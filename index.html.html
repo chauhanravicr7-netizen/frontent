@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dockside - Timber ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-amber-900 via-orange-800 to-amber-900">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                        <span class="text-2xl">🪵</span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white">Dockside</h1>
+                </div>
+                <p class="text-amber-100">Timber Business Operating System</p>
+            </div>
+
+            <!-- Card -->
+            <div class="bg-white rounded-lg shadow-2xl p-8">
+                <h2 class="text-2xl font-bold mb-6 text-center text-amber-900">Login</h2>
+
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="your@email.com"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-900"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="••••••••"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-900"
+                            required
+                        />
+                    </div>
+
+                    <div id="error" class="p-3 bg-red-50 border border-red-200 rounded-lg hidden">
+                        <p class="text-red-700 text-sm" id="errorMsg"></p>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-amber-900 hover:bg-amber-800 text-white font-medium py-2 px-4 rounded-lg transition"
+                    >
+                        Login
+                    </button>
+                </form>
+
+                <p class="text-center text-gray-600 text-sm mt-6">
+                    Test Account: <br/>
+                    <strong>demo@dockside.com</strong> <br/>
+                    <strong>demo123456</strong>
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-8 text-center text-amber-100 text-sm">
+                <p>🧪 Demo: test@dockside.com / password123</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://dockside-backend--chauhanravicr7.replit.app';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.userId);
+                    localStorage.setItem('companyId', data.companyId);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('email', data.email);
+                    
+                    alert('✅ Login successful! Welcome to Dockside!');
+                    // Redirect to dashboard (in real app)
+                    document.body.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-center"><h1 class="text-3xl font-bold mb-4">🎉 Welcome to Dockside!</h1><p class="text-lg">Your SaaS is live and working!</p><p class="text-gray-600 mt-4">Email: ' + email + '</p></div></div>';
+                } else {
+                    errorDiv.classList.remove('hidden');
+                    errorMsg.textContent = data.error || 'Login failed';
+                }
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorMsg.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
