@@ -28,7 +28,7 @@
             <form id="loginForm" class="space-y-6">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Office Email</label>
-                    <input type="email" id="email" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-amber-500 transition shadow-sm" placeholder="owner@company.com" required>
+                    <input type="email" id="email" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-amber-500 transition shadow-sm" placeholder="demo@dockside.com" required>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
@@ -54,27 +54,30 @@
         const spinner = document.getElementById('btnSpinner');
         const btnText = document.getElementById('btnText');
         const errorDiv = document.getElementById('error');
+        const emailInput = document.getElementById('email').value;
+        const passwordInput = document.getElementById('password').value;
         
         btn.disabled = true;
         spinner.classList.remove('hidden');
         btnText.innerText = 'Connecting...';
+        errorDiv.classList.add('hidden');
 
         try {
             const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    email: document.getElementById('email').value, 
-                    password: document.getElementById('password').value 
+                    email: emailInput, 
+                    password: passwordInput 
                 })
             });
 
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('token', data.token);
-                renderDashboard(data.email);
+                renderDashboard(emailInput);
             } else {
-                throw new Error(data.error || 'Check your credentials');
+                throw new Error(data.error || 'Authentication failed');
             }
         } catch (err) {
             errorDiv.innerText = err.message;
@@ -87,19 +90,25 @@
     });
 
     function renderDashboard(email) {
+        // Fix for the 'reading 0' error: ensure email exists before taking first letter
+        const displayLetter = email ? email[0].toUpperCase() : 'U';
+
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen">
                 <nav class="w-64 bg-white border-r border-slate-200 flex flex-col">
                     <div class="p-8"><h2 class="text-xl font-bold text-slate-900 tracking-tighter">DOCKSIDE</h2></div>
                     <div class="flex-1 px-4 space-y-1">
-                        <button onclick="switchTab('overview')" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition">🏠 Overview</button>
+                        <button onclick="location.reload()" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition">🏠 Overview</button>
                         <button onclick="switchTab('inventory')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 transition">📦 Inventory</button>
                         <button onclick="switchTab('orders')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 transition">📝 Orders</button>
                     </div>
                     <div class="p-6 border-t border-slate-100">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700">${email[0].toUpperCase()}</div>
-                            <div class="truncate"><p class="text-xs font-bold text-slate-900 truncate">${email}</p><p class="text-[10px] text-slate-400">Administrator</p></div>
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700">${displayLetter}</div>
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-slate-900 truncate">${email}</p>
+                                <p class="text-[10px] text-slate-400">Administrator</p>
+                            </div>
                         </div>
                     </div>
                 </nav>
@@ -133,7 +142,7 @@
                         <div class="card rounded-2xl">
                             <div class="p-6 border-b border-slate-100 flex justify-between">
                                 <h4 class="font-bold">Recent Stock Movements</h4>
-                                <button class="text-amber-700 text-xs font-bold">View History</button>
+                                <button class="text-amber-700 text-xs font-bold font-bold">View History</button>
                             </div>
                             <div class="p-10 text-center text-slate-400 italic">No movements recorded today.</div>
                         </div>
@@ -147,14 +156,13 @@
         const content = document.getElementById('mainContent');
         const title = document.getElementById('tabTitle');
         
-        // Update Sidebar UI
+        // Update Sidebar UI styling
         document.querySelectorAll('.sidebar-link').forEach(btn => {
-            btn.classList.remove('active', 'bg-slate-50', 'text-slate-900');
+            btn.classList.remove('active', 'bg-f1f5f9', 'text-slate-900');
             btn.classList.add('text-slate-500');
         });
-        event.currentTarget.classList.add('active');
-
-        if(tab === 'inventory') {
+        
+        if (tab === 'inventory') {
             title.innerText = 'Stock Inventory';
             content.innerHTML = `
                 <div class="flex justify-between items-center mb-8">
@@ -162,22 +170,33 @@
                     <button class="btn-primary text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg">+ Add New Stock</button>
                 </div>
                 <div class="card rounded-2xl overflow-hidden">
-                    <table class="w-full text-left">
+                    <table class="w-full text-left border-collapse">
                         <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase">
-                            <tr><th class="px-8 py-4">Item Species</th><th class="px-8 py-4">Dimensions</th><th class="px-8 py-4">Volume</th><th class="px-8 py-4">Action</th></tr>
+                            <tr>
+                                <th class="px-8 py-4">Item Species</th>
+                                <th class="px-8 py-4">Dimensions</th>
+                                <th class="px-8 py-4">Volume</th>
+                                <th class="px-8 py-4">Action</th>
+                            </tr>
                         </thead>
                         <tbody class="text-sm">
-                            <tr class="border-t border-slate-100"><td class="px-8 py-4 font-semibold">Teak Wood (Grade A)</td><td class="px-8 py-4 text-slate-500">2" x 4" x 10'</td><td class="px-8 py-4 font-bold">45.5 m³</td><td class="px-8 py-4 text-amber-700 font-bold cursor-pointer">Edit</td></tr>
-                            <tr class="border-t border-slate-100"><td class="px-8 py-4 font-semibold">Pine (Sawn)</td><td class="px-8 py-4 text-slate-500">4" x 4" x 8'</td><td class="px-8 py-4 font-bold">120.0 m³</td><td class="px-8 py-4 text-amber-700 font-bold cursor-pointer">Edit</td></tr>
+                            <tr class="border-t border-slate-100">
+                                <td class="px-8 py-4 font-semibold">Teak Wood (Grade A)</td>
+                                <td class="px-8 py-4 text-slate-500">2" x 4" x 10'</td>
+                                <td class="px-8 py-4 font-bold">45.5 m³</td>
+                                <td class="px-8 py-4 text-amber-700 font-bold cursor-pointer hover:underline">Edit</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             `;
-        } else if(tab === 'orders') {
+        } else if (tab === 'orders') {
             title.innerText = 'Order Management';
-            content.innerHTML = `<div class="p-20 text-center text-slate-400"><p class="text-4xl mb-4 text-slate-200">📄</p><p>No orders currently in processing.</p></div>`;
-        } else {
-            location.reload(); // Refresh for Overview
+            content.innerHTML = `
+                <div class="p-20 text-center text-slate-400">
+                    <p class="text-5xl mb-4">📄</p>
+                    <p class="font-medium">No active orders found in the system.</p>
+                </div>`;
         }
     }
 </script>
