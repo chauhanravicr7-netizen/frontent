@@ -1,78 +1,69 @@
-<body class="relative min-h-screen bg-neutral-950 text-neutral-200 overflow-hidden">
-
-<!-- Background Gradient Glow -->
-<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(180,83,9,0.15),transparent_60%)]"></div>
-
-<div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(255,255,255,0.04),transparent_70%)]"></div>
-
-<div class="relative z-10 min-h-screen flex items-center justify-center px-6">
-
-    <div class="w-full max-w-md">
-
-        <!-- Brand Header -->
-        <div class="mb-14 text-center">
-            <div class="w-14 h-14 mx-auto mb-6 border border-amber-700 flex items-center justify-center">
-                <span class="text-amber-600 text-xl">DS</span>
+<body class="bg-gray-50 font-sans antialiased">
+    <div class="flex min-h-screen">
+        <div class="hidden lg:flex lg:w-1/2 bg-amber-900 relative overflow-hidden items-center justify-center">
+            <div class="absolute inset-0 opacity-20">
+                <svg class="h-full w-full" fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs><pattern id="wood-pattern" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 0h10v10H0z" fill="none"/><path d="M0 5h10M5 0v10" stroke="white" stroke-width="0.1"/></pattern></defs>
+                    <rect width="100" height="100" fill="url(#wood-pattern)"/>
+                </svg>
             </div>
-
-            <h1 class="text-4xl font-bold tracking-[0.3em] text-white">
-                DOCKSIDE
-            </h1>
-
-            <p class="text-neutral-500 mt-3 text-xs tracking-[0.4em] uppercase">
-                Timber Business Operating System
-            </p>
+            <div class="relative z-10 text-center p-12">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-6">
+                    <span class="text-4xl">🪵</span>
+                </div>
+                <h1 class="text-5xl font-extrabold text-white tracking-tight mb-4">Dockside</h1>
+                <p class="text-amber-100 text-xl font-medium max-w-md mx-auto">
+                    Precision management for the modern timber industry.
+                </p>
+            </div>
         </div>
 
-        <!-- Login Panel -->
-        <div class="relative bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 p-10 shadow-[0_0_60px_rgba(180,83,9,0.15)]">
-
-            <h2 class="text-lg font-semibold text-white mb-8 tracking-wide">
-                Secure Access Portal
-            </h2>
-
-            <form id="loginForm" class="space-y-6">
-
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Work Email
-                    </label>
-                    <input type="email" id="email"
-                    class="w-full bg-neutral-950 border border-neutral-800 px-4 py-3 focus:outline-none focus:border-amber-600 transition text-sm"
-                    placeholder="name@company.com" required>
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+            <div class="w-full max-w-md">
+                <div class="lg:hidden text-center mb-8">
+                    <span class="text-5xl">🪵</span>
+                    <h1 class="text-3xl font-bold text-amber-900 mt-2">Dockside</h1>
                 </div>
 
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Password
-                    </label>
-                    <input type="password" id="password"
-                    class="w-full bg-neutral-950 border border-neutral-800 px-4 py-3 focus:outline-none focus:border-amber-600 transition text-sm"
-                    placeholder="••••••••" required>
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
+                    <p class="text-gray-500">Please enter your details to access your dashboard.</p>
                 </div>
 
-                <div id="error" class="hidden text-sm text-red-400 border border-red-700 p-3">
-                    <span id="errorMsg"></span>
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Work Email</label>
+                        <input type="email" id="email" placeholder="name@company.com" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-900 focus:border-transparent transition-all outline-none" required>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm font-semibold text-gray-700">Password</label>
+                            <a href="#" class="text-sm font-medium text-amber-800 hover:text-amber-900">Forgot password?</a>
+                        </div>
+                        <input type="password" id="password" placeholder="••••••••" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-900 focus:border-transparent transition-all outline-none" required>
+                    </div>
+
+                    <div id="error" class="p-4 bg-red-50 border-l-4 border-red-500 rounded-md hidden">
+                        <div class="flex">
+                            <div class="flex-shrink-0">⚠️</div>
+                            <div class="ml-3"><p class="text-sm text-red-700 font-medium" id="errorMsg"></p></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg transform transition active:scale-[0.98]">
+                        Sign in to Dashboard
+                    </button>
+                </form>
+
+                <div class="mt-8 pt-8 border-t border-gray-100">
+                    <p class="text-center text-gray-500 text-sm">
+                        Demo Account: <span class="font-semibold text-gray-800">demo@dockside.com</span> / <span class="font-semibold text-gray-800">demo123456</span>
+                    </p>
                 </div>
-
-                <button type="submit"
-                class="w-full bg-amber-700 hover:bg-amber-600 text-black font-semibold py-3 tracking-widest transition">
-                    ACCESS SYSTEM
-                </button>
-
-            </form>
-
+            </div>
         </div>
-
-        <!-- Footer -->
-        <div class="mt-10 text-center text-xs text-neutral-600 tracking-widest">
-            ENCRYPTED CONNECTION • ENTERPRISE GRADE SECURITY
-        </div>
-
-        <div class="mt-3 text-center text-xs text-neutral-700">
-            Demo: demo@dockside.com / demo123456
-        </div>
-
     </div>
-
-</div>
+</body>
