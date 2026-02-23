@@ -5,70 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dockside - Timber ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-amber-900 via-orange-800 to-amber-900">
-    <div class="min-h-screen flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <!-- Logo -->
-            <div class="text-center mb-8">
-                <div class="flex items-center justify-center gap-2 mb-2">
-                    <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                        <span class="text-2xl">🪵</span>
-                    </div>
-                    <h1 class="text-3xl font-bold text-white">Dockside</h1>
-                </div>
-                <p class="text-amber-100">Timber Business Operating System</p>
+<body class="bg-gray-50 font-sans antialiased">
+    <div class="flex min-h-screen">
+        <div class="hidden lg:flex lg:w-1/2 bg-amber-900 relative overflow-hidden items-center justify-center">
+            <div class="absolute inset-0 opacity-20">
+                <svg class="h-full w-full" fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs><pattern id="wood-pattern" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 0h10v10H0z" fill="none"/><path d="M0 5h10M5 0v10" stroke="white" stroke-width="0.1"/></pattern></defs>
+                    <rect width="100" height="100" fill="url(#wood-pattern)"/>
+                </svg>
             </div>
+            <div class="relative z-10 text-center p-12">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-6 text-4xl">
+                    🪵
+                </div>
+                <h1 class="text-6xl font-extrabold text-white tracking-tight mb-4">Dockside</h1>
+                <p class="text-amber-100 text-xl font-medium max-w-md mx-auto italic">
+                    "Precision management for the modern timber industry."
+                </p>
+            </div>
+        </div>
 
-            <!-- Card -->
-            <div class="bg-white rounded-lg shadow-2xl p-8">
-                <h2 class="text-2xl font-bold mb-6 text-center text-amber-900">Login</h2>
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+            <div class="w-full max-w-md">
+                <div class="lg:hidden text-center mb-8">
+                    <span class="text-5xl">🪵</span>
+                    <h1 class="text-3xl font-bold text-amber-900 mt-2">Dockside</h1>
+                </div>
 
-                <form id="loginForm" class="space-y-4">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
+                    <p class="text-gray-500">Please enter your details to access your dashboard.</p>
+                </div>
+
+                <form id="loginForm" class="space-y-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            placeholder="your@email.com"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-900"
-                            required
-                        />
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Work Email</label>
+                        <input type="email" id="email" placeholder="name@company.com" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-900 focus:border-transparent transition-all outline-none shadow-sm" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="••••••••"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-900"
-                            required
-                        />
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm font-semibold text-gray-700">Password</label>
+                            <a href="#" class="text-sm font-medium text-amber-800 hover:text-amber-900">Forgot password?</a>
+                        </div>
+                        <input type="password" id="password" placeholder="••••••••" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-900 focus:border-transparent transition-all outline-none shadow-sm" required>
                     </div>
 
-                    <div id="error" class="p-3 bg-red-50 border border-red-200 rounded-lg hidden">
-                        <p class="text-red-700 text-sm" id="errorMsg"></p>
+                    <div id="error" class="p-4 bg-red-50 border-l-4 border-red-500 rounded-md hidden">
+                        <div class="flex">
+                            <div class="text-red-500 mr-2">⚠️</div>
+                            <p class="text-sm text-red-700 font-medium" id="errorMsg"></p>
+                        </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        class="w-full bg-amber-900 hover:bg-amber-800 text-white font-medium py-2 px-4 rounded-lg transition"
-                    >
-                        Login
+                    <button type="submit" class="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transform transition active:scale-[0.98] text-lg">
+                        Sign in to Dashboard
                     </button>
                 </form>
 
-                <p class="text-center text-gray-600 text-sm mt-6">
-                    Test Account: <br/>
-                    <strong>demo@dockside.com</strong> <br/>
-                    <strong>demo123456</strong>
-                </p>
-            </div>
-
-            <!-- Footer -->
-            <div class="mt-8 text-center text-amber-100 text-sm">
-                <p>🧪 Demo: test@dockside.com / password123</p>
+                <div class="mt-8 pt-8 border-t border-gray-100">
+                    <p class="text-center text-gray-500 text-sm">
+                        Test Account: <br>
+                        <span class="font-semibold text-gray-800">demo@dockside.com</span> / <span class="font-semibold text-gray-800">demo123456</span>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -100,8 +107,20 @@
                     localStorage.setItem('email', data.email);
                     
                     alert('✅ Login successful! Welcome to Dockside!');
-                    // Redirect to dashboard (in real app)
-                    document.body.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-center"><h1 class="text-3xl font-bold mb-4">🎉 Welcome to Dockside!</h1><p class="text-lg">Your SaaS is live and working!</p><p class="text-gray-600 mt-4">Email: ' + email + '</p></div></div>';
+                    
+                    // Dashboard View
+                    document.body.innerHTML = `
+                        <div class="flex items-center justify-center h-screen bg-gray-50">
+                            <div class="text-center p-8 bg-white shadow-2xl rounded-2xl border border-gray-100">
+                                <span class="text-6xl mb-4 block">🎉</span>
+                                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Welcome to Dockside!</h1>
+                                <p class="text-xl text-gray-600 mb-6">Your SaaS is live and working.</p>
+                                <div class="inline-block px-4 py-2 bg-amber-50 text-amber-900 rounded-lg font-medium">
+                                    Account: ${email}
+                                </div>
+                                <button onclick="window.location.reload()" class="block w-full mt-8 text-sm text-gray-400 hover:text-amber-900 underline">Logout</button>
+                            </div>
+                        </div>`;
                 } else {
                     errorDiv.classList.remove('hidden');
                     errorMsg.textContent = data.error || 'Login failed';
