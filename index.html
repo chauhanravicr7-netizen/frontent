@@ -7,32 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f1a; color: #e2e8f0; }
+        .input-dark { background: #161b2c; border: 1px solid #2d364d; color: white; transition: all 0.3s; }
+        .input-dark:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.1); outline: none; }
         .sidebar-link.active { background: rgba(255, 255, 255, 0.05); color: white; border-left: 4px solid #d97706; }
-        .input-dark { background: #1e293b; border: 1px solid #334155; color: white; transition: all 0.3s; }
-        .input-dark:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2); outline: none; }
-        /* Smooth Fade In */
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="antialiased overflow-hidden text-slate-200">
+<body class="antialiased overflow-hidden">
 
 <div id="app" class="fade-in">
-    <div class="h-screen flex items-center justify-center">
-        <div class="w-12 h-12 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
-</div>
 
 <script>
     const API_URL = 'https://dockside-api.onrender.com';
 
-    // CORE: Session Persistence Check
-    // This runs immediately when the page loads or refreshes
+    // SESSION PERSISTENCE: This stops the logout on refresh
     window.onload = () => {
         const savedToken = localStorage.getItem('token');
         const savedEmail = localStorage.getItem('email');
-        
         if (savedToken && savedEmail) {
             renderDashboard(savedEmail);
         } else {
@@ -45,31 +39,31 @@
             <div class="min-h-screen flex flex-col lg:flex-row">
                 <div class="hidden lg:flex lg:w-3/5 relative overflow-hidden bg-black">
                     <img src="https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=2073" 
-                         class="absolute inset-0 w-full h-full object-cover opacity-40 scale-105" alt="Timber Log Stock">
+                         class="absolute inset-0 w-full h-full object-cover opacity-50" alt="Timber Log Stock">
                     <div class="relative z-10 flex flex-col justify-center p-20">
                         <h1 class="text-7xl font-black tracking-tighter text-white mb-4">DOCKSIDE</h1>
                         <p class="text-xl text-amber-500 font-bold uppercase tracking-[0.3em]">Timber Operating System</p>
                         <div class="mt-10 h-1 w-24 bg-amber-600"></div>
-                        <p class="mt-10 text-slate-400 max-w-md font-light leading-relaxed">
-                            Connecting global forests to local markets with enterprise-grade precision and real-time inventory telemetry.
+                        <p class="mt-10 text-slate-400 max-w-md font-light leading-relaxed text-lg">
+                            Global inventory telemetry and supply chain management for the modern timber industry.
                         </p>
                     </div>
                     <div class="absolute bottom-10 left-20 z-10 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                        Gandhidham Hub • v2.4.0 Stable
+                        Gandhidham Hub • Enterprise v2.5.0
                     </div>
                 </div>
 
                 <div class="flex-1 flex items-center justify-center p-12 bg-[#0b0f1a] border-l border-slate-800/50">
                     <div class="w-full max-w-sm space-y-10">
-                        <div class="space-y-2">
+                        <div class="space-y-2 text-center lg:text-left">
                             <h2 class="text-4xl font-bold text-white tracking-tight">Sign In</h2>
-                            <p class="text-slate-500 text-sm">Secure access to the executive terminal.</p>
+                            <p class="text-slate-500 text-sm font-medium uppercase tracking-widest">Executive Terminal Access</p>
                         </div>
 
                         <form id="loginForm" class="space-y-6">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Work Email</label>
-                                <input type="email" id="email" required class="w-full px-6 py-4 rounded-xl input-dark" placeholder="executive@dockside.com">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Identity</label>
+                                <input type="email" id="email" required class="w-full px-6 py-4 rounded-xl input-dark text-sm" placeholder="demo@dockside.com">
                             </div>
 
                             <div class="space-y-2">
@@ -77,10 +71,10 @@
                                     <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Access Key</label>
                                     <a href="#" class="text-[10px] font-bold text-amber-600 hover:text-amber-500 uppercase tracking-widest">Forgot?</a>
                                 </div>
-                                <input type="password" id="password" required class="w-full px-6 py-4 rounded-xl input-dark" placeholder="••••••••">
+                                <input type="password" id="password" required class="w-full px-6 py-4 rounded-xl input-dark text-sm" placeholder="••••••••">
                             </div>
 
-                            <div id="error" class="hidden text-[11px] font-bold text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 italic"></div>
+                            <div id="error" class="hidden text-[11px] font-bold text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 italic text-center"></div>
 
                             <button type="submit" id="loginBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-xl shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95">
                                 <span id="btnText" class="tracking-[0.2em] text-xs">AUTHENTICATE</span>
@@ -90,15 +84,13 @@
 
                         <div class="pt-10 border-t border-slate-800/50 text-center">
                             <p class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">
-                                Demo: demo@dockside.com / demo123456
+                                Demo Creds: demo@dockside.com / demo123456
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-
-        // Re-attach listener after rendering HTML
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
     }
 
@@ -122,12 +114,11 @@
             });
             const data = await res.json();
             if (res.ok) {
-                // SAVE SESSION: This stops the "logout on refresh" problem
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('email', email);
                 renderDashboard(email);
             } else {
-                throw new Error(data.error || 'Identity Verification Failed');
+                throw new Error(data.error || 'Authentication Failed');
             }
         } catch (err) {
             errorDiv.innerText = err.message; errorDiv.classList.remove('hidden');
@@ -142,20 +133,20 @@
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen bg-[#0b0f1a] fade-in">
                 <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col z-20 shadow-2xl">
-                    <div class="p-10" onclick="location.reload()">
+                    <div class="p-10 cursor-pointer" onclick="location.reload()">
                         <h2 class="text-2xl font-black tracking-tighter text-white">DOCKSIDE<span class="text-amber-600">.</span></h2>
                     </div>
                     <div class="flex-1 px-4 space-y-1">
                         <button onclick="location.reload()" class="sidebar-link active w-full flex items-center gap-4 px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest">🏠 Dashboard</button>
-                        <button onclick="alert('Inventory Module Loading...')" class="sidebar-link w-full flex items-center gap-4 px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">📦 Inventory</button>
-                        <button onclick="handleLogout()" class="w-full mt-10 flex items-center gap-4 px-6 py-4 text-xs font-black uppercase tracking-widest text-red-500/50 hover:text-red-500 transition-all">🚪 Sign Out</button>
+                        <button onclick="switchTab('inventory')" class="sidebar-link w-full flex items-center gap-4 px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">📦 Inventory</button>
+                        <button onclick="handleLogout()" class="w-full mt-auto mb-6 flex items-center gap-4 px-6 py-4 text-xs font-black uppercase tracking-widest text-red-500/50 hover:text-red-500 transition-all">🚪 Sign Out</button>
                     </div>
                     <div class="p-8 border-t border-slate-800/50">
                         <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5">
                             <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center font-black text-white shadow-lg shadow-amber-900/20">${displayLetter}</div>
                             <div class="truncate">
                                 <p class="text-[11px] font-black text-white truncate uppercase tracking-tighter">${email}</p>
-                                <p class="text-[9px] text-slate-500 uppercase tracking-widest font-black">Admin Access</p>
+                                <p class="text-[9px] text-slate-500 uppercase tracking-widest font-black text-right">Owner Access</p>
                             </div>
                         </div>
                     </div>
@@ -163,31 +154,18 @@
 
                 <main class="flex-1 flex flex-col overflow-hidden">
                     <header class="h-24 bg-[#0d121f]/50 border-b border-slate-800/50 flex items-center justify-between px-12 backdrop-blur-md">
-                        <h3 class="text-lg font-black text-white uppercase tracking-widest">Executive Dashboard</h3>
+                        <h3 id="tabTitle" class="text-lg font-black text-white uppercase tracking-widest">Executive Dashboard</h3>
                         <div class="flex items-center gap-6">
-                            <span class="text-[10px] font-black text-green-500 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em]">● Systems Nominal</span>
+                            <span class="text-[10px] font-black text-green-500 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em]">● Gandhidham Live</span>
                         </div>
                     </header>
-                    <div class="flex-1 overflow-y-auto p-12 space-y-10">
+                    <div id="mainContent" class="flex-1 overflow-y-auto p-12 space-y-10">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Stock Value</p>
-                                <p class="text-4xl font-black text-white">$1.2M <span class="text-xs font-light text-slate-600">USD</span></p>
-                            </div>
-                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Active Orders</p>
-                                <p class="text-4xl font-black text-white">24</p>
-                            </div>
-                            <div class="bg-amber-600/10 p-10 rounded-[2rem] border border-amber-600/20 shadow-2xl border-l-8 border-l-amber-600">
-                                <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4">Volume Transit</p>
-                                <p class="text-4xl font-black text-white">450 <span class="text-xs font-light text-amber-600/50">m³</span></p>
-                            </div>
+                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl"><p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Stock Value</p><p class="text-4xl font-black text-white">$1.2M</p></div>
+                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl"><p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Active Orders</p><p class="text-4xl font-black text-white">24</p></div>
+                            <div class="bg-amber-600/10 p-10 rounded-[2rem] border-l-8 border-amber-600"><p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4">Volume Transit</p><p class="text-4xl font-black text-white">450 m³</p></div>
                         </div>
-                        <div class="bg-[#111827] rounded-[2rem] border border-white/5 p-20 flex flex-col items-center justify-center text-center">
-                            <div class="w-16 h-16 bg-slate-800 rounded-2xl mb-6 flex items-center justify-center">📉</div>
-                            <h4 class="text-slate-400 uppercase tracking-[0.3em] font-black text-sm">Waiting for Telemetry...</h4>
-                            <p class="text-slate-600 text-xs mt-4">Connect your local warehouse API to see real-time log movements.</p>
-                        </div>
+                        <div class="bg-[#111827] rounded-[2rem] border border-white/5 p-20 text-center uppercase tracking-widest font-black text-slate-600">Waiting for data telemetry...</div>
                     </div>
                 </main>
             </div>
