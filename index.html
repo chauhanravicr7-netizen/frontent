@@ -3,95 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Premium Timber ERP</title>
+    <title>DOCKSIDE | Global Timber ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .sidebar-link.active { background-color: #f8fafc; color: #0f172a; border-left: 4px solid #b45309; }
-        .btn-premium { background: #1e293b; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-premium:hover { background: #334155; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .sidebar-link { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent; }
+        .sidebar-link.active { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: #b45309; }
+        .btn-premium { background: #0f172a; transition: all 0.3s; }
+        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; transition: transform 0.3s ease; }
+        .glass-card:hover { transform: translateY(-4px); }
     </style>
 </head>
-<body class="bg-slate-50 antialiased">
+<body class="bg-slate-50 antialiased overflow-hidden">
 
 <div id="app">
-    <div id="loginPage" class="min-h-screen flex flex-col lg:flex-row">
-        
-        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900">
-            <img src="https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=2073" 
-                 class="absolute inset-0 w-full h-full object-cover opacity-60 scale-105" alt="Timber Texture">
-            
-            <div class="relative z-10 flex flex-col justify-center p-20 text-white">
-                <div class="mb-8">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-                        <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1"/>
-                        <path d="M12 2L12 22M2 12L22 12" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
-                    </svg>
-                </div>
-                <h1 class="text-6xl font-extrabold tracking-tighter mb-4">DOCKSIDE</h1>
-                <p class="text-xl text-slate-300 font-light max-w-md leading-relaxed">
-                    Manage the flow of timber, from forest to sustainable future.
-                </p>
-                <div class="mt-12 flex items-center gap-4">
-                    <div class="h-1 w-12 bg-amber-600"></div>
-                    <span class="text-sm uppercase tracking-widest font-bold text-amber-500">Industry Leader ERP</span>
-                </div>
-            </div>
-            
-            <div class="absolute bottom-10 left-20 z-10 text-xs text-slate-400 uppercase tracking-widest">
-                © 2026 Dockside Logistics • Gandhidham
+    <div id="loginPortal" class="min-h-screen flex flex-col lg:flex-row">
+        <div class="hidden lg:flex lg:w-1/2 relative bg-slate-900">
+            <img src="https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=2073" class="absolute inset-0 w-full h-full object-cover opacity-50">
+            <div class="relative z-10 p-20 text-white self-center">
+                <h1 class="text-7xl font-black tracking-tighter mb-4">DOCKSIDE</h1>
+                <p class="text-xl text-slate-300 font-light max-w-md">Precision. Sustainability. Growth.</p>
             </div>
         </div>
-
-        <div class="flex-1 flex items-center justify-center p-8 bg-white lg:bg-slate-50">
-            <div class="w-full max-w-md">
-                <div class="glass-panel p-10 rounded-3xl border border-slate-200 shadow-2xl">
-                    <div class="mb-10 lg:hidden text-center">
-                        <h1 class="text-3xl font-black text-slate-900 tracking-tighter">DOCKSIDE</h1>
-                    </div>
-                    
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-bold text-slate-900 mb-2">Sign In</h2>
-                        <p class="text-slate-500 text-sm">Enter your credentials to access the ERP.</p>
-                    </div>
-
-                    <form id="loginForm" class="space-y-6">
-                        <div class="space-y-2">
-                            <label class="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Work Email</label>
-                            <input type="email" id="email" required
-                                class="w-full px-5 py-4 rounded-2xl bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-amber-600 transition-all outline-none text-slate-900" 
-                                placeholder="demo@dockside.com">
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center px-1">
-                                <label class="text-xs font-black uppercase tracking-widest text-slate-400">Access Key</label>
-                                <a href="#" class="text-xs font-bold text-amber-700 hover:text-amber-800">Forgot?</a>
-                            </div>
-                            <input type="password" id="password" required
-                                class="w-full px-5 py-4 rounded-2xl bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-amber-600 transition-all outline-none text-slate-900" 
-                                placeholder="••••••••">
-                        </div>
-
-                        <div id="error" class="hidden text-xs font-bold text-red-600 bg-red-50 p-4 rounded-xl border border-red-100 italic"></div>
-
-                        <button type="submit" id="loginBtn" class="w-full btn-premium text-white font-bold py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3">
-                            <span id="btnText" class="tracking-widest uppercase text-sm">Sign In to Dashboard</span>
-                            <div id="btnSpinner" class="hidden w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                        </button>
-                    </form>
-
-                    <div class="mt-8 pt-8 border-t border-slate-100 text-center">
-                        <p class="text-[10px] text-slate-400 uppercase tracking-widest leading-loose">
-                            Secured Enterprise Environment<br>
-                            Account: <span class="text-slate-900 font-bold">demo@dockside.com</span> | <span class="text-slate-900 font-bold">demo123456</span>
-                        </p>
-                    </div>
-                </div>
+        <div class="flex-1 flex items-center justify-center p-8">
+            <div class="w-full max-w-md space-y-8">
+                <div class="text-center mb-10"><h2 class="text-3xl font-bold text-slate-900">Sign In</h2></div>
+                <form id="loginForm" class="space-y-6">
+                    <input type="email" id="email" required class="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-amber-600 shadow-sm" placeholder="Email Address">
+                    <input type="password" id="password" required class="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-amber-600 shadow-sm" placeholder="Access Key">
+                    <div id="error" class="hidden text-xs font-bold text-red-600 bg-red-50 p-4 rounded-xl border border-red-100"></div>
+                    <button type="submit" id="loginBtn" class="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex justify-center items-center gap-3">
+                        <span id="btnText">AUTHENTICATE</span>
+                        <div id="btnSpinner" class="hidden w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -99,136 +46,125 @@
 
 <script>
     const API_URL = 'https://dockside-api.onrender.com';
+    let currentUserEmail = "";
 
+    // 1. LOGIN HANDLER
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('loginBtn');
         const spinner = document.getElementById('btnSpinner');
         const btnText = document.getElementById('btnText');
         const errorDiv = document.getElementById('error');
-        const emailInput = document.getElementById('email').value;
-        const passwordInput = document.getElementById('password').value;
-        
-        btn.disabled = true;
-        spinner.classList.remove('hidden');
-        btnText.innerText = 'AUTHENTICATING...';
-        errorDiv.classList.add('hidden');
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
+        btn.disabled = true; spinner.classList.remove('hidden'); btnText.innerText = 'VERIFYING...';
+        
         try {
-            const response = await fetch(`${API_URL}/api/auth/login`, {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: emailInput, password: passwordInput })
+                body: JSON.stringify({ email, password })
             });
-
-            const data = await response.json();
-            if (response.ok) {
-                localStorage.setItem('token', data.token);
-                renderDashboard(emailInput);
+            const data = await res.json();
+            if (res.ok) {
+                currentUserEmail = email;
+                renderAppShell(); // Switches to Dashboard
             } else {
                 throw new Error(data.error || 'Identity Verification Failed');
             }
         } catch (err) {
-            errorDiv.innerText = err.message;
-            errorDiv.classList.remove('hidden');
-            btnText.innerText = 'Sign In to Dashboard';
+            errorDiv.innerText = err.message; errorDiv.classList.remove('hidden');
+            btnText.innerText = 'AUTHENTICATE';
         } finally {
-            btn.disabled = false;
-            spinner.classList.add('hidden');
+            btn.disabled = false; spinner.classList.add('hidden');
         }
     });
 
-    function renderDashboard(email) {
-        const displayLetter = email ? email[0].toUpperCase() : 'U';
+    // 2. MAIN APP SHELL (PERSISTENT NAV)
+    function renderAppShell() {
+        const displayLetter = currentUserEmail ? currentUserEmail[0].toUpperCase() : 'A';
         document.getElementById('app').innerHTML = `
-            <div class="flex h-screen bg-white">
-                <nav class="w-72 bg-slate-900 text-white flex flex-col">
-                    <div class="p-10">
+            <div class="flex h-screen bg-slate-50">
+                <nav class="w-72 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
+                    <div class="p-10 cursor-pointer" onclick="navigateTo('overview')">
                         <h2 class="text-2xl font-black tracking-tighter">DOCKSIDE<span class="text-amber-600">.</span></h2>
                     </div>
-                    <div class="flex-1 px-6 space-y-2">
-                        <button onclick="location.reload()" class="sidebar-link active w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold transition-all">🏠 Dashboard</button>
-                        <button onclick="switchTab('inventory')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">📦 Inventory</button>
-                        <button onclick="switchTab('orders')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">📋 Orders</button>
+                    <div class="flex-1 px-4 space-y-1">
+                        <button onclick="navigateTo('overview')" id="nav-overview" class="sidebar-link active w-full flex items-center gap-4 px-6 py-4 rounded-xl text-sm font-bold">🏠 Dashboard</button>
+                        <button onclick="navigateTo('inventory')" id="nav-inventory" class="sidebar-link w-full flex items-center gap-4 px-6 py-4 rounded-xl text-sm font-bold text-slate-400 hover:text-white">📦 Inventory</button>
+                        <button onclick="navigateTo('orders')" id="nav-orders" class="sidebar-link w-full flex items-center gap-4 px-6 py-4 rounded-xl text-sm font-bold text-slate-400 hover:text-white">📋 Orders</button>
                     </div>
                     <div class="p-8 border-t border-slate-800">
                         <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/50">
                             <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center font-bold text-white shadow-lg">${displayLetter}</div>
-                            <div class="truncate"><p class="text-xs font-bold truncate">${email}</p><p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Executive</p></div>
+                            <div class="truncate"><p class="text-xs font-bold truncate">${currentUserEmail}</p><p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Executive Access</p></div>
                         </div>
                     </div>
                 </nav>
 
-                <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
-                    <header class="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-12">
-                        <h3 id="tabTitle" class="text-xl font-extrabold text-slate-800 tracking-tight">Executive Overview</h3>
+                <main class="flex-1 flex flex-col overflow-hidden">
+                    <header class="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-12 shadow-sm">
+                        <h3 id="tabTitle" class="text-xl font-extrabold text-slate-800">Executive Overview</h3>
                         <div class="flex items-center gap-6">
-                            <div class="text-right">
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">System Status</p>
-                                <p class="text-xs font-bold text-green-600 flex items-center gap-2 justify-end">● Online (Gandhidham)</p>
-                            </div>
+                            <span class="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100 uppercase tracking-widest">● Gandhidham Live</span>
                         </div>
                     </header>
-
-                    <div id="mainContent" class="flex-1 overflow-y-auto p-12">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                            <div class="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Net Inventory</p>
-                                <p class="text-4xl font-black text-slate-900">1,240 <span class="text-sm font-medium text-slate-300">m³</span></p>
-                            </div>
-                            <div class="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Open Orders</p>
-                                <p class="text-4xl font-black text-slate-900">14</p>
-                            </div>
-                            <div class="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 border-l-8 border-l-amber-600">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Live Pipelines</p>
-                                <p class="text-4xl font-black text-slate-900">03</p>
-                            </div>
+                    <div id="mainContent" class="flex-1 overflow-y-auto p-12 space-y-10">
                         </div>
-
-                        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
-                                <h4 class="font-black text-sm uppercase tracking-widest text-slate-800">Recent Movements</h4>
-                            </div>
-                            <div class="p-20 text-center">
-                                <p class="text-slate-300 italic text-sm tracking-widest uppercase">No live telemetry to display.</p>
-                            </div>
-                        </div>
-                    </div>
                 </main>
             </div>
         `;
+        navigateTo('overview'); // Load default view
     }
 
-    function switchTab(tab) {
+    // 3. NAVIGATION CONTROLLER (FIXED BUGS)
+    function navigateTo(view) {
         const content = document.getElementById('mainContent');
         const title = document.getElementById('tabTitle');
-        document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        
+        // Reset Sidebar States
+        document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+        document.getElementById(`nav-${view}`).classList.add('active');
 
-        if(tab === 'inventory') {
-            title.innerText = 'Inventory Repository';
+        if (view === 'overview') {
+            title.innerText = "Executive Overview";
             content.innerHTML = `
-                <div class="flex justify-between items-center mb-10">
-                    <h2 class="text-3xl font-black tracking-tight">Stock Records</h2>
-                    <button class="btn-premium text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl">+ Register Stock</button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass-card p-10"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Inventory</p><p class="text-4xl font-black">1,240 <span class="text-sm font-normal text-slate-300">m³</span></p></div>
+                    <div class="glass-card p-10"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Orders</p><p class="text-4xl font-black">14</p></div>
+                    <div class="glass-card p-10 border-l-8 border-amber-600"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pipeline</p><p class="text-4xl font-black">03</p></div>
                 </div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="glass-card p-8 min-h-[300px] flex items-center justify-center">
+                    <p class="text-slate-300 uppercase tracking-widest font-bold">No active telemetry found.</p>
+                </div>
+            `;
+        } else if (view === 'inventory') {
+            title.innerText = "Inventory Management";
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-black tracking-tight text-slate-900">Live Stock Records</h2>
+                    <button class="bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">+ Register New Stock</button>
+                </div>
+                <div class="glass-card overflow-hidden">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            <tr><th class="px-10 py-6">Product Identity</th><th class="px-10 py-6">Unit Specs</th><th class="px-10 py-6">Net Vol</th><th class="px-10 py-6 text-right">Operations</th></tr>
+                            <tr><th class="px-10 py-6">Identity</th><th class="px-10 py-6">Unit Specs</th><th class="px-10 py-6">Volume</th><th class="px-10 py-6 text-right">Actions</th></tr>
                         </thead>
                         <tbody class="text-sm">
                             <tr class="border-t border-slate-100">
-                                <td class="px-10 py-6 font-bold text-slate-900 italic">Teak Wood (A-Grade)</td>
-                                <td class="px-10 py-6 text-slate-500 font-medium">2" x 4" x 10'</td>
-                                <td class="px-10 py-6 font-black text-amber-800">45.5 m³</td>
-                                <td class="px-10 py-6 text-right"><button class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-amber-700">Manage</button></td>
+                                <td class="px-10 py-6 font-bold text-slate-900">Teak Wood (A-Grade)</td>
+                                <td class="px-10 py-6 text-slate-500">2" x 4" x 10'</td>
+                                <td class="px-10 py-6 font-black text-amber-700">45.5 m³</td>
+                                <td class="px-10 py-6 text-right font-black uppercase text-[10px] text-slate-400 cursor-pointer">Edit</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             `;
+        } else if (view === 'orders') {
+            title.innerText = "Order Registry";
+            content.innerHTML = `<div class="p-20 text-center"><p class="text-slate-300 uppercase tracking-widest font-bold">Registry Empty</p></div>`;
         }
     }
 </script>
