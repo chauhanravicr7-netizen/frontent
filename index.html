@@ -7,22 +7,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f1a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f1a; color: #e2e8f0; margin: 0; padding: 0; }
         .input-dark { background: #161b2c; border: 1px solid #2d364d; color: white; transition: all 0.3s; }
-        .input-dark:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.1); outline: none; }
+        .input-dark:focus { border-color: #d97706; outline: none; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.1); }
         .sidebar-link.active { background: rgba(255, 255, 255, 0.05); color: white; border-left: 4px solid #d97706; }
     </style>
 </head>
-<body class="antialiased overflow-hidden text-slate-200">
+<body class="antialiased overflow-hidden">
 
 <div id="app">
+    <div class="h-screen flex items-center justify-center">
+        <div class="text-amber-600 font-bold animate-pulse uppercase tracking-widest">Initialising Executive Terminal...</div>
     </div>
+</div>
 
 <script>
     const API_URL = 'https://dockside-api.onrender.com';
 
-    // SESSION PERSISTENCE (Fixes refresh bug)
-    window.onload = () => {
+    // SESSION PERSISTENCE (Runs on load)
+    document.addEventListener('DOMContentLoaded', () => {
         const savedToken = localStorage.getItem('token');
         const savedEmail = localStorage.getItem('email');
         if (savedToken && savedEmail) {
@@ -30,126 +33,95 @@
         } else {
             renderLoginPage();
         }
-    };
+    });
 
     function renderLoginPage() {
         document.getElementById('app').innerHTML = `
             <div class="min-h-screen flex flex-col lg:flex-row">
                 <div class="hidden lg:flex lg:w-3/5 relative overflow-hidden bg-black">
                     <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" 
-                         class="absolute inset-0 w-full h-full object-cover opacity-50" alt="Professional Timber Inventory">
-                    <div class="relative z-10 flex flex-col justify-center p-20">
+                         class="absolute inset-0 w-full h-full object-cover opacity-50">
+                    <div class="relative z-10 p-20 flex flex-col justify-center">
                         <h1 class="text-7xl font-black tracking-tighter text-white mb-4 italic">DOCKSIDE</h1>
                         <p class="text-xl text-amber-500 font-bold uppercase tracking-[0.3em]">Forest to Future</p>
                         <div class="mt-10 h-1 w-24 bg-amber-600"></div>
                     </div>
                 </div>
-
-                <div class="flex-1 flex items-center justify-center p-12 bg-[#0b0f1a] border-l border-slate-800/50 shadow-2xl">
+                <div class="flex-1 flex items-center justify-center p-12 bg-[#0b0f1a] border-l border-slate-800/50">
                     <div class="w-full max-w-sm space-y-10">
-                        <div class="space-y-2">
-                            <h2 class="text-4xl font-bold text-white tracking-tight">Sign In</h2>
-                            <p class="text-slate-500 text-sm font-medium uppercase tracking-widest">Executive Terminal Access</p>
-                        </div>
-
+                        <h2 class="text-4xl font-bold text-white tracking-tight">Sign In</h2>
                         <form id="loginForm" class="space-y-6">
                             <input type="email" id="email" required class="w-full px-6 py-4 rounded-xl input-dark text-sm" placeholder="demo@dockside.com">
                             <input type="password" id="password" required class="w-full px-6 py-4 rounded-xl input-dark text-sm" placeholder="••••••••">
-                            <div id="error" class="hidden text-[11px] font-bold text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 italic text-center"></div>
-
-                            <button type="submit" id="loginBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-xl shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95">
-                                <span id="btnText" class="tracking-[0.2em] text-xs uppercase">Authenticate</span>
-                                <div id="btnSpinner" class="hidden w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            </button>
+                            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-xl shadow-2xl tracking-[0.2em] text-xs">AUTHENTICATE</button>
                         </form>
                     </div>
                 </div>
-            </div>
-        `;
-        document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    }
-
-    async function handleLogin(e) {
-        e.preventDefault();
-        const btn = document.getElementById('loginBtn');
-        const spinner = document.getElementById('btnSpinner');
-        const btnText = document.getElementById('btnText');
-        const errorDiv = document.getElementById('error');
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        btn.disabled = true; spinner.classList.remove('hidden'); btnText.innerText = 'CONNECTING...';
-        errorDiv.classList.add('hidden');
-
-        try {
-            const res = await fetch(\`\${API_URL}/api/auth/login\`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('email', email);
-                renderDashboard(email);
-            } else {
-                throw new Error(data.error || 'Identity Verification Failed');
-            }
-        } catch (err) {
-            errorDiv.innerText = err.message; errorDiv.classList.remove('hidden');
-            btnText.innerText = 'AUTHENTICATE';
-        } finally {
-            btn.disabled = false; spinner.classList.add('hidden');
-        }
+            </div>`;
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch(\`\${API_URL}/api/auth/login\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('email', email);
+                    renderDashboard(email);
+                } else { alert(data.error); }
+            } catch (err) { alert("Server starting... try again in 30 seconds."); }
+        });
     }
 
     function renderDashboard(email) {
         const displayLetter = email[0].toUpperCase();
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen bg-[#0b0f1a]">
-                <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col z-20 shadow-2xl">
+                <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col shadow-2xl">
                     <div class="p-10 cursor-pointer" onclick="location.reload()">
                         <h2 class="text-2xl font-black tracking-tighter text-white">DOCKSIDE<span class="text-amber-600">.</span></h2>
                     </div>
-                    <div class="flex-1 px-4 space-y-1">
+                    <div class="flex-1 px-4">
                         <button onclick="location.reload()" class="sidebar-link active w-full flex items-center gap-4 px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest">🏠 Dashboard</button>
-                        <button onclick="localStorage.clear(); location.reload();" class="w-full mt-auto mb-6 flex items-center gap-4 px-6 py-4 text-xs font-black uppercase tracking-widest text-red-500 opacity-60 hover:opacity-100 transition-all">🚪 Sign Out</button>
+                        <button onclick="localStorage.clear(); location.reload();" class="w-full mt-auto mb-6 flex items-center gap-4 px-6 py-4 text-xs font-black uppercase tracking-widest text-red-500/70 hover:text-red-500">🚪 Sign Out</button>
                     </div>
                     <div class="p-8 border-t border-slate-800/50">
                         <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-white/5">
-                            <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center font-black text-white shadow-lg">\${displayLetter}</div>
-                            <div class="truncate"><p class="text-[11px] font-black text-white truncate uppercase tracking-tighter">\${email}</p></div>
+                            <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center font-black text-white">\${displayLetter}</div>
+                            <div class="truncate"><p class="text-[11px] font-black text-white truncate uppercase">\${email}</p></div>
                         </div>
                     </div>
                 </nav>
-
-                <main class="flex-1 flex flex-col overflow-hidden">
-                    <header class="h-24 bg-[#0d121f]/50 border-b border-slate-800/50 flex items-center justify-between px-12 backdrop-blur-md">
+                <main class="flex-1 p-12 overflow-y-auto">
+                    <header class="flex justify-between items-center mb-10">
                         <h3 class="text-lg font-black text-white uppercase tracking-widest">Executive Dashboard</h3>
                         <span class="text-[10px] font-black text-green-500 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em]">● Online</span>
                     </header>
-                    <div class="flex-1 overflow-y-auto p-12 space-y-10">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Stock Value</p>
-                                <p class="text-4xl font-black text-white">$1.2M</p>
-                            </div>
-                            <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Active Orders</p>
-                                <p class="text-4xl font-black text-white">24</p>
-                            </div>
-                            <div class="bg-amber-600/10 p-10 rounded-[2rem] border-l-8 border-amber-600">
-                                <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4">Volume Transit</p>
-                                <p class="text-4xl font-black text-white">450 m³</p>
-                            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Stock Value</p>
+                            <p class="text-4xl font-black text-white">$1.2M</p>
                         </div>
-                        <div class="bg-[#111827] rounded-[2rem] border border-white/5 p-20 text-center uppercase tracking-[0.3em] font-black text-slate-600 italic">
-                            Persistence active. Site refresh will not log you out.
+                        <div class="bg-[#111827] p-10 rounded-[2rem] border border-white/5 shadow-2xl">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Active Orders</p>
+                            <p class="text-4xl font-black text-white">24</p>
+                        </div>
+                        <div class="bg-amber-600/10 p-10 rounded-[2rem] border-l-8 border-amber-600 shadow-2xl">
+                            <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4">Volume Transit</p>
+                            <p class="text-4xl font-black text-white">450 m³</p>
                         </div>
                     </div>
+                    <div class="mt-10 bg-[#111827] rounded-[2rem] border border-white/5 p-20 text-center uppercase tracking-[0.3em] font-black text-slate-600 italic">
+                        Persistence active. Logged in as \${email}.
+                    </div>
                 </main>
-            </div>
-        `;
+            </div>`;
     }
 </script>
 </body>
