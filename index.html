@@ -3,66 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dockside - Timber ERP</title>
+    <title>DOCKSIDE | Executive Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0B1220; margin: 0; overflow: hidden; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
-        
-        .glass-panel { 
-            background: rgba(19, 29, 51, 0.6);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            border-radius: 12px;
-            transition: all 250ms;
-        }
-        
-        .glass-panel:hover {
-            background: rgba(19, 29, 51, 0.8);
-            border-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.45);
-            transform: translateY(-2px);
-        }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
-        ::-webkit-scrollbar-thumb { background: rgba(217, 119, 6, 0.4); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(217, 119, 6, 0.6); }
-        
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: slideIn 250ms ease-out; }
-        
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .status-in-stock { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-        .status-low { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
-        .status-reserved { background: #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.5); }
-        
-        .inventory-table { width: 100%; border-collapse: collapse; }
-        .inventory-table thead { position: sticky; top: 0; background: rgba(17, 26, 46, 0.95); backdrop-filter: blur(8px); z-index: 10; }
-        .inventory-table th { padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .inventory-table tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.02); transition: all 250ms; }
-        .inventory-table tbody tr:hover { background: rgba(217, 119, 6, 0.05); }
-        .inventory-table td { padding: 12px 16px; font-size: 13px; color: #cbd5e1; }
-        .inventory-table .sku-cell { font-family: 'Courier New', monospace; font-size: 11px; font-weight: 700; color: #d97706; }
-        
-        .form-input { width: 100%; background: rgba(71, 85, 105, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 13px; transition: all 250ms; }
-        .form-input:focus { outline: none; background: rgba(71, 85, 105, 0.3); border-color: rgba(217, 119, 6, 0.5); box-shadow: 0 0 12px rgba(217, 119, 6, 0.2); }
-        
-        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 250ms; box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(217, 119, 6, 0.4); }
-        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 18px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 250ms; }
-        
-        .dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(17, 26, 46, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; backdrop-filter: blur(16px); min-width: 240px; z-index: 50; opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 250ms; }
-        .dropdown-menu.active { opacity: 1; visibility: visible; transform: translateY(0); }
-        .dropdown-item { display: block; width: 100%; padding: 12px 16px; background: none; border: none; text-align: left; color: #cbd5e1; font-size: 13px; cursor: pointer; transition: all 250ms; border-bottom: 1px solid rgba(255, 255, 255, 0.02); }
-        .dropdown-item:hover { background: rgba(217, 119, 6, 0.1); color: #d97706; padding-left: 20px; }
-        
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 100; opacity: 0; visibility: hidden; transition: all 250ms; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: rgba(17, 26, 46, 0.95); backdrop-filter: blur(16px); border-left: 1px solid rgba(255, 255, 255, 0.08); transform: translateX(100%); transition: transform 250ms; z-index: 101; overflow-y: auto; }
+        .glass-panel { background: rgba(19, 29, 51, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
+        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; border: 1px solid #94a3b8; width: 460px; }
+        .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; }
+        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: #111A2E; border-left: 1px solid rgba(255,255,255,0.1); transform: translateX(100%); transition: transform 0.3s; z-index: 100; }
         .modal-panel.active { transform: translateX(0); }
+        .form-input { width: 100%; background: #0B1220; border: 1px solid rgba(255,255,255,0.1); padding: 10px; color: white; font-size: 13px; border-radius: 4px; }
     </style>
 </head>
 <body class="antialiased text-slate-300">
@@ -80,40 +34,16 @@
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#0B1220]">
-            <div class="w-full max-w-md bg-white rounded-sm border border-slate-300">
-                <div class="bg-slate-800 text-white p-3 flex justify-between items-center font-bold text-xs">
-                    <span>USER LOGIN</span>
-                    <span class="text-amber-500 uppercase tracking-widest">GANDHIDHAM HUB</span>
+            <div class="corporate-card">
+                <div class="bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs">
+                    <span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest font-black">Gandhidham Hub</span>
                 </div>
                 <div class="py-10 px-8 space-y-4">
-                    <div class="flex items-center gap-4">
-                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Email</label>
-                        <input type="email" id="email" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo@dockside.com">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Password</label>
-                        <input type="password" id="password" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo123456">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">User Type</label>
-                        <select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded">
-                            <option>Admin</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Period</label>
-                        <select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded">
-                            <option>2025-2026</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-center pt-8 border-t">
-                        <button onclick="handleLogin()" class="px-8 py-2 bg-gradient-to-b from-slate-200 to-slate-300 border border-slate-500 font-black text-xs text-slate-800 uppercase tracking-wider rounded hover:bg-slate-300">Login</button>
-                    </div>
-                </div>
-                <div class="text-center text-slate-700 text-xs px-8 pb-8">
-                    <p class="font-bold">Test Account:</p>
-                    <p>demo@dockside.com</p>
-                    <p>demo123456</p>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Login ID</label><input type="email" id="email" class="form-input text-black bg-white" value="demo@dockside.com"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label><input type="password" id="password" class="form-input text-black bg-white" value="demo123456"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Type</label><select class="form-input text-black bg-white"><option>Admin</option></select></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Period</label><select class="form-input text-black bg-white"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center pt-8 border-t"><button onclick="handleLogin()" class="action-btn uppercase">Login Terminal</button></div>
                 </div>
             </div>
         </div>
@@ -121,347 +51,96 @@
 </div>
 
 <script>
-const state = {
-    authenticated: false,
-    currentView: 'dashboard',
-    sidebarCollapsed: false,
-    currency: 'INR',
-    inventory: [
-        { id: 'SKU001', name: 'Teak Plywood 12mm', category: 'Plywood', thickness: 12, length: 2440, volume: 29.28, quantity: 150, location: 'WH-A-01', status: 'In Stock', updated: '2 hours ago' },
-        { id: 'SKU002', name: 'Birch Veneer Sheet', category: 'Veneer', thickness: 2, length: 2440, volume: 2.44, quantity: 420, location: 'WH-B-02', status: 'In Stock', updated: '5 hours ago' },
-        { id: 'SKU003', name: 'Pine Log Grade A', category: 'Logs', thickness: 250, length: 4000, volume: 1000, quantity: 12, location: 'WH-C-01', status: 'Low', updated: '1 hour ago' },
-        { id: 'SKU004', name: 'MDF Board 18mm', category: 'Composite', thickness: 18, length: 1830, volume: 32.94, quantity: 80, location: 'WH-A-03', status: 'In Stock', updated: '3 hours ago' },
-        { id: 'SKU005', name: 'Hardwood Plank Oak', category: 'Planks', thickness: 25, length: 3600, volume: 90, quantity: 45, location: 'WH-B-01', status: 'Reserved', updated: '30 mins ago' }
-    ]
-};
-
-function handleLogin() {
-    state.authenticated = true;
-    renderShell();
-}
-
-function switchView(view) {
-    state.currentView = view;
-    renderShell();
-}
-
-function toggleSidebar() {
-    state.sidebarCollapsed = !state.sidebarCollapsed;
-    renderShell();
-}
-
-function toggleDropdown(id) {
-    const menu = document.getElementById(id);
-    if (menu) menu.classList.toggle('active');
-}
-
-function openAddStockPanel() {
-    document.getElementById('add-stock-panel').classList.add('active');
-    document.getElementById('modal-overlay').classList.add('active');
-}
-
-function closeAddStockPanel() {
-    document.getElementById('add-stock-panel').classList.remove('active');
-    document.getElementById('modal-overlay').classList.remove('active');
-}
-
-function handleAddStock(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const width = parseFloat(formData.get('width')) || 1;
-    const length = parseFloat(formData.get('length')) || 1;
-    const thickness = parseFloat(formData.get('thickness')) || 1;
-    const volume = (width * length * thickness) / 1000000;
-
-    const newStock = {
-        id: 'SKU' + String(state.inventory.length + 1).padStart(3, '0'),
-        name: formData.get('productName'),
-        category: formData.get('category'),
-        thickness: thickness,
-        length: length,
-        volume: volume.toFixed(2),
-        quantity: parseInt(formData.get('quantity')),
-        location: formData.get('location'),
-        status: 'In Stock',
-        updated: 'just now'
+    let state = {
+        authenticated: false,
+        currentView: 'dashboard',
+        currency: 'INR',
+        // Pre-filled data for diverse sections
+        inventory: [
+            { id: 'SKU001', name: 'Premium Teak Logs', volume: '145.50', unit: 'CFT', warehouse: 'Plot 10, Gandhidham Hub', price: '850' },
+            { id: 'SKU002', name: 'Gurjan Plywood 18mm', volume: '22.40', unit: 'CBM', warehouse: 'Adani Warehouse A1', price: '42000' }
+        ],
+        finance: { revenue: '1.2 Cr', pending: '14.5 L' }
     };
 
-    state.inventory.push(newStock);
-    e.target.reset();
-    closeAddStockPanel();
-    renderShell();
-}
+    function handleLogin() { state.authenticated = true; renderShell(); }
+    function switchView(view) { state.currentView = view; renderShell(); }
 
-function updateClock() {
-    const clockEl = document.getElementById('clock');
-    if (clockEl) {
-        const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
-}
-
-function renderShell() {
-    if (!state.authenticated) return;
-
-    const symbol = state.currency === 'INR' ? '₹' : '$';
-    const inStockCount = state.inventory.filter(i => i.status === 'In Stock').length;
-    const lowStockCount = state.inventory.filter(i => i.status === 'Low').length;
-    const totalVolume = state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0);
-    const totalValue = totalVolume * 2500;
-
-    document.getElementById('app').innerHTML = `
-    <div class="flex h-screen overflow-hidden bg-gradient-to-br from-[#0B1220] to-[#111A2E]">
-        <aside class="${state.sidebarCollapsed ? 'w-20' : 'w-64'} bg-[#111A2E]/80 backdrop-blur-xl border-r border-white/5 flex flex-col transition-all duration-250 z-30">
-            <div class="p-6 border-b border-white/5">
-                <h2 class="text-lg font-black text-white italic-brand uppercase tracking-tighter ${state.sidebarCollapsed ? 'text-center text-sm' : ''}">
-                    ${state.sidebarCollapsed ? 'DS' : 'DOCKSIDE'}
-                </h2>
-                ${!state.sidebarCollapsed ? '<p class="text-[9px] font-bold text-amber-600 tracking-[0.2em] uppercase mt-1">Executive Terminal</p>' : ''}
-            </div>
-
-            <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
-                ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
-                    <button onclick="switchView('${item.toLowerCase()}')" 
-                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all duration-250
-                        ${state.currentView === item.toLowerCase() 
-                            ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' 
-                            : 'text-slate-400 hover:text-white hover:bg-white/5'}">
-                        <span class="w-4 h-4">●</span>
-                        <span class="sidebar-label">${item}</span>
-                    </button>
-                `).join('')}
-            </nav>
-
-            <div class="p-4 border-t border-white/5">
-                <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-wide w-full">Sign Out</button>
-            </div>
-        </aside>
-
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-[#111A2E]/50 backdrop-blur-md gap-6">
-                <div class="flex items-center gap-4">
-                    <button onclick="toggleSidebar()" class="p-2 hover:bg-white/5 rounded-lg transition-all duration-250">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    <div class="w-px h-6 bg-white/10"></div>
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="text-sm font-bold text-white uppercase tracking-[0.2em]">${state.currentView.toUpperCase()}</span>
+    function renderShell() {
+        if (!state.authenticated) return;
+        const symbol = state.currency === 'INR' ? '₹' : '$';
+        
+        document.getElementById('app').innerHTML = `
+        <div class="flex h-screen bg-[#0B1220] overflow-hidden">
+            <aside class="w-72 bg-[#111A2E] border-r border-white/5 flex flex-col z-20 shadow-2xl">
+                <div class="p-8 pb-10">
+                    <h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">Dockside</h2>
+                    <p class="text-[9px] font-bold text-amber-600 tracking-[0.3em] uppercase mt-2">Executive Terminal</p>
                 </div>
-
-                <div class="flex-1 max-w-xs">
-                    <input type="text" placeholder="Search..." class="form-input text-[12px]">
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-[11px] font-bold text-white uppercase tracking-wider" id="clock">00:00</p>
-                        <p class="text-[9px] text-slate-500">Gandhidham Hub</p>
-                    </div>
-
-                    <div class="relative">
-                        <button onclick="toggleDropdown('currency-menu')" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold text-white uppercase hover:bg-white/10 transition-all duration-250">
-                            ${state.currency}
+                <nav class="flex-1 px-4 space-y-1">
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
+                        <button onclick="switchView('${item.toLowerCase()}')" 
+                            class="w-full text-left px-6 py-3 rounded font-black text-[10px] uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}">
+                            ${item}
                         </button>
-                        <div id="currency-menu" class="dropdown-menu">
-                            <button onclick="state.currency='INR'; renderShell()" class="dropdown-item">₹ INR</button>
-                            <button onclick="state.currency='USD'; renderShell()" class="dropdown-item">$ USD</button>
-                        </div>
-                    </div>
-
-                    <div class="relative">
-                        <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-all duration-250">
-                            <div class="w-8 h-8 rounded-lg bg-amber-600/20 flex items-center justify-center text-amber-400 font-bold">A</div>
-                            <span class="text-[11px] font-bold text-white hidden sm:block">Admin</span>
-                        </button>
-                        <div id="profile-menu" class="dropdown-menu right-0 min-w-[280px]">
-                            <div class="dropdown-item cursor-default text-amber-400 font-bold">admin@dockside.com</div>
-                            <button onclick="location.reload()" class="dropdown-item text-red-400">Sign Out</button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main class="flex-1 overflow-y-auto p-8 animate-in">
-                ${state.currentView === 'dashboard' ? renderDashboard(symbol) : renderInventory(symbol)}
-            </main>
-        </div>
-    </div>
-
-    <div id="modal-overlay" class="modal-overlay" onclick="closeAddStockPanel()"></div>
-
-    <div id="add-stock-panel" class="modal-panel">
-        <div class="p-8 border-b border-white/5">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-white uppercase">Add New Stock</h3>
-                <button onclick="closeAddStockPanel()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
-            </div>
-        </div>
-        <form onsubmit="handleAddStock(event)" class="p-8 space-y-5">
-            <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Product Name</label>
-                <input type="text" name="productName" class="form-input" required>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Category</label>
-                    <select name="category" class="form-input" required>
-                        <option value="Plywood">Plywood</option>
-                        <option value="Logs">Logs</option>
-                        <option value="Planks">Planks</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Quantity</label>
-                    <input type="number" name="quantity" class="form-input" required>
-                </div>
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Thickness (mm)</label>
-                    <input type="number" name="thickness" class="form-input" step="0.1" required>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Length (mm)</label>
-                    <input type="number" name="length" class="form-input" step="0.1" required>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Width (mm)</label>
-                    <input type="number" name="width" class="form-input" step="0.1" required>
-                </div>
-            </div>
-            <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Location</label>
-                <select name="location" class="form-input" required>
-                    <option value="WH-A-01">WH-A-01</option>
-                    <option value="WH-B-01">WH-B-01</option>
-                    <option value="WH-C-01">WH-C-01</option>
-                </select>
-            </div>
-            <div class="pt-4 space-y-2">
-                <button type="submit" class="btn-primary w-full">Add Stock</button>
-                <button type="button" onclick="closeAddStockPanel()" class="btn-secondary w-full">Cancel</button>
-            </div>
-        </form>
-    </div>`;
-
-    updateClock();
-    setInterval(updateClock, 1000);
-}
-
-function renderDashboard(symbol) {
-    const inStockCount = state.inventory.filter(i => i.status === 'In Stock').length;
-    const lowStockCount = state.inventory.filter(i => i.status === 'Low').length;
-    const totalVolume = state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0);
-    const totalValue = totalVolume * 2500;
-
-    return `
-    <div class="grid grid-cols-5 gap-4 mb-8">
-        ${[
-            { label: 'Total Value', value: symbol + totalValue.toLocaleString(), status: 'up' },
-            { label: 'Active SKUs', value: state.inventory.length, status: 'up' },
-            { label: 'In Stock', value: inStockCount, status: 'down' },
-            { label: 'Low Stock', value: lowStockCount, status: 'alert' },
-            { label: 'Total Volume (m³)', value: totalVolume.toFixed(2), status: 'up' }
-        ].map(card => `
-            <div class="glass-panel p-6 border-l-4 ${card.status === 'up' ? 'border-green-600' : card.status === 'alert' ? 'border-amber-600' : 'border-red-600'}">
-                <p class="text-[9px] font-black text-slate-500 uppercase mb-2">${card.label}</p>
-                <h4 class="text-2xl font-black text-white">${card.value}</h4>
-            </div>
-        `).join('')}
-    </div>
-    <div class="grid grid-cols-2 gap-6">
-        <div class="glass-panel p-8">
-            <h5 class="text-[11px] font-black text-white uppercase mb-6">Warehouse Utilization</h5>
-            <div class="space-y-4">
-                ${[
-                    { name: 'WH-A', usage: 78 },
-                    { name: 'WH-B', usage: 62 },
-                    { name: 'WH-C', usage: 45 }
-                ].map(w => `
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <span class="text-[11px]">${w.name}</span>
-                            <span class="text-amber-400">${w.usage}%</span>
-                        </div>
-                        <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div style="width: ${w.usage}%" class="h-full bg-amber-600"></div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-        <div class="glass-panel p-8">
-            <h5 class="text-[11px] font-black text-white uppercase mb-6">Recent Orders</h5>
-            <div class="space-y-4">
-                ${[
-                    { id: 'ORD-2025-1032', status: 'Shipped' },
-                    { id: 'ORD-2025-1031', status: 'Processing' },
-                    { id: 'ORD-2025-1030', status: 'Confirmed' }
-                ].map(o => `<div class="flex justify-between"><span class="text-amber-400">${o.id}</span><span>${o.status}</span></div>`).join('')}
-            </div>
-        </div>
-    </div>`;
-}
-
-function renderInventory(symbol) {
-    return `
-    <div class="space-y-6">
-        <div class="glass-panel p-8 border-l-4 border-amber-600">
-            <div class="grid grid-cols-4 gap-8 mb-6">
-                <div>
-                    <p class="text-[9px] text-slate-500 uppercase mb-2">Total Items</p>
-                    <h4 class="text-2xl font-black text-white">${state.inventory.length}</h4>
-                </div>
-                <div>
-                    <p class="text-[9px] text-slate-500 uppercase mb-2">Total Volume (m³)</p>
-                    <h4 class="text-2xl font-black text-white">${state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0).toFixed(2)}</h4>
-                </div>
-                <div>
-                    <p class="text-[9px] text-slate-500 uppercase mb-2">Low Stock</p>
-                    <h4 class="text-2xl font-black text-white">${state.inventory.filter(i => i.status === 'Low').length}</h4>
-                </div>
-                <div>
-                    <p class="text-[9px] text-slate-500 uppercase mb-2">Last Updated</p>
-                    <h4 class="text-2xl font-black text-white">Now</h4>
-                </div>
-            </div>
-            <button onclick="openAddStockPanel()" class="btn-primary">+ Add New Stock</button>
-        </div>
-
-        <div class="glass-panel p-8 overflow-x-auto">
-            <table class="inventory-table">
-                <thead>
-                    <tr>
-                        <th>SKU</th>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Volume (m³)</th>
-                        <th>Qty</th>
-                        <th>Location</th>
-                        <th>Status</th>
-                        <th>Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${state.inventory.map(item => `
-                        <tr>
-                            <td class="sku-cell">${item.id}</td>
-                            <td>${item.name}</td>
-                            <td>${item.category}</td>
-                            <td>${item.volume}</td>
-                            <td>${item.quantity}</td>
-                            <td>${item.location}</td>
-                            <td><span class="status-dot ${item.status === 'In Stock' ? 'status-in-stock' : item.status === 'Low' ? 'status-low' : 'status-reserved'}"></span> ${item.status}</td>
-                            <td>${item.updated}</td>
-                        </tr>
                     `).join('')}
-                </tbody>
-            </table>
+                </nav>
+                <div class="p-8 border-t border-white/5"><button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase">Sign Out</button></div>
+            </aside>
+
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="h-20 flex items-center justify-between px-10 border-b border-white/5 bg-[#111A2E]/50 backdrop-blur-md">
+                    <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
+                    <div class="text-right"><p class="text-[10px] font-black text-white uppercase">Operational Status: <span class="text-green-500 animate-pulse">● Online</span></p></div>
+                </header>
+                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar">${renderContent(symbol)}</main>
+            </div>
         </div>
-    </div>`;
-}
+
+        <div id="regPanel" class="modal-panel custom-scrollbar overflow-y-auto shadow-2xl">
+            <div class="p-8 border-b border-white/5 flex justify-between items-center">
+                <h3 class="text-lg font-black text-white uppercase tracking-widest">Register Timber Stock</h3>
+                <button onclick="togglePanel(false)" class="text-slate-500 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Product Name</label><input type="text" placeholder="e.g. Teak Logs" class="form-input"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Purchase Price (₹)</label><input type="number" class="form-input"></div>
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Unit</label><select class="form-input"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2 text-center">T (mm)</label><input type="number" class="form-input"></div>
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2 text-center">W (mm)</label><input type="number" class="form-input"></div>
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2 text-center">L (mm)</label><input type="number" class="form-input"></div>
+                </div>
+                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Warehouse (Gandhidham)</label><select class="form-input"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
+                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-500 transition-all mt-6">Register Stock Entry</button>
+            </div>
+        </div>`;
+    }
+
+    function togglePanel(show) { document.getElementById('regPanel').classList.toggle('active', show); }
+
+    function renderContent(symbol) {
+        if (state.currentView === 'dashboard') {
+            return `<div class="grid grid-cols-3 gap-8 mb-8">
+                ${['Total Stock Value', 'Open Orders', 'Transit Volume'].map(l => `<div class="glass-panel p-8 border-l-4 border-amber-600"><p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">${l}</p><h4 class="text-3xl font-black text-white">${l.includes('Value') ? symbol + ' 12.4 Cr' : l.includes('Volume') ? '450 m³' : '24'}</h4></div>`).join('')}
+            </div>
+            <div class="glass-panel p-10 h-80 flex flex-col justify-center items-center text-center">
+                <div class="w-2 h-2 bg-amber-600 rounded-full animate-ping mb-4"></div>
+                <p class="text-sm italic text-slate-400 italic font-light leading-relaxed italic">"Executive Terminal tracking active for Period 2025-26. Current primary localization: ${symbol} (INR)."</p>
+            </div>`;
+        } else if (state.currentView === 'inventory') {
+            return `<div class="flex justify-between items-center mb-8"><h4 class="text-lg font-black text-white uppercase italic tracking-widest">Timber Stock Ledger</h4><button onclick="togglePanel(true)" class="bg-amber-600 text-white px-6 py-3 font-black text-[10px] uppercase shadow-lg shadow-amber-600/20 hover:scale-105 transition-all">+ Add New Stock</button></div>
+            <div class="glass-panel overflow-hidden"><table class="w-full text-left text-[11px]"><thead class="bg-white/5 font-black text-slate-500 border-b border-white/5 uppercase"><tr><th class="p-4">SKU</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Price</th></tr></thead><tbody class="divide-y divide-white/5">${state.inventory.map(i => `<tr class="hover:bg-white/[0.02] cursor-pointer"><td class="p-4 font-black text-amber-500">${i.id}</td><td class="p-4 text-white">${i.name}</td><td class="p-4">${i.volume} ${i.unit}</td><td class="p-4 text-slate-500 font-bold">${i.warehouse}</td><td class="p-4 text-white font-black">${symbol} ${i.price}</td></tr>`).join('')}</tbody></table></div>`;
+        } else if (state.currentView === 'finance') {
+            return `<div class="grid grid-cols-2 gap-8"><div class="glass-panel p-10 border-t-4 border-green-500"><p class="text-[11px] font-black text-slate-500 uppercase mb-4 tracking-widest">Total Receivables</p><h4 class="text-4xl font-black text-green-500">${symbol} 45.2 L</h4></div><div class="glass-panel p-10 border-t-4 border-red-500"><p class="text-[11px] font-black text-slate-500 uppercase mb-4 tracking-widest">Total Payables</p><h4 class="text-4xl font-black text-red-500">${symbol} 12.8 L</h4></div></div>`;
+        } else if (state.currentView === 'orders') {
+            return `<div class="glass-panel p-20 text-center uppercase tracking-[0.5em] text-slate-500 italic">Order Pipeline Tracking Active • 2025-26</div>`;
+        }
+        return `<div class="glass-panel p-20 text-center uppercase tracking-[0.5em] text-slate-500 italic">Terminal [${state.currentView.toUpperCase()}] Operational • Awaiting Data</div>`;
+    }
 </script>
 </body>
 </html>
