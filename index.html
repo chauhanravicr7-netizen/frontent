@@ -3,193 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal</title>
+    <title>DOCKSIDE | Executive Terminal v1.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
-        /* Neutral Obsidian Background - Removing Dark Blue */
-        body { font-family: 'Inter', sans-serif; background-color: #05070A; margin: 0; overflow: hidden; }
+        :root { --obsidian: #05070A; --panel: #0D1117; --glass: rgba(22, 27, 34, 0.7); }
+        body { font-family: 'Inter', sans-serif; background-color: var(--obsidian); margin: 0; overflow: hidden; color: #94a3b8; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
-        
-        .glass-panel { 
-            background: rgba(22, 27, 34, 0.7); 
-            backdrop-filter: blur(16px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); 
-            border-radius: 12px; 
-            transition: all 250ms; 
-        }
-        .glass-panel:hover { background: rgba(30, 35, 45, 0.85); border-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
-        
-        /* e-Royal Style Login */
-        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; border: 1px solid #94a3b8; width: 460px; }
-        .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; }
-        
-        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: #0D1117; border-left: 1px solid rgba(255,255,255,0.1); transform: translateX(100%); transition: transform 0.3s; z-index: 100; overflow-y: auto; }
-        .modal-panel.active { transform: translateX(0); }
-        .form-input { width: 100%; background: #05070A; border: 1px solid rgba(255,255,255,0.1); padding: 10px; color: white; font-size: 13px; border-radius: 4px; }
+        .glass-panel { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; transition: all 0.2s; }
+        .glass-panel:hover { border-color: rgba(217, 119, 6, 0.3); transform: translateY(-2px); }
+        .table-header { font-[900] text-[10px] uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3; }
+        .metric-value { color: white; font-weight: 900; letter-spacing: -0.05em; }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
+        /* Loading Shimmer */
+        .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     </style>
 </head>
-<body class="antialiased text-slate-400">
+<body class="antialiased">
 
 <div id="app">
-    <div class="min-h-screen flex flex-col lg:flex-row">
-        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen bg-gradient-to-r from-black/80 to-transparent">
-                <h1 class="text-7xl font-black text-white italic-brand tracking-tighter uppercase">Dockside</h1>
-                <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8 font-light italic text-2xl text-slate-200">
-                    <p>"Transparency is the grain of our business."</p>
-                    <p>"Precision in every measurement, trust in every deal."</p>
-                </div>
+    <div class="min-h-screen flex items-center justify-center p-6 bg-black relative">
+        <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-30">
+        <div class="relative z-10 w-full max-w-md bg-white rounded shadow-2xl overflow-hidden border border-slate-400">
+            <div class="bg-slate-800 text-white p-4 flex justify-between items-center font-black text-[10px] tracking-widest">
+                <span>TERMINAL ACCESS</span><span>GANDHIDHAM HUB</span>
             </div>
-        </div>
-        <div class="flex-1 flex items-center justify-center p-6 bg-[#05070A]">
-            <div class="corporate-card shadow-2xl animate-in">
-                <div class="bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs border-b border-slate-400">
-                    <span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest font-black">Gandhidham Hub</span>
-                </div>
-                <div class="py-10 px-8 space-y-4">
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Login ID</label><input type="email" id="email" class="form-input text-black bg-white border-slate-300" value="demo@dockside.com"></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Password</label><input type="password" id="password" class="form-input text-black bg-white border-slate-300" value="demo123456"></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Type</label><select class="form-input text-black bg-white border-slate-300"><option>Admin</option></select></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Period</label><select class="form-input text-black bg-white border-slate-300"><option>2025-2026</option></select></div>
-                    <div class="flex justify-center pt-8 border-t border-slate-300"><button onclick="handleLogin()" class="action-btn uppercase shadow-lg">Access Terminal</button></div>
-                </div>
+            <div class="p-10 space-y-5">
+                <input type="email" placeholder="LOGIN ID" class="w-full p-3 border border-slate-300 text-black text-xs font-bold focus:outline-amber-600" value="demo@dockside.com">
+                <input type="password" placeholder="PASSWORD" class="w-full p-3 border border-slate-300 text-black text-xs font-bold focus:outline-amber-600" value="demo123456">
+                <button onclick="handleLogin()" class="w-full bg-slate-200 border-b-4 border-slate-400 py-3 font-black text-xs text-slate-800 hover:bg-slate-300 active:translate-y-1 transition-all">ESTABLISH CONNECTION</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // SYSTEM STATE
     let state = {
         authenticated: false,
         currentView: 'dashboard',
         currency: 'INR',
-        inventory: [
-            { id: 'SKU001', name: 'Premium Teak Logs', volume: '145.50', unit: 'CFT', warehouse: 'Plot 10, Gandhidham Hub', price: '850', entryDate: '24-02-26', stage: 'In Warehouse' },
-            { id: 'SKU002', name: 'Gurjan Plywood 18mm', volume: '22.40', unit: 'CBM', warehouse: 'Adani Warehouse A1', price: '42000', entryDate: '25-02-26', stage: 'Ordered' }
-        ]
+        hub: 'Gandhidham Hub',
+        lastSync: new Date().toLocaleTimeString()
     };
 
     function handleLogin() { state.authenticated = true; renderShell(); }
     function switchView(view) { state.currentView = view; renderShell(); }
-    function togglePanel(show) { document.getElementById('regPanel').classList.toggle('active', show); }
 
     function renderShell() {
-        if (!state.authenticated) return;
         const symbol = state.currency === 'INR' ? '₹' : '$';
-        
         document.getElementById('app').innerHTML = `
-        <div class="flex h-screen bg-[#05070A] overflow-hidden">
-            <aside class="w-72 bg-[#0D1117] border-r border-white/5 flex flex-col z-20 shadow-2xl">
-                <div class="p-8 pb-10">
-                    <h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">Dockside</h2>
-                    <p class="text-[9px] font-bold text-amber-600 tracking-[0.3em] uppercase mt-2">Executive Terminal</p>
-                </div>
-                <nav class="flex-1 px-4 space-y-1">
+        <div class="flex h-screen overflow-hidden">
+            <aside class="w-64 bg-[#0D1117] border-r border-white/5 flex flex-col z-30 shadow-2xl">
+                <div class="p-8"><h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
+                <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
                     ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full text-left px-6 py-3 rounded font-black text-[10px] uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}">
+                            class="w-full flex items-center px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}">
                             ${item}
                         </button>
                     `).join('')}
                 </nav>
-                <div class="p-8 border-t border-white/5"><button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-widest">Sign Out Hub</button></div>
+                <footer class="p-6 border-t border-white/5 text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+                    v1.0.0 • ${state.lastSync}
+                </footer>
             </aside>
 
-            <div class="flex-1 flex flex-col overflow-hidden">
-                <header class="h-20 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]/80 backdrop-blur-md">
-                    <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
-                    <div class="text-right flex items-center gap-4">
-                        <span class="text-[10px] font-black text-slate-500 uppercase">Operational: <span class="text-green-500">Online</span></span>
-                        <div class="w-px h-6 bg-white/10"></div>
-                        <div class="text-right"><p class="text-[10px] font-black text-white uppercase leading-none">Admin</p><p class="text-[9px] font-bold text-amber-600 uppercase mt-1">2025-26 Period</p></div>
+            <div class="flex-1 flex flex-col">
+                <header class="h-16 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]/80 backdrop-blur-md">
+                    <div class="flex items-center gap-6">
+                        <h3 class="text-xs font-black text-white uppercase tracking-[0.2em]">${state.currentView}</h3>
+                        <div class="flex bg-black/40 rounded p-1 border border-white/5">
+                            <button onclick="state.currency='INR'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='INR'?'bg-amber-600 text-white':'text-slate-500'}">INR</button>
+                            <button onclick="state.currency='USD'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='USD'?'bg-amber-600 text-white':'text-slate-500'}">USD</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-[10px] font-black">
+                        <span class="text-green-500 uppercase">● Live ${state.hub}</span>
+                        <div class="w-px h-6 bg-white/5 mx-2"></div>
+                        <input type="text" placeholder="GLOBAL SEARCH..." class="bg-black/40 border border-white/5 px-4 py-1.5 rounded text-white w-64 focus:border-amber-600 outline-none">
                     </div>
                 </header>
-                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar">${renderContent(symbol)}</main>
-            </div>
-        </div>
-
-        <div id="regPanel" class="modal-panel shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex justify-between items-center bg-[#0D1117]">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest italic">New Stock Entry</h3>
-                <button onclick="togglePanel(false)" class="text-slate-500 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div class="p-8 space-y-6">
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Product Specification</label><input type="text" placeholder="e.g. Teak Plywood" class="form-input"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Purchase Cost (₹)</label><input type="number" class="form-input"></div>
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Unit</label><select class="form-input"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
-                </div>
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2 text-amber-600 font-bold">Logistics Warehouse</label><select class="form-input"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS</option><option>Adani Warehouse A1</option></select></div>
-                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-500 transition-all mt-6">Confirm Registration</button>
+                <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderMainContent(symbol)}</main>
             </div>
         </div>`;
     }
 
-    function renderContent(symbol) {
-        if (state.currentView === 'dashboard') {
-            return `
-                <div class="grid grid-cols-4 gap-6 mb-10">
-                    ${[
-                        { label: 'Total Stock Value', value: symbol + ' 12.4 Cr', trend: '+8.2%' },
-                        { label: 'Open Orders', value: '24', trend: '+3 Today' },
-                        { label: 'Active SKUs', value: '186', trend: '+5 Added' },
-                        { label: 'Pending Payments', value: symbol + ' 1.2 Cr', trend: '-2.1%' }
-                    ].map(card => `
-                        <div class="glass-panel p-6 relative group transition-all duration-300">
-                            <div class="flex justify-between items-start">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${card.label}</p>
-                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            </div>
-                            <h4 class="text-2xl font-black text-white mt-4 tracking-tighter">${card.value}</h4>
-                            <p class="text-[10px] mt-3 font-bold ${card.trend.includes('-') ? 'text-red-400' : 'text-green-400'}">
-                                ${card.trend} • Trend
-                            </p>
-                            <div class="mt-4 flex items-end gap-1 opacity-20">
-                                ${[30, 50, 40, 60, 55, 75, 65].map(h => `<div style="height:${h}%" class="w-2 bg-amber-600 rounded-t"></div>`).join('')}
-                            </div>
-                        </div>`).join('')}
+    function renderMainContent(symbol) {
+        switch(state.currentView) {
+            case 'dashboard': return renderDashboard(symbol);
+            case 'inventory': return renderInventory(symbol);
+            case 'orders': return renderOrders(symbol);
+            case 'finance': return renderFinance(symbol);
+            case 'transit': return renderTransit();
+            default: return `<div class="p-20 text-center uppercase tracking-widest italic opacity-20">Section [${state.currentView}] initialized... awaiting data.</div>`;
+        }
+    }
+
+    function renderDashboard(symbol) {
+        return `
+        <div class="grid grid-cols-4 gap-6 mb-10">
+            ${[
+                {l: 'Stock Value', v: symbol+' 12.4 Cr', t: '+8.2%', c: 'text-green-500'},
+                {l: 'Open Orders', v: '24', t: '+3 Today', c: 'text-amber-500'},
+                {l: 'Pending Payments', v: symbol+' 1.2 Cr', t: 'Risk: Med', c: 'text-red-500'},
+                {l: 'Delayed Shipments', v: '04', t: 'Urgent', c: 'text-red-600'}
+            ].map(k => `
+                <div class="glass-panel p-6 border-b-2 border-transparent hover:border-amber-600">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">${k.l}</p>
+                    <h4 class="text-2xl metric-value mb-2">${k.v}</h4>
+                    <p class="text-[9px] font-black ${k.c} uppercase italic tracking-tighter">${k.t} • Analytics</p>
                 </div>
-                <div class="grid grid-cols-12 gap-8 mb-10">
-                    <div class="col-span-7 glass-panel p-8">
-                        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-                            <h5 class="text-[11px] font-black text-white uppercase tracking-widest text-slate-200">Revenue Flow Analysis</h5>
-                            <span class="text-[9px] text-slate-500 uppercase italic font-bold">Last 6 Months</span>
-                        </div>
-                        <div class="flex items-end justify-between h-52 opacity-40">
-                            ${[60, 80, 70, 90, 75, 100].map(h => `<div style="height:${h}%" class="w-10 bg-gradient-to-t from-amber-600 to-amber-500 rounded-t shadow-lg shadow-amber-600/10"></div>`).join('')}
-                        </div>
-                    </div>
-                    <div class="col-span-5 glass-panel p-8 flex flex-col items-center justify-center">
-                        <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-10 w-full text-left">Capacity Usage</h5>
-                        <div class="relative w-40 h-40">
-                            <div class="absolute inset-0 rounded-full border-[12px] border-slate-800"></div>
-                            <div class="absolute inset-0 rounded-full border-[12px] border-amber-600 border-t-transparent border-l-transparent rotate-45 shadow-[0_0_15px_rgba(217,119,6,0.2)]"></div>
-                            <div class="absolute inset-0 flex items-center justify-center"><span class="text-3xl font-black text-white">72%</span></div>
-                        </div>
-                        <p class="text-[10px] mt-8 text-slate-500 uppercase tracking-widest font-black">Plot 10, Gandhidham Hub</p>
-                    </div>
-                </div>`;
-        } else if (state.currentView === 'inventory') {
-            return `<div class="flex justify-between items-center mb-8"><h4 class="text-lg font-black text-white uppercase italic tracking-widest">Stock Ledger Terminal</h4><button onclick="togglePanel(true)" class="bg-amber-600 text-white px-6 py-3 font-black text-[10px] uppercase shadow-lg shadow-amber-600/20 hover:scale-105 transition-all">+ Add New Stock</button></div>
-            <div class="glass-panel overflow-hidden border border-white/5">
-                <table class="w-full text-left text-[11px]">
-                    <thead class="bg-white/[0.03] font-black text-slate-500 border-b border-white/5 uppercase">
-                        <tr><th class="p-4">SKU</th><th class="p-4 text-slate-300">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-white text-right">Price</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        ${state.inventory.map(i => `<tr class="hover:bg-white/[0.02] cursor-pointer"><td class="p-4 font-black text-amber-500 tracking-widest">${i.id}</td><td class="p-4 text-slate-500 italic font-bold">${i.entryDate}</td><td class="p-4 text-white font-bold uppercase">${i.name}</td><td class="p-4">${i.volume} ${i.unit}</td><td class="p-4 text-slate-400 font-bold">${i.warehouse}</td><td class="p-4"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${i.stage === 'In Warehouse' ? 'bg-green-600/10 text-green-500 border border-green-500/20' : 'bg-amber-600/10 text-amber-500 border border-amber-600/20'}">${i.stage}</span></td><td class="p-4 text-white font-black text-right">${symbol} ${i.price}</td></tr>`).join('')}
+            `).join('')}
+        </div>
+        <div class="grid grid-cols-12 gap-8">
+            <div class="col-span-8 glass-panel p-8">
+                <h5 class="text-[10px] font-black text-white uppercase tracking-widest mb-8">Revenue vs Order Flow Analysis</h5>
+                <div class="flex items-end justify-between h-48 gap-4 opacity-40">
+                    ${[30, 60, 45, 90, 70, 55, 85, 40].map(h => `<div style="height:${h}%" class="flex-1 bg-amber-600 rounded-t-sm shadow-[0_0_15px_rgba(217,119,6,0.1)]"></div>`).join('')}
+                </div>
+            </div>
+            <div class="col-span-4 glass-panel p-8 flex flex-col">
+                <h5 class="text-[10px] font-black text-white uppercase tracking-widest mb-8">Activity Feed</h5>
+                <div class="space-y-6 text-[10px] font-bold">
+                    <div class="flex gap-4"><span class="text-amber-600">14:20</span><p class="text-white">Order #ORD-774 created for Client A</p></div>
+                    <div class="flex gap-4"><span class="text-green-500">12:10</span><p class="text-white">Payment Received: ₹ 4.5 L</p></div>
+                    <div class="flex gap-4"><span class="text-red-500">09:00</span><p class="text-white">Low Stock Alert: Marine Plywood</p></div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderInventory(symbol) {
+        return `
+        <div class="grid grid-cols-5 gap-4 mb-8">
+            <div class="glass-panel p-6 border-l-4 border-amber-600"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Total Items</p><h4 class="text-xl metric-value">1,485</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-red-600"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Low Stock SKUs</p><h4 class="text-xl metric-value">12</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-green-600"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Total Value</p><h4 class="text-xl metric-value">${symbol} 8.4 Cr</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-white/10 col-span-2 flex items-center justify-end px-10">
+                <button class="bg-amber-600 text-white font-black text-[10px] px-8 py-3 rounded uppercase hover:scale-105 transition-all">+ Register New SKU</button>
+            </div>
+        </div>
+        <div class="glass-panel overflow-hidden">
+            <table class="w-full text-left">
+                <thead><tr>
+                    ${['SKU ID', 'Product', 'Stock', 'Available', 'Reorder', 'Warehouse', 'Status'].map(t => `<th class="table-header p-6">${t}</th>`).join('')}
+                </tr></thead>
+                <tbody class="text-white text-[11px] font-bold divide-y divide-white/5">
+                    <tr class="hover:bg-white/[0.02]">
+                        <td class="p-6 text-amber-500 tracking-widest">TK-40-GND</td>
+                        <td class="p-6">Premium Teak Log 40mm</td>
+                        <td class="p-6">450 CFT</td>
+                        <td class="p-6 text-green-500">420 CFT</td>
+                        <td class="p-6">100 CFT</td>
+                        <td class="p-6">Plot 10, Gandhidham</td>
+                        <td class="p-6"><span class="px-2 py-1 bg-green-500/10 text-green-500 rounded text-[9px]">IN STOCK</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    function renderOrders(symbol) {
+        return `
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="glass-panel p-6 border-t-2 border-amber-600"><p class="text-[9px] font-black text-slate-500 mb-2">ORDERS TODAY</p><h4 class="text-xl metric-value">12</h4></div>
+            <div class="glass-panel p-6 border-t-2 border-amber-600"><p class="text-[9px] font-black text-slate-500 mb-2">WEEKLY VOLUME</p><h4 class="text-xl metric-value">84</h4></div>
+            <div class="glass-panel p-6 border-t-2 border-amber-600"><p class="text-[9px] font-black text-slate-500 mb-2">FULFILLMENT %</p><h4 class="text-xl metric-value text-green-500">98.2%</h4></div>
+            <div class="glass-panel p-6 border-t-2 border-amber-600"><p class="text-[9px] font-black text-slate-500 mb-2">AVG DISPATCH</p><h4 class="text-xl metric-value">4.2 Hrs</h4></div>
+        </div>
+        <div class="glass-panel p-8">
+            <h5 class="text-[10px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Live Commercial Orders (Last 24 Hours)</h5>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center p-4 bg-white/5 rounded">
+                    <div><p class="text-[11px] text-white font-black">#ORD-9902 • Shree Timber Exports</p><p class="text-[9px] text-slate-500 mt-1 uppercase">Deadline: 28 Feb 2026</p></div>
+                    <div class="text-right"><p class="text-[11px] text-white font-black">${symbol} 12.4 L</p><p class="text-[9px] text-amber-600 uppercase">Status: Processing</p></div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderFinance(symbol) {
+        return `
+        <div class="grid grid-cols-3 gap-8 mb-10">
+            <div class="glass-panel p-10 border-l-4 border-green-500"><p class="text-[9px] font-black text-slate-500 uppercase mb-4 tracking-widest">Total Revenue (MTD)</p><h4 class="text-4xl metric-value">${symbol} 4.2 Cr</h4></div>
+            <div class="glass-panel p-10 border-l-4 border-red-500"><p class="text-[9px] font-black text-slate-500 uppercase mb-4 tracking-widest">Receivables</p><h4 class="text-4xl metric-value">${symbol} 84.5 L</h4></div>
+            <div class="glass-panel p-10 border-l-4 border-amber-500"><p class="text-[9px] font-black text-slate-500 uppercase mb-4 tracking-widest">Operational Margin</p><h4 class="text-4xl metric-value text-amber-500">24.2%</h4></div>
+        </div>
+        <div class="glass-panel p-10">
+            <div class="flex justify-between items-center mb-10">
+                <h5 class="text-[10px] font-black text-white uppercase tracking-widest italic">Executive Financial Audit</h5>
+                <button class="bg-white/5 border border-white/10 px-6 py-2 text-[9px] font-black uppercase text-slate-300 hover:bg-white/10 transition-all">Download P&L Statement (GST)</button>
+            </div>
+            <div class="h-64 flex items-end justify-between gap-1 opacity-20">
+                ${[20, 30, 40, 50, 60, 70, 80, 70, 60, 50, 40, 30, 20, 40, 60, 80, 100].map(h => `<div style="height:${h}%" class="flex-1 bg-green-500 rounded-t-sm"></div>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    function renderTransit() {
+        return `
+        <div class="grid grid-cols-1 gap-8">
+            <div class="glass-panel p-10 bg-gradient-to-r from-amber-600/5 to-transparent border-l-8 border-amber-600">
+                <h5 class="text-2xl font-black text-white uppercase italic tracking-tighter mb-4">Live Transit Telemetry HUB</h5>
+                <p class="text-xs text-slate-400 italic">"Global logistics interface active. Monitoring Gandhidham-Kandla-Mundra route clusters."</p>
+            </div>
+            <div class="glass-panel overflow-hidden">
+                <table class="w-full text-left">
+                    <thead><tr>${['Vehicle ID', 'Destination', 'Status', 'ETA', 'Risk'].map(t => `<th class="table-header p-6">${t}</th>`).join('')}</tr></thead>
+                    <tbody class="text-white text-[11px] font-bold divide-y divide-white/5">
+                        <tr class="hover:bg-white/[0.02] cursor-pointer">
+                            <td class="p-6">GJ-12-BV-4402</td>
+                            <td class="p-6">Mundra Port Terminal 2</td>
+                            <td class="p-6"><span class="text-blue-400">IN TRANSIT</span></td>
+                            <td class="p-6 uppercase">14:00 Today</td>
+                            <td class="p-6 text-green-500">LOW</td>
+                        </tr>
                     </tbody>
                 </table>
-            </div>`;
-        }
-        return `<div class="glass-panel p-20 text-center uppercase tracking-[0.5em] text-slate-600 italic font-black">Terminal Hub Operational • Awaiting Field Data</div>`;
+            </div>
+        </div>`;
     }
 </script>
 </body>
