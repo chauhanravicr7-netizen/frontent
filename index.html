@@ -5,19 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DOCKSIDE | Executive Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0B1220; margin: 0; overflow: hidden; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
-        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid #94a3b8; max-width: 460px; width: 100%; }
-        .corporate-header { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); color: white; padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; font-size: 12px; }
-        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
-        .form-label { width: 120px; font-size: 10px; font-weight: 800; color: #334155; text-transform: uppercase; }
-        .form-input { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; }
-        .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; min-width: 100px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        
+        /* Corporate Login Box */
+        .corporate-card { 
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
+            border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); 
+            border: 1px solid #94a3b8; max-width: 460px; width: 100%; 
+        }
+        
+        /* Section Backgrounds */
+        .bg-dashboard {
+            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+            background-size: 40px 40px;
+            background-color: #0B1220;
+        }
+        .bg-settings {
+            background: linear-gradient(135deg, #0B1220 0%, #111A2E 100%);
+            background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+        }
+        
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: rgba(19, 29, 51, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
     </style>
 </head>
 <body class="antialiased text-slate-300">
@@ -25,26 +41,27 @@
 <div id="app">
     <div class="min-h-screen flex flex-col lg:flex-row">
         <div class="hidden lg:flex lg:w-1/2 relative bg-black">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-50">
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen bg-gradient-to-r from-black/80 to-transparent">
                 <h1 class="text-7xl font-black text-white italic-brand tracking-tighter">DOCKSIDE</h1>
                 <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8">
-                    <p class="text-2xl text-slate-200 italic font-light italic">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light italic">"Precision in every measurement, trust in every deal."</p>
+                    <p class="text-2xl text-slate-200 italic font-light">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl text-slate-200 italic font-light">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#0B1220]">
             <div class="corporate-card">
-                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest">Gandhidham Terminal</span></div>
-                <div class="py-10">
-                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" id="email" class="form-input" value="demo@dockside.com"></div>
-                    <div class="form-row"><label class="form-label">Password</label><input type="password" id="password" class="form-input" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input"><option>Admin</option><option>Operator</option></select></div>
-                    <div class="form-row"><label class="form-label">Period</label><select class="form-input"><option>2025-2026</option></select></div>
-                    <div class="flex justify-center gap-6 mt-8 pt-8 border-t border-slate-300">
-                        <button onclick="handleLogin()" class="action-btn uppercase">Login</button>
-                        <button onclick="location.reload()" class="action-btn uppercase">Cancel</button>
+                <div class="corporate-header bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs border-b border-slate-400">
+                    <span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest">GANDHIDHAM HUB</span>
+                </div>
+                <div class="py-10 px-8 space-y-4">
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">ID</label><input type="email" id="email" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo@dockside.com"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Pass</label><input type="password" id="password" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo123456"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Type</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>Admin</option></select></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Period</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center gap-4 pt-8 border-t">
+                        <button onclick="handleLogin()" class="px-8 py-3 bg-slate-200 border border-slate-400 font-black text-[10px] uppercase hover:bg-white transition-all shadow-md">Login</button>
                     </div>
                 </div>
             </div>
@@ -53,83 +70,52 @@
 </div>
 
 <script>
-    // CORE SYSTEM STATE
-    let state = {
-        currentView: 'dashboard',
-        currency: 'INR',
-        currencyMode: 'SINGLE'
-    };
+    let state = { currentView: 'dashboard', currency: 'INR', currencyMode: 'SINGLE' };
 
-    function handleLogin() {
-        renderShell();
-    }
+    function handleLogin() { renderShell(); }
 
     function switchView(view) {
         state.currentView = view;
         renderShell();
     }
 
-    function setCurrency(cur) {
-        state.currency = cur;
-        renderShell();
-    }
-
-    function updateMode(val) {
-        state.currencyMode = val;
-        if(val === 'SINGLE') state.currency = 'INR';
-        renderShell();
-    }
-
-    // MASTER RENDER: SIDEBAR + TOPBAR
     function renderShell() {
-        const symbol = state.currency === 'INR' ? '₹' : state.currency === 'USD' ? '$' : 'AED';
+        const symbol = state.currency === 'INR' ? '₹' : '$';
+        const bgClass = state.currentView === 'dashboard' ? 'bg-dashboard' : 'bg-settings';
         
         document.getElementById('app').innerHTML = `
-        <div class="flex h-screen bg-[#0B1220] overflow-hidden">
-            <aside class="w-72 bg-[#111A2E] border-r border-white/5 flex flex-col z-20 shadow-2xl">
+        <div class="flex h-screen overflow-hidden ${bgClass}">
+            <aside class="w-72 bg-[#111A2E]/90 backdrop-blur-xl border-r border-white/5 flex flex-col z-20">
                 <div class="p-8 pb-10">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-amber-600 rounded flex items-center justify-center shadow-[0_0_15px_rgba(217,119,6,0.3)]">
-                            <span class="text-white font-black text-xl">D</span>
-                        </div>
-                        <h2 class="text-xl font-black text-white tracking-tighter italic-brand uppercase">Dockside</h2>
-                    </div>
-                    <p class="text-[9px] font-bold text-slate-500 mt-2 tracking-[0.3em] uppercase">Executive Terminal</p>
+                    <h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">Dockside</h2>
+                    <p class="text-[9px] font-bold text-amber-600 tracking-[0.3em] uppercase mt-2">Executive Hub</p>
                 </div>
-
-                <nav class="flex-1 px-4 space-y-1">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Reports', 'Settings'].map(item => `
+                <nav class="flex-1 px-4 space-y-2">
+                    ${['Dashboard', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full flex items-center px-4 py-3 rounded transition-all duration-200 text-[11px] font-bold uppercase tracking-widest
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600/10 text-white border-l-2 border-amber-600' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}">
+                            class="w-full text-left px-6 py-4 rounded font-black text-[10px] uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'text-slate-500 hover:text-white'}">
                             ${item}
                         </button>
                     `).join('')}
                 </nav>
-
-                <div class="p-6 border-t border-white/5">
-                    <button onclick="location.reload()" class="text-red-500/70 hover:text-red-500 text-[10px] font-black uppercase tracking-widest">Sign Out</button>
+                <div class="p-8 border-t border-white/5">
+                    <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-widest">Sign Out</button>
                 </div>
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
-                <header class="h-16 bg-[#111A2E]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 z-10">
-                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Operational Status: <span class="text-green-500">Active</span></div>
+                <header class="h-20 flex items-center justify-between px-10 border-b border-white/5">
+                    <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
                     <div class="flex items-center gap-6">
-                        ${state.currencyMode === 'ALL' ? `
-                        <div class="flex bg-[#0B1220] rounded p-1 border border-white/5">
-                            ${['INR', 'USD', 'AED'].map(cur => `
-                                <button onclick="setCurrency('${cur}')" class="px-3 py-1 text-[10px] font-black rounded ${state.currency === cur ? 'bg-amber-600 text-white' : 'text-slate-500'}">${cur}</button>
-                            `).join('')}
-                        </div>` : ''}
                         <div class="text-right">
-                            <p class="text-[10px] font-black text-white uppercase leading-none">Admin</p>
-                            <p class="text-[9px] font-bold text-amber-600 uppercase mt-1">2025-2026 Period</p>
+                            <p class="text-[10px] font-black text-white uppercase">Gandhidham Hub</p>
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Period: 2025-26</p>
                         </div>
                     </div>
                 </header>
 
-                <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar">
                     ${renderContent(symbol)}
                 </main>
             </div>
@@ -139,50 +125,32 @@
     function renderContent(symbol) {
         if (state.currentView === 'dashboard') {
             return `
-                <div class="grid grid-cols-5 gap-4 mb-8">
+                <div class="grid grid-cols-3 gap-8">
                     ${[
                         { label: 'Total Stock Value', val: symbol + ' 0.00' },
                         { label: 'Active SKUs', val: '0' },
-                        { label: 'Open Orders', val: '0' },
-                        { label: 'Vehicles In Transit', val: '0' },
-                        { label: 'Pending Payments', val: symbol + ' 0.00' }
+                        { label: 'Transit Volume', val: '0 m³' }
                     ].map(kpi => `
-                        <div class="bg-[#131D33] p-5 rounded-sm border border-white/[0.06] shadow-lg">
-                            <p class="text-[9px] font-black text-slate-500 uppercase mb-3">${kpi.label}</p>
-                            <h4 class="text-xl font-bold text-white tracking-tighter">${kpi.val}</h4>
+                        <div class="glass-panel p-10 rounded-sm border-l-4 border-amber-600 shadow-2xl transition-transform hover:-translate-y-1">
+                            <p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">${kpi.label}</p>
+                            <h4 class="text-4xl font-black text-white">${kpi.val}</h4>
                         </div>
                     `).join('')}
                 </div>
-
-                <div class="grid grid-cols-12 gap-6">
-                    <div class="col-span-8 bg-[#131D33] p-6 border border-white/[0.06] h-80 flex flex-col">
-                        <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 text-center">Volume Analytics Overview</h5>
-                        <div class="flex-1 flex items-end justify-center gap-4 opacity-20">
-                            ${[40, 70, 50, 90, 60, 30, 80].map(h => `<div style="height: ${h}%" class="w-12 bg-amber-600 rounded-t-sm"></div>`).join('')}
-                        </div>
-                    </div>
-                    <div class="col-span-4 bg-[#131D33] p-6 border border-white/[0.06]">
-                        <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-4">Transit Status</h5>
-                        <p class="text-[10px] text-slate-500 italic">No vehicles currently reporting telemetry.</p>
-                    </div>
-                </div>
-
-                <div class="mt-8 p-8 bg-gradient-to-r from-[#131D33] to-[#111A2E] border border-amber-600/20">
-                    <h5 class="text-[12px] font-black text-white uppercase tracking-[0.3em] mb-4">Dockside AI Summary</h5>
-                    <p class="text-sm italic text-slate-400 leading-relaxed italic">"System initialized. Terminal 2.0 awaiting Indian market inventory data for the Gandhidham Hub. Currency focused on ${state.currency}."</p>
+                <div class="mt-10 glass-panel p-10 h-80 border-t-4 border-amber-600 flex items-center justify-center">
+                    <p class="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse italic">Awaiting Inventory Telemetry...</p>
                 </div>`;
-        } else if (state.currentView === 'settings') {
+        } else {
             return `
-                <h3 class="text-lg font-black text-white uppercase tracking-widest mb-10">System Settings</h3>
-                <div class="max-w-2xl bg-[#131D33] p-10 border border-white/[0.06]">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Currency Mode</label>
-                    <select onchange="updateMode(this.value)" class="w-full bg-[#0B1220] border border-white/10 text-white p-4 rounded text-sm outline-none focus:border-amber-600">
-                        <option value="SINGLE" ${state.currencyMode === 'SINGLE' ? 'selected' : ''}>Local Mode (India Only - ₹)</option>
-                        <option value="ALL" ${state.currencyMode === 'ALL' ? 'selected' : ''}>Global Mode (Multiple Currencies)</option>
+                <div class="max-w-xl glass-panel p-12 rounded border-t-4 border-blue-600">
+                    <h4 class="text-lg font-black text-white uppercase tracking-widest mb-10">Terminal Config</h4>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-4">Currency Mode</label>
+                    <select class="w-full bg-black/40 border border-white/10 text-white p-4 rounded outline-none focus:border-blue-600 font-bold text-xs uppercase tracking-widest">
+                        <option>India Only (₹)</option>
+                        <option>Global (₹/$)</option>
                     </select>
                 </div>`;
         }
-        return `<div class="text-center text-slate-500 uppercase text-xs tracking-widest mt-20">Section [${state.currentView}] Coming Soon</div>`;
     }
 </script>
 </body>
