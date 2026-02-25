@@ -14,6 +14,10 @@
         .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
         .form-input { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; }
         .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .nav-btn { width: 100%; text-align: left; padding: 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; transition: all 0.2s; margin-bottom: 0.5rem; }
+        .nav-btn-active { background: rgba(255,255,255,0.05); color: white; border-left: 4px solid #d97706; }
+        .nav-btn-inactive { color: #94a3b8; }
+        .nav-btn-inactive:hover { color: white; background: rgba(255,255,255,0.02); }
     </style>
 </head>
 <body class="antialiased">
@@ -26,7 +30,6 @@
                 <h1 class="text-6xl font-black text-white italic">DOCKSIDE</h1>
                 <div class="space-y-6 mt-10">
                     <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
@@ -36,11 +39,10 @@
                 <div class="py-10">
                     <div class="form-row"><label class="form-label">Login ID</label><input type="email" id="email" class="form-input" value="demo@dockside.com"></div>
                     <div class="form-row"><label class="form-label">Password</label><input type="password" id="password" class="form-input" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input"><option>Admin</option><option>Operator</option></select></div>
+                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input"><option>Admin</option></select></div>
                     <div class="form-row"><label class="form-label">Period</label><select class="form-input"><option>2025-2026</option></select></div>
                     <div class="flex justify-center gap-6 mt-8 pt-8 border-t border-slate-300">
-                        <button onclick="renderDashboard()" class="action-btn">LOGIN</button>
-                        <button onclick="location.reload()" class="action-btn">CANCEL</button>
+                        <button onclick="handleLogin()" class="action-btn">LOGIN</button>
                     </div>
                 </div>
             </div>
@@ -49,93 +51,84 @@
 </div>
 
 <script>
-    let currentCurrency = 'INR';
-    let currencyMode = 'SINGLE'; 
+    let state = {
+        currentView: 'dashboard',
+        currency: 'INR',
+        currencyMode: 'SINGLE'
+    };
 
-    // FIXED: Navigation function to ensure Dashboard button always works
-    function navigateTo(section) {
-        if (section === 'dashboard') renderDashboard();
-        if (section === 'settings') renderSettings();
+    function handleLogin() {
+        renderShell();
     }
 
-    function renderDashboard() {
-        const symbol = currentCurrency === 'INR' ? '₹' : '$';
-        
+    function renderShell() {
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen bg-[#0b0f1a]">
                 <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col p-8">
                     <h2 class="text-2xl font-black text-white italic mb-10">DOCKSIDE.</h2>
-                    <button onclick="navigateTo('dashboard')" class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600 mb-2">🏠 Dashboard</button>
-                    <button onclick="navigateTo('settings')" class="w-full text-left p-4 rounded text-slate-400 text-xs font-bold uppercase hover:text-white">⚙️ Settings</button>
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn ${state.currentView === 'dashboard' ? 'nav-btn-active' : 'nav-btn-inactive'}">🏠 Dashboard</button>
+                    <button onclick="switchView('settings')" id="nav-settings" class="nav-btn ${state.currentView === 'settings' ? 'nav-btn-active' : 'nav-btn-inactive'}">⚙️ Settings</button>
                     <button onclick="location.reload()" class="mt-auto text-red-500 text-xs font-bold uppercase">Sign Out</button>
                 </nav>
-                <main class="flex-1 p-12 overflow-y-auto">
-                    <header class="flex justify-between items-center mb-10">
-                        <h3 id="pageTitle" class="text-lg font-black text-white uppercase tracking-widest">Executive Terminal</h3>
-                        ${currencyMode === 'ALL' ? `
-                        <div class="flex bg-slate-800 rounded-lg p-1 border border-white/10">
-                            <button onclick="setCurrency('INR')" class="px-4 py-1 text-[10px] font-bold rounded ${currentCurrency === 'INR' ? 'bg-amber-600 text-white' : 'text-slate-400'}">INR (₹)</button>
-                            <button onclick="setCurrency('USD')" class="px-4 py-1 text-[10px] font-bold rounded ${currentCurrency === 'USD' ? 'bg-amber-600 text-white' : 'text-slate-400'}">USD ($)</button>
-                        </div>
-                        ` : ''}
-                    </header>
-                    
-                    <div id="mainContent" class="grid grid-cols-3 gap-8 text-white">
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
-                            <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p>
-                            <p class="text-3xl font-black">${symbol} 0.00</p>
-                        </div>
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
-                            <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p>
-                            <p class="text-3xl font-black">0</p>
-                        </div>
-                        <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl">
-                            <p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p>
-                            <p class="text-3xl font-black">0 m³</p>
-                        </div>
-                    </div>
-                </main>
+                <main id="main-portal" class="flex-1 p-12 overflow-y-auto"></main>
             </div>`;
+        renderContent();
     }
 
-    function renderSettings() {
-        const main = document.querySelector('main');
-        document.getElementById('pageTitle').innerText = "System Settings";
-        document.getElementById('mainContent').className = "block";
-        document.getElementById('mainContent').innerHTML = `
-            <div class="max-w-2xl">
-                <div class="bg-slate-900/50 p-10 rounded-2xl border border-white/10 space-y-8">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Configuration</label>
-                        <select onchange="updateCurrencyMode(this.value)" class="w-full bg-[#0b0f1a] border border-white/10 text-white p-4 rounded-xl text-sm focus:border-amber-600 outline-none">
-                            <option value="SINGLE" ${currencyMode === 'SINGLE' ? 'selected' : ''}>Local Mode (India Only - ₹)</option>
-                            <option value="ALL" ${currencyMode === 'ALL' ? 'selected' : ''}>Global Mode (Show INR/USD Toggle)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Preference</label>
-                        <div class="flex gap-4">
-                            <button onclick="setCurrency('INR')" class="px-6 py-3 rounded-xl border ${currentCurrency === 'INR' ? 'bg-amber-600 border-amber-600 text-white' : 'border-white/10 text-slate-400'} text-xs font-bold">INR (₹)</button>
-                            <button onclick="setCurrency('USD')" class="px-6 py-3 rounded-xl border ${currentCurrency === 'USD' ? 'bg-amber-600 border-amber-600 text-white' : 'border-white/10 text-slate-400'} text-xs font-bold">USD ($)</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+    function switchView(view) {
+        state.currentView = view;
+        renderShell(); // Force full redraw to ensure buttons work
     }
 
-    function updateCurrencyMode(val) {
-        currencyMode = val;
-        if(val === 'SINGLE') currentCurrency = 'INR';
-        renderDashboard();
+    function renderContent() {
+        const portal = document.getElementById('main-portal');
+        if (state.currentView === 'dashboard') {
+            const symbol = state.currency === 'INR' ? '₹' : '$';
+            portal.innerHTML = `
+                <header class="flex justify-between items-center mb-10">
+                    <h3 class="text-lg font-black text-white uppercase tracking-widest">Executive Terminal</h3>
+                    ${state.currencyMode === 'ALL' ? `
+                    <div class="flex bg-slate-800 rounded-lg p-1 border border-white/10">
+                        <button onclick="setCurrency('INR')" class="px-4 py-1 text-[10px] font-bold rounded ${state.currency === 'INR' ? 'bg-amber-600 text-white' : 'text-slate-400'}">INR</button>
+                        <button onclick="setCurrency('USD')" class="px-4 py-1 text-[10px] font-bold rounded ${state.currency === 'USD' ? 'bg-amber-600 text-white' : 'text-slate-400'}">USD</button>
+                    </div>` : ''}
+                </header>
+                <div class="grid grid-cols-3 gap-8 text-white">
+                    <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
+                        <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p>
+                        <p class="text-3xl font-black">${symbol} 0.00</p>
+                    </div>
+                    <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
+                        <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p>
+                        <p class="text-3xl font-black">0</p>
+                    </div>
+                    <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl">
+                        <p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p>
+                        <p class="text-3xl font-black">0 m³</p>
+                    </div>
+                </div>`;
+        } else if (state.currentView === 'settings') {
+            portal.innerHTML = `
+                <h3 class="text-lg font-black text-white uppercase tracking-widest mb-10">System Settings</h3>
+                <div class="max-w-2xl bg-slate-900/50 p-10 rounded-2xl border border-white/10">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Mode</label>
+                    <select onchange="updateMode(this.value)" class="w-full bg-[#0b0f1a] border border-white/10 text-white p-4 rounded-xl text-sm">
+                        <option value="SINGLE" ${state.currencyMode === 'SINGLE' ? 'selected' : ''}>India Only (₹)</option>
+                        <option value="ALL" ${state.currencyMode === 'ALL' ? 'selected' : ''}>Global (₹/$ Toggle)</option>
+                    </select>
+                </div>`;
+        }
+    }
+
+    function updateMode(val) {
+        state.currencyMode = val;
+        if(val === 'SINGLE') state.currency = 'INR';
+        renderShell();
     }
 
     function setCurrency(cur) {
-        currentCurrency = cur;
-        if (document.getElementById('pageTitle').innerText === "System Settings") {
-            renderSettings();
-        } else {
-            renderDashboard();
-        }
+        state.currency = cur;
+        renderShell();
     }
 </script>
 </body>
