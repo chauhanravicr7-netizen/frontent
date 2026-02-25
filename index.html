@@ -10,30 +10,21 @@
         body { font-family: 'Inter', sans-serif; background-color: #0B1220; margin: 0; overflow: hidden; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
         
-        /* Corporate Login Box */
-        .corporate-card { 
-            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
-            border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); 
-            border: 1px solid #94a3b8; max-width: 460px; width: 100%; 
-        }
-        
-        /* Section Backgrounds */
+        /* Dynamic Backgrounds per Section */
         .bg-dashboard {
-            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
-            background-size: 40px 40px;
-            background-color: #0B1220;
+            background: radial-gradient(circle at 50% 50%, rgba(17, 26, 46, 1) 0%, rgba(11, 18, 32, 1) 100%);
+            background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
         }
-        .bg-settings {
-            background: linear-gradient(135deg, #0B1220 0%, #111A2E 100%);
-            background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
-        }
+        .bg-inventory { background: linear-gradient(rgba(11, 18, 32, 0.9), rgba(11, 18, 32, 0.9)), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop'); background-size: cover; }
+        .bg-transit { background: linear-gradient(rgba(11, 18, 32, 0.9), rgba(11, 18, 32, 0.9)), url('https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=80&w=2075&auto=format&fit=crop'); background-size: cover; }
         
-        /* Glassmorphism Cards */
-        .glass-panel {
-            background: rgba(19, 29, 51, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+        .glass-panel { background: rgba(19, 29, 51, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
+        
+        /* e-Royal Style Login Restored */
+        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; border: 1px solid #94a3b8; width: 460px; }
+        .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 11px; color: #1e293b; }
     </style>
 </head>
 <body class="antialiased text-slate-300">
@@ -44,25 +35,23 @@
             <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-50">
             <div class="relative z-10 p-20 flex flex-col justify-center h-screen bg-gradient-to-r from-black/80 to-transparent">
                 <h1 class="text-7xl font-black text-white italic-brand tracking-tighter">DOCKSIDE</h1>
-                <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8">
-                    <p class="text-2xl text-slate-200 italic font-light">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light">"Precision in every measurement, trust in every deal."</p>
+                <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8 font-light italic text-2xl text-slate-200">
+                    <p>"Transparency is the grain of our business."</p>
+                    <p>"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#0B1220]">
             <div class="corporate-card">
-                <div class="corporate-header bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs border-b border-slate-400">
+                <div class="bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs">
                     <span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest">GANDHIDHAM HUB</span>
                 </div>
                 <div class="py-10 px-8 space-y-4">
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">ID</label><input type="email" id="email" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo@dockside.com"></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Pass</label><input type="password" id="password" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo123456"></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Type</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>Admin</option></select></div>
-                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase">Period</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>2025-2026</option></select></div>
-                    <div class="flex justify-center gap-4 pt-8 border-t">
-                        <button onclick="handleLogin()" class="px-8 py-3 bg-slate-200 border border-slate-400 font-black text-[10px] uppercase hover:bg-white transition-all shadow-md">Login</button>
-                    </div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Login ID</label><input type="email" id="email" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo@dockside.com"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label><input type="password" id="password" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo123456"></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">User Type</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>Admin</option></select></div>
+                    <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Period</label><select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center pt-8 border-t"><button onclick="handleLogin()" class="action-btn uppercase">Login</button></div>
                 </div>
             </div>
         </div>
@@ -81,36 +70,40 @@
 
     function renderShell() {
         const symbol = state.currency === 'INR' ? '₹' : '$';
-        const bgClass = state.currentView === 'dashboard' ? 'bg-dashboard' : 'bg-settings';
+        const bgMap = { 'dashboard': 'bg-dashboard', 'inventory': 'bg-inventory', 'transit': 'bg-transit' };
+        const activeBg = bgMap[state.currentView] || 'bg-dashboard';
         
         document.getElementById('app').innerHTML = `
-        <div class="flex h-screen overflow-hidden ${bgClass}">
+        <div class="flex h-screen overflow-hidden ${activeBg} transition-all duration-1000">
             <aside class="w-72 bg-[#111A2E]/90 backdrop-blur-xl border-r border-white/5 flex flex-col z-20">
                 <div class="p-8 pb-10">
                     <h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">Dockside</h2>
-                    <p class="text-[9px] font-bold text-amber-600 tracking-[0.3em] uppercase mt-2">Executive Hub</p>
+                    <p class="text-[9px] font-bold text-amber-600 tracking-[0.3em] uppercase mt-2">Executive Terminal</p>
                 </div>
-                <nav class="flex-1 px-4 space-y-2">
-                    ${['Dashboard', 'Settings'].map(item => `
+                <nav class="flex-1 px-4 space-y-1 custom-scrollbar overflow-y-auto">
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Reports', 'AI Insights', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full text-left px-6 py-4 rounded font-black text-[10px] uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'text-slate-500 hover:text-white'}">
+                            class="w-full text-left px-6 py-3 rounded font-black text-[10px] uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}">
                             ${item}
                         </button>
                     `).join('')}
                 </nav>
                 <div class="p-8 border-t border-white/5">
-                    <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-widest">Sign Out</button>
+                    <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase">Sign Out</button>
                 </div>
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
-                <header class="h-20 flex items-center justify-between px-10 border-b border-white/5">
-                    <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
+                <header class="h-20 flex items-center justify-between px-10 border-b border-white/5 bg-[#111A2E]/50 backdrop-blur-md">
+                    <div class="flex items-center gap-4">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
+                    </div>
                     <div class="flex items-center gap-6">
                         <div class="text-right">
-                            <p class="text-[10px] font-black text-white uppercase">Gandhidham Hub</p>
-                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Period: 2025-26</p>
+                            <p class="text-[10px] font-black text-white uppercase tracking-widest">Terminal Active</p>
+                            <p class="text-[9px] font-bold text-slate-500 uppercase">Gandhidham Hub • 2025-26</p>
                         </div>
                     </div>
                 </header>
@@ -125,32 +118,37 @@
     function renderContent(symbol) {
         if (state.currentView === 'dashboard') {
             return `
-                <div class="grid grid-cols-3 gap-8">
-                    ${[
-                        { label: 'Total Stock Value', val: symbol + ' 0.00' },
-                        { label: 'Active SKUs', val: '0' },
-                        { label: 'Transit Volume', val: '0 m³' }
-                    ].map(kpi => `
-                        <div class="glass-panel p-10 rounded-sm border-l-4 border-amber-600 shadow-2xl transition-transform hover:-translate-y-1">
-                            <p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">${kpi.label}</p>
-                            <h4 class="text-4xl font-black text-white">${kpi.val}</h4>
+                <div class="grid grid-cols-5 gap-4 mb-8">
+                    ${['Total Stock Value', 'Active SKUs', 'Open Orders', 'In Transit', 'Pending Payments'].map(label => `
+                        <div class="glass-panel p-6 border-l-2 border-amber-600">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">${label}</p>
+                            <h4 class="text-xl font-black text-white">${label.includes('Value') || label.includes('Payments') ? symbol + ' 0.00' : '0'}</h4>
                         </div>
                     `).join('')}
                 </div>
-                <div class="mt-10 glass-panel p-10 h-80 border-t-4 border-amber-600 flex items-center justify-center">
-                    <p class="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse italic">Awaiting Inventory Telemetry...</p>
-                </div>`;
-        } else {
-            return `
-                <div class="max-w-xl glass-panel p-12 rounded border-t-4 border-blue-600">
-                    <h4 class="text-lg font-black text-white uppercase tracking-widest mb-10">Terminal Config</h4>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-4">Currency Mode</label>
-                    <select class="w-full bg-black/40 border border-white/10 text-white p-4 rounded outline-none focus:border-blue-600 font-bold text-xs uppercase tracking-widest">
-                        <option>India Only (₹)</option>
-                        <option>Global (₹/$)</option>
-                    </select>
+
+                <div class="grid grid-cols-12 gap-6 mb-8">
+                    <div class="col-span-8 glass-panel p-8 h-80 flex flex-col">
+                        <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Inventory Analytics Overview</h5>
+                        <div class="flex-1 flex items-end justify-center gap-4 opacity-20">
+                            ${[40, 70, 50, 90, 60, 30, 80, 55].map(h => `<div style="height: ${h}%" class="w-10 bg-amber-600 rounded-t-sm"></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="col-span-4 glass-panel p-8">
+                        <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-4 border-b border-white/5 pb-4">Live Transit Monitoring</h5>
+                        <p class="text-[10px] text-slate-500 italic text-center mt-20">Awaiting GPS Telemetry...</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-10 border-r-4 border-amber-600 bg-gradient-to-r from-amber-600/5 to-transparent">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-2 h-2 bg-amber-600 rounded-full animate-ping"></div>
+                        <h5 class="text-[12px] font-black text-white uppercase tracking-[0.4em]">Dockside Intelligence Hub</h5>
+                    </div>
+                    <p class="text-sm italic text-slate-400 leading-relaxed italic">"System initialized for Gandhidham Hub. Monitoring turnover patterns for the 2025-2026 period. Local currency focus: ${state.currency}."</p>
                 </div>`;
         }
+        return `<div class="glass-panel p-20 text-center text-slate-500 uppercase text-xs tracking-[0.5em] mt-20 italic">Section [${state.currentView}] Operational Hub - Awaiting Data</div>`;
     }
 </script>
 </body>
