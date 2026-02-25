@@ -1,158 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal v1.0.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
-    <style>
-        :root { --obsidian: #05070A; --panel: #0D1117; --glass: rgba(22, 27, 34, 0.7); }
-        body { font-family: 'Inter', sans-serif; background-color: var(--obsidian); margin: 0; overflow: hidden; color: #94a3b8; }
-        .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
-        
-        /* LOGIN PORTAL - RESTORED PERMIT */
-        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid #94a3b8; max-width: 460px; width: 100%; }
-        .corporate-header { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); color: white; padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; }
-        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
-        .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
-        .form-input-login { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; background: white; }
-        .action-btn-login { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-
-        /* DASHBOARD - RESTORED PREMIUM SAAS */
-        .glass-panel { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; transition: all 0.2s; }
-        .metric-value { color: white; font-weight: 900; letter-spacing: -0.05em; }
-        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: #0D1117; border-left: 1px solid rgba(255,255,255,0.1); transform: translateX(100%); transition: transform 0.3s; z-index: 100; overflow-y: auto; }
-        .modal-panel.active { transform: translateX(0); }
-        .form-input-reg { width: 100%; background: #05070A; border: 1px solid rgba(255,255,255,0.1); padding: 10px; color: white; font-size: 13px; border-radius: 4px; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOCKSIDE | Executive Terminal v1.0.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
+<style>
+:root { --obsidian:#05070A; --panel:#0D1117; --glass:rgba(22,27,34,0.7); }
+body{font-family:'Inter',sans-serif;background:var(--obsidian);margin:0;overflow:hidden;color:#94a3b8;}
+.italic-brand{font-family:'Plus Jakarta Sans',sans-serif;font-style:italic;}
+.corporate-card{background:linear-gradient(to bottom,#fff 0%,#e2e8f0 100%);border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,0.6);border:1px solid #94a3b8;max-width:460px;width:100%;}
+.corporate-header{background:linear-gradient(180deg,#475569 0%,#1e293b 100%);color:white;padding:12px 18px;font-weight:800;display:flex;justify-content:space-between;border-radius:4px 4px 0 0;}
+.form-row{display:flex;align-items:center;margin-bottom:12px;gap:12px;padding:0 30px;}
+.form-label{width:120px;font-size:11px;font-weight:800;color:#334155;text-transform:uppercase;}
+.form-input-login{flex:1;padding:6px 10px;border:1px solid #94a3b8;font-size:13px;color:#000;border-radius:2px;background:white;}
+.action-btn-login{background:linear-gradient(to bottom,#f8fafc 0%,#cbd5e1 100%);border:1px solid #64748b;padding:10px 20px;font-weight:900;font-size:12px;color:#1e293b;cursor:pointer;}
+.glass-panel{background:var(--glass);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.05);border-radius:8px;}
+.metric-value{color:white;font-weight:900;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:#D97706;border-radius:10px;}
+</style>
 </head>
 <body class="antialiased">
 
-<div id="app">
-    <div class="min-h-screen flex flex-col lg:flex-row">
-        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
-                <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase">DOCKSIDE</h1>
-                <div class="space-y-6">
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
-                </div>
-            </div>
-        </div>
-        <div class="flex-1 flex items-center justify-center p-6 bg-[#05070A]">
-            <div class="corporate-card">
-                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
-                <div class="py-10">
-                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" value="demo@dockside.com"></div>
-                    <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
-                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
-                    <div class="flex justify-center gap-6 mt-8 pt-8 border-t border-slate-300">
-                        <button onclick="handleLogin()" class="action-btn-login">LOGIN</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div id="app"></div>
 
 <script>
-    let state = {
-        authenticated: false,
-        currentView: 'dashboard',
-        currency: 'INR',
-        inventory: [
-            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10, Gandhidham Hub', stage: 'In Warehouse', price: '850' }
-        ]
-    };
+let state={
+authenticated:false,
+currentView:'dashboard',
+currency:'INR',
+inventory:[
+{id:'SKU001',entry:'24-02-26',prod:'Teak Logs',vol:'145.5',unit:'CFT',loc:'Plot 10',stage:'In Warehouse',price:850},
+{id:'SKU002',entry:'18-02-26',prod:'Sal Wood',vol:'88',unit:'CFT',loc:'Mundra CFS',stage:'Reserved',price:720}
+],
+orders:[
+{id:'ORD901',client:'Shree Timber',date:'25-02-26',status:'Packed',value:240000},
+{id:'ORD902',client:'Metro Ply',date:'24-02-26',status:'Dispatched',value:540000}
+],
+transit:[
+{id:'TR441',origin:'Gandhidham',dest:'Ahmedabad',eta:'27-02-26',status:'In Transit',cost:18000}
+]
+};
 
-    function handleLogin() { state.authenticated = true; renderShell(); }
-    function switchView(view) { state.currentView = view; renderShell(); }
-    function toggleReg(show) { document.getElementById('regPanel').classList.toggle('active', show); }
+function handleLogin(){state.authenticated=true;renderShell();}
+function switchView(v){state.currentView=v;renderShell();}
 
-    function renderShell() {
-        if (!state.authenticated) return;
-        const symbol = state.currency === 'INR' ? '₹' : '$';
-        document.getElementById('app').innerHTML = `
-        <div class="flex h-screen bg-[#05070A] overflow-hidden">
-            <aside class="w-64 bg-[#0D1117] border-r border-white/5 flex flex-col z-20 shadow-2xl">
-                <div class="p-8"><h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
-                <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
-                        <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'}">
-                            ${item}
-                        </button>
-                    `).join('')}
-                </nav>
-            </aside>
+function renderShell(){
+if(!state.authenticated){
+document.getElementById('app').innerHTML=`
+<div class="min-h-screen flex items-center justify-center bg-black text-white">
+<div class="corporate-card">
+<div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
+<div class="py-10">
+<div class="form-row"><label class="form-label">Login ID</label><input class="form-input-login" value="demo@dockside.com"></div>
+<div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
+<div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option></select></div>
+<div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-26</option></select></div>
+<div class="flex justify-center mt-8"><button onclick="handleLogin()" class="action-btn-login">LOGIN</button></div>
+</div>
+</div>
+</div>`;
+return;
+}
 
-            <div class="flex-1 flex flex-col overflow-hidden">
-                <header class="h-16 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]/80 backdrop-blur-md">
-                    <h3 class="text-xs font-black text-white uppercase tracking-[0.2em]">${state.currentView}</h3>
-                    <div class="flex items-center gap-4">
-                        <div class="flex bg-black/40 rounded p-1 border border-white/5">
-                            <button onclick="state.currency='INR'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='INR'?'bg-amber-600 text-white':'text-slate-500'}">INR</button>
-                            <button onclick="state.currency='USD'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='USD'?'bg-amber-600 text-white':'text-slate-500'}">USD</button>
-                        </div>
-                        <span class="text-green-500 uppercase text-[10px] font-black tracking-widest mx-4">● Live Hub</span>
-                    </div>
-                </header>
-                <main class="flex-1 overflow-y-auto p-10 custom-scrollbar animate-in">${renderContent(symbol)}</main>
-            </div>
-        </div>
+const symbol=state.currency==='INR'?'₹':'$';
 
-        <div id="regPanel" class="modal-panel shadow-2xl p-10 space-y-6">
-            <div class="flex justify-between items-center mb-10"><h3 class="text-lg font-black text-white uppercase tracking-widest italic">New Stock Entry</h3><button onclick="toggleReg(false)" class="text-slate-500 hover:text-white text-2xl">&times;</button></div>
-            <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Product Name</label><input type="text" class="form-input-reg"></div>
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Purchase Cost (₹)</label><input type="number" class="form-input-reg"></div>
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Unit</label><select class="form-input-reg"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
-            </div>
-            <div><label class="text-[10px] font-black text-amber-600 uppercase block mb-2 font-bold italic">Warehouse Location (Gandhidham)</label><select class="form-input-reg"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
-            <button onclick="toggleReg(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-500 transition-all mt-6">Confirm Stock Entry</button>
-        </div>`;
-    }
+document.getElementById('app').innerHTML=`
+<div class="flex h-screen overflow-hidden">
+<aside class="w-64 bg-[#0D1117] border-r border-white/5 flex flex-col">
+<div class="p-8 text-white font-black italic-brand text-2xl">DOCKSIDE.</div>
+<nav class="flex-1 px-4 space-y-2">
+${['dashboard','inventory','orders','transit','finance','analytics','settings'].map(i=>`
+<button onclick="switchView('${i}')" class="w-full text-left px-4 py-3 rounded text-xs font-bold uppercase ${state.currentView===i?'bg-amber-600 text-white':'text-slate-500 hover:text-white'}">${i}</button>`).join('')}
+</nav>
+</aside>
 
-    function renderContent(symbol) {
-        if (state.currentView === 'dashboard') {
-            return `
-            <div class="grid grid-cols-4 gap-6 mb-10">
-                ${[{l: 'Stock Value', v: symbol+' 12.4 Cr', t: '+8.2%'}, {l: 'Open Orders', v: '24', t: '+3 Today'}, {l: 'Active SKUs', v: '186', t: '+5 Added'}, {l: 'Pending Payments', v: symbol+' 1.2 Cr', t: '-2.1%'}].map(card => `
-                    <div class="glass-panel p-6 border-b-2 border-transparent hover:border-amber-600 transition-all">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${card.label}</p>
-                        <h4 class="text-2xl metric-value mt-2">${card.value}</h4>
-                        <p class="text-[10px] mt-2 font-black ${card.t.includes('-')?'text-red-500':'text-green-500'} italic uppercase">${card.t} Trend</p>
-                    </div>`).join('')}
-            </div>
-            <div class="grid grid-cols-12 gap-8 mb-10">
-                <div class="col-span-8 glass-panel p-8">
-                    <h5 class="text-[10px] font-black text-white uppercase tracking-widest mb-8">Revenue Analysis vs Period ${state.hub}</h5>
-                    <div class="flex items-end justify-between h-52 gap-4 opacity-40">
-                        ${[30, 60, 45, 90, 70, 55, 85, 40].map(h => `<div style="height:${h}%" class="flex-1 bg-amber-600 rounded-t-sm shadow-[0_0_15px_rgba(217,119,6,0.1)]"></div>`).join('')}
-                    </div>
-                </div>
-                <div class="col-span-4 glass-panel p-8 flex flex-col items-center justify-center">
-                    <h5 class="text-[10px] font-black text-white uppercase tracking-widest mb-10 w-full text-left">Plot 10 Utilization</h5>
-                    <div class="relative w-40 h-40">
-                        <div class="absolute inset-0 rounded-full border-[12px] border-slate-800"></div>
-                        <div class="absolute inset-0 rounded-full border-[12px] border-amber-600 border-t-transparent border-l-transparent rotate-45 shadow-[0_0_15px_rgba(217,119,6,0.2)]"></div>
-                        <div class="absolute inset-0 flex items-center justify-center font-black text-2xl text-white tracking-tighter">72%</div>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.currentView === 'inventory') {
-            return `
-            <div class="flex justify-between items-center mb-10"><h4 class="text-lg font-black text-white uppercase italic tracking-widest">Timber Stock Ledger</h4><button onclick="toggleReg(true)" class="bg-amber-600 text-white px-6 py-3 font-black text-[10px] uppercase shadow-lg shadow-amber-600/20 hover:scale-105 transition-all">+ Add New Stock</button></div>
-            <div class="glass-panel overflow-hidden border border-white/5"><table class="w-full text-left text-[11px]"><thead class="bg-white/[0.03] font-black text-slate-500 border-b border-white/5 uppercase"><tr><th class="p-6">SKU</th><th class="p-6">Entry Date</th><th class="p-6">Product</th><th class="p-6">Volume</th><th class="p-6">Warehouse Hub</th><th class="p-6">Stage</th><th class="p-6 text-white text-right">Price (₹)</th></tr></thead><tbody class="divide-y divide-white/5">${state.inventory.map(i => `<tr class="hover:bg-white/[0.02] cursor-pointer"><td class="p-6 font-black text-amber-500 tracking-widest">${i.id}</td><td class="p-6 text-slate-400 font-bold">${i.entry}</td><td class="p-6 text-white uppercase font-bold">${i.prod}</td><td class="p-6">${i.vol} ${i.unit}</td><td class="p-6 text-slate-500 font-bold italic">${i.loc}</td><td class="p-6"><span class="px-2 py-1 bg-green-500/10 text-green-500 border border-green-500/20 rounded text-[9px] font-black uppercase">${i.stage}</span></td><td class="p-6 text-white font-black text-right">${i.price}</td></tr>`).join('')}</tbody></table></div>`;
-        }
-        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-slate-600 italic font-black">Section [${state.currentView.toUpperCase()}] Terminal Operational • Awaiting Field Data</div>`;
-    }
+<div class="flex-1 flex flex-col overflow-hidden">
+<header class="h-16 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]">
+<h3 class="text-white uppercase text-sm font-black">${state.currentView}</h3>
+<div>
+<button onclick="state.currency='INR';renderShell();" class="px-3 py-1 text-xs ${state.currency==='INR'?'bg-amber-600 text-white':'text-slate-400'}">INR</button>
+<button onclick="state.currency='USD';renderShell();" class="px-3 py-1 text-xs ${state.currency==='USD'?'bg-amber-600 text-white':'text-slate-400'}">USD</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-10">${renderContent(symbol)}</main>
+</div>
+</div>`;
+}
+
+function renderContent(symbol){
+
+if(state.currentView==='dashboard'){
+return`
+<div class="grid grid-cols-4 gap-6 mb-10">
+${[
+['Total Stock',symbol+' 12.4 Cr'],
+['Open Orders','24'],
+['Active SKUs','186'],
+['Pending Payments',symbol+' 1.2 Cr']
+].map(c=>`
+<div class="glass-panel p-6">
+<p class="text-xs uppercase text-slate-500">${c[0]}</p>
+<h4 class="metric-value text-2xl mt-2">${c[1]}</h4>
+</div>`).join('')}
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+<div class="glass-panel p-6 col-span-2">
+<h4 class="text-white font-bold mb-4">Revenue (Last 6 Months)</h4>
+<div class="flex items-end gap-4 h-40">
+${[30,50,70,60,90,75].map(h=>`<div style="height:${h}%" class="flex-1 bg-amber-600"></div>`).join('')}
+</div>
+</div>
+<div class="glass-panel p-6">
+<h4 class="text-white font-bold mb-4">Capacity Usage</h4>
+<div class="text-4xl text-white font-black">72%</div>
+<p class="text-green-500 text-xs mt-2">Operationally Stable</p>
+</div>
+</div>`;
+}
+
+if(state.currentView==='inventory'){
+return`
+<h4 class="text-white font-bold mb-6">Inventory Ledger</h4>
+<div class="glass-panel overflow-hidden">
+<table class="w-full text-xs">
+<thead class="bg-white/5 text-slate-400 uppercase">
+<tr><th class="p-4">SKU</th><th>Product</th><th>Volume</th><th>Location</th><th>Status</th><th class="text-right pr-4">Price</th></tr>
+</thead>
+<tbody>
+${state.inventory.map(i=>`
+<tr class="border-t border-white/5">
+<td class="p-4 text-amber-500">${i.id}</td>
+<td>${i.prod}</td>
+<td>${i.vol} ${i.unit}</td>
+<td>${i.loc}</td>
+<td>${i.stage}</td>
+<td class="text-right pr-4">${symbol} ${i.price}</td>
+</tr>`).join('')}
+</tbody>
+</table>
+</div>`;
+}
+
+if(state.currentView==='orders'){
+return`
+<h4 class="text-white font-bold mb-6">Order Management</h4>
+<div class="glass-panel overflow-hidden">
+<table class="w-full text-xs">
+<thead class="bg-white/5 text-slate-400 uppercase">
+<tr><th class="p-4">Order ID</th><th>Client</th><th>Date</th><th>Status</th><th class="text-right pr-4">Value</th></tr>
+</thead>
+<tbody>
+${state.orders.map(o=>`
+<tr class="border-t border-white/5">
+<td class="p-4 text-amber-500">${o.id}</td>
+<td>${o.client}</td>
+<td>${o.date}</td>
+<td>${o.status}</td>
+<td class="text-right pr-4">${symbol} ${o.value}</td>
+</tr>`).join('')}
+</tbody>
+</table>
+</div>`;
+}
+
+if(state.currentView==='transit'){
+return`
+<h4 class="text-white font-bold mb-6">Transit Tracking</h4>
+<div class="glass-panel p-6 space-y-4">
+${state.transit.map(t=>`
+<div class="border-b border-white/5 pb-4">
+<p class="text-white font-bold">${t.id}</p>
+<p class="text-xs text-slate-400">${t.origin} → ${t.dest}</p>
+<p class="text-xs">ETA: ${t.eta}</p>
+<p class="text-green-500 text-xs">${t.status}</p>
+<p class="text-xs">Cost: ${symbol} ${t.cost}</p>
+</div>`).join('')}
+</div>`;
+}
+
+if(state.currentView==='finance'){
+return`
+<div class="grid grid-cols-3 gap-6">
+${[
+['Total Revenue',symbol+' 8.4 Cr'],
+['Operational Cost',symbol+' 5.1 Cr'],
+['Net Profit',symbol+' 3.3 Cr']
+].map(c=>`
+<div class="glass-panel p-6">
+<p class="text-xs uppercase text-slate-400">${c[0]}</p>
+<h4 class="text-white font-black text-2xl mt-2">${c[1]}</h4>
+</div>`).join('')}
+</div>`;
+}
+
+if(state.currentView==='analytics'){
+return`
+<div class="glass-panel p-6">
+<h4 class="text-white font-bold mb-4">Performance Metrics</h4>
+<ul class="space-y-2 text-xs">
+<li>Inventory Turnover Ratio: <span class="text-white font-bold">4.2x</span></li>
+<li>Fulfillment Accuracy: <span class="text-green-500 font-bold">96%</span></li>
+<li>Average Order Value: <span class="text-white font-bold">${symbol} 2.4L</span></li>
+<li>Revenue per SKU: <span class="text-white font-bold">${symbol} 1.8L</span></li>
+</ul>
+</div>`;
+}
+
+if(state.currentView==='settings'){
+return`
+<div class="glass-panel p-6 space-y-4">
+<h4 class="text-white font-bold">Admin Settings</h4>
+<p class="text-xs">Admin Name: <span class="text-white">Executive Operator</span></p>
+<p class="text-xs">Hub: <span class="text-white">Gandhidham</span></p>
+<p class="text-xs">Financial Year: <span class="text-white">2025-26</span></p>
+<p class="text-xs">System Version: <span class="text-white">v1.0.0</span></p>
+</div>`;
+}
+
+return``;
+}
+
+renderShell();
 </script>
 </body>
 </html>
