@@ -3,128 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Enterprise Timber ERP</title>
+    <title>DOCKSIDE | Indian Timber ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f1a; margin: 0; }
-        
-        .corporate-card {
-            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%);
-            border-radius: 4px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #94a3b8;
-            max-width: 450px;
-            width: 100%;
-        }
-        .corporate-header {
-            background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
-            color: white;
-            padding: 10px 15px;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-            font-size: 12px;
-            font-weight: 800;
-            display: flex;
-            justify-content: space-between;
-        }
-        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
-        .form-label { width: 110px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
-        .form-input { flex: 1; padding: 5px 8px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; }
-        .corporate-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 8px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid #94a3b8; max-width: 460px; width: 100%; }
+        .corporate-header { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); color: white; padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; }
+        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
+        .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
+        .form-input { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; }
+        .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     </style>
 </head>
 <body class="antialiased">
 
 <div id="app">
     <div class="min-h-screen flex flex-col lg:flex-row">
-        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-black">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-screen object-cover opacity-40">
+        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
             <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
-                <h1 class="text-6xl font-black text-white mb-8 italic">DOCKSIDE</h1>
-                <div class="space-y-10">
-                    <div class="border-l-4 border-amber-600 pl-6"><p class="text-2xl text-slate-200 italic font-light">"Transparency is the grain of our business."</p></div>
-                    <div class="border-l-4 border-amber-600 pl-6"><p class="text-2xl text-slate-200 italic font-light">"Precision in every measurement, trust in every deal."</p></div>
+                <h1 class="text-6xl font-black text-white italic">DOCKSIDE</h1>
+                <div class="space-y-6 mt-10">
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
-
         <div class="flex-1 flex items-center justify-center p-6 bg-[#0b0f1a]">
             <div class="corporate-card">
                 <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500">GANDHIDHAM HUB</span></div>
-                <form id="loginForm" class="p-8">
-                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" id="email" required class="form-input" value="demo@dockside.com"></div>
-                    <div class="form-row"><label class="form-label">Password</label><input type="password" id="password" required class="form-input" value="demo123456"></div>
-                    <div class="form-row">
-                        <label class="form-label">User Type</label>
-                        <select id="userType" class="form-input">
-                            <option value="admin">Admin</option>
-                            <option value="operator">Operator</option>
-                        </select>
+                <div class="py-10">
+                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" id="email" class="form-input" value="demo@dockside.com"></div>
+                    <div class="form-row"><label class="form-label">Password</label><input type="password" id="password" class="form-input" value="demo123456"></div>
+                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input"><option>Admin</option><option>Operator</option></select></div>
+                    <div class="form-row"><label class="form-label">Period</label><select class="form-input"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center gap-6 mt-8 pt-8 border-t border-slate-300">
+                        <button onclick="renderDashboard()" class="action-btn">LOGIN</button>
+                        <button onclick="location.reload()" class="action-btn">CANCEL</button>
                     </div>
-                    <div class="form-row">
-                        <label class="form-label">Working Period</label>
-                        <select id="period" class="form-input">
-                            <option value="2025-2026">2025 - 2026</option>
-                            <option value="2024-2025">2024 - 2025</option>
-                        </select>
-                    </div>
-                    <div id="status" class="text-[10px] text-center font-black py-4 text-slate-500 uppercase">System Ready</div>
-                    <div class="flex justify-center gap-4 border-t border-slate-300 pt-6">
-                        <button type="submit" id="loginBtn" class="corporate-btn">LOGIN</button>
-                        <button type="button" onclick="location.reload()" class="corporate-btn">CANCEL</button>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <button type="button" onclick="renderDashboard('demo@dockside.com')" class="text-[9px] text-slate-500 underline uppercase tracking-widest opacity-30 hover:opacity-100">Force Dashboard</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const API_URL = 'https://dockside-api.onrender.com';
+    // System State
+    let currentCurrency = 'INR';
+    let currencyMode = 'SINGLE'; // 'SINGLE' or 'ALL'
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const status = document.getElementById('status');
-        status.innerText = "AUTHENTICATING...";
-        
-        try {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    email: document.getElementById('email').value, 
-                    password: document.getElementById('password').value 
-                })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('email', data.email || 'Admin');
-                renderDashboard(data.email || 'Admin');
-            } else { alert(data.error); status.innerText = "Access Denied"; }
-        } catch (err) { status.innerText = "CONNECTION PENDING..."; }
-    });
+    function renderDashboard() {
+        const symbol = currentCurrency === 'INR' ? '₹' : '$';
+        const displayValue = currentCurrency === 'INR' ? '10.2 Cr' : '1.2M';
 
-    function renderDashboard(email) {
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen bg-[#0b0f1a]">
                 <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col p-8">
                     <h2 class="text-2xl font-black text-white italic mb-10">DOCKSIDE.</h2>
-                    <button class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600">🏠 Dashboard</button>
-                    <button onclick="localStorage.clear(); location.reload();" class="mt-auto text-red-500 text-xs font-bold uppercase">Sign Out</button>
+                    <button class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600 mb-2">🏠 Dashboard</button>
+                    <button onclick="renderSettings()" class="w-full text-left p-4 rounded text-slate-400 text-xs font-bold uppercase hover:text-white">⚙️ Settings</button>
+                    <button onclick="location.reload()" class="mt-auto text-red-500 text-xs font-bold uppercase">Sign Out</button>
                 </nav>
                 <main class="flex-1 p-12 overflow-y-auto">
+                    <header class="flex justify-between items-center mb-10">
+                        <h3 class="text-lg font-black text-white uppercase tracking-widest">Executive Terminal</h3>
+                        
+                        ${currencyMode === 'ALL' ? `
+                        <div class="flex bg-slate-800 rounded-lg p-1 border border-white/10">
+                            <button onclick="setCurrency('INR')" class="px-4 py-1 text-[10px] font-bold rounded ${currentCurrency === 'INR' ? 'bg-amber-600 text-white' : 'text-slate-400'}">INR (₹)</button>
+                            <button onclick="setCurrency('USD')" class="px-4 py-1 text-[10px] font-bold rounded ${currentCurrency === 'USD' ? 'bg-amber-600 text-white' : 'text-slate-400'}">USD ($)</button>
+                        </div>
+                        ` : ''}
+                    </header>
+                    
                     <div class="grid grid-cols-3 gap-8 text-white">
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p><p class="text-3xl font-black">$1.2M</p></div>
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p><p class="text-3xl font-black">24</p></div>
-                        <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl"><p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p><p class="text-3xl font-black">450 m³</p></div>
+                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
+                            <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p>
+                            <p class="text-3xl font-black">${symbol}${displayValue}</p>
+                        </div>
+                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
+                            <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p>
+                            <p class="text-3xl font-black">24</p>
+                        </div>
+                        <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl">
+                            <p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p>
+                            <p class="text-3xl font-black">450 m³</p>
+                        </div>
                     </div>
                 </main>
             </div>`;
+    }
+
+    function renderSettings() {
+        document.querySelector('main').innerHTML = `
+            <div class="max-w-2xl">
+                <h3 class="text-2xl font-black text-white uppercase mb-10">System Settings</h3>
+                <div class="bg-slate-900/50 p-10 rounded-2xl border border-white/10 space-y-8">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Configuration</label>
+                        <select onchange="updateCurrencyMode(this.value)" class="w-full bg-[#0b0f1a] border border-white/10 text-white p-4 rounded-xl text-sm focus:border-amber-600 outline-none">
+                            <option value="SINGLE" ${currencyMode === 'SINGLE' ? 'selected' : ''}>Local Mode (India Only - ₹)</option>
+                            <option value="ALL" ${currencyMode === 'ALL' ? 'selected' : ''}>Global Mode (Show INR/USD Toggle)</option>
+                        </select>
+                    </div>
+                    <p class="text-[10px] text-slate-500 italic">In Global Mode, a currency switcher will appear on the dashboard header.</p>
+                </div>
+            </div>`;
+    }
+
+    function updateCurrencyMode(val) {
+        currencyMode = val;
+        if(val === 'SINGLE') currentCurrency = 'INR';
+        renderDashboard();
+    }
+
+    function setCurrency(cur) {
+        currentCurrency = cur;
+        renderDashboard();
     }
 </script>
 </body>
