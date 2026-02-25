@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Indian Timber ERP</title>
+    <title>DOCKSIDE | Executive Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -49,26 +49,29 @@
 </div>
 
 <script>
-    // System State
     let currentCurrency = 'INR';
-    let currencyMode = 'SINGLE'; // 'SINGLE' or 'ALL'
+    let currencyMode = 'SINGLE'; 
+
+    // FIXED: Navigation function to ensure Dashboard button always works
+    function navigateTo(section) {
+        if (section === 'dashboard') renderDashboard();
+        if (section === 'settings') renderSettings();
+    }
 
     function renderDashboard() {
         const symbol = currentCurrency === 'INR' ? '₹' : '$';
-        const displayValue = currentCurrency === 'INR' ? '10.2 Cr' : '1.2M';
-
+        
         document.getElementById('app').innerHTML = `
             <div class="flex h-screen bg-[#0b0f1a]">
                 <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col p-8">
                     <h2 class="text-2xl font-black text-white italic mb-10">DOCKSIDE.</h2>
-                    <button class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600 mb-2">🏠 Dashboard</button>
-                    <button onclick="renderSettings()" class="w-full text-left p-4 rounded text-slate-400 text-xs font-bold uppercase hover:text-white">⚙️ Settings</button>
+                    <button onclick="navigateTo('dashboard')" class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600 mb-2">🏠 Dashboard</button>
+                    <button onclick="navigateTo('settings')" class="w-full text-left p-4 rounded text-slate-400 text-xs font-bold uppercase hover:text-white">⚙️ Settings</button>
                     <button onclick="location.reload()" class="mt-auto text-red-500 text-xs font-bold uppercase">Sign Out</button>
                 </nav>
                 <main class="flex-1 p-12 overflow-y-auto">
                     <header class="flex justify-between items-center mb-10">
-                        <h3 class="text-lg font-black text-white uppercase tracking-widest">Executive Terminal</h3>
-                        
+                        <h3 id="pageTitle" class="text-lg font-black text-white uppercase tracking-widest">Executive Terminal</h3>
                         ${currencyMode === 'ALL' ? `
                         <div class="flex bg-slate-800 rounded-lg p-1 border border-white/10">
                             <button onclick="setCurrency('INR')" class="px-4 py-1 text-[10px] font-bold rounded ${currentCurrency === 'INR' ? 'bg-amber-600 text-white' : 'text-slate-400'}">INR (₹)</button>
@@ -77,18 +80,18 @@
                         ` : ''}
                     </header>
                     
-                    <div class="grid grid-cols-3 gap-8 text-white">
+                    <div id="mainContent" class="grid grid-cols-3 gap-8 text-white">
                         <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
                             <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p>
-                            <p class="text-3xl font-black">${symbol}${displayValue}</p>
+                            <p class="text-3xl font-black">${symbol} 0.00</p>
                         </div>
                         <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl">
                             <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p>
-                            <p class="text-3xl font-black">24</p>
+                            <p class="text-3xl font-black">0</p>
                         </div>
                         <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl">
                             <p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p>
-                            <p class="text-3xl font-black">450 m³</p>
+                            <p class="text-3xl font-black">0 m³</p>
                         </div>
                     </div>
                 </main>
@@ -96,9 +99,11 @@
     }
 
     function renderSettings() {
-        document.querySelector('main').innerHTML = `
+        const main = document.querySelector('main');
+        document.getElementById('pageTitle').innerText = "System Settings";
+        document.getElementById('mainContent').className = "block";
+        document.getElementById('mainContent').innerHTML = `
             <div class="max-w-2xl">
-                <h3 class="text-2xl font-black text-white uppercase mb-10">System Settings</h3>
                 <div class="bg-slate-900/50 p-10 rounded-2xl border border-white/10 space-y-8">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Configuration</label>
@@ -107,7 +112,13 @@
                             <option value="ALL" ${currencyMode === 'ALL' ? 'selected' : ''}>Global Mode (Show INR/USD Toggle)</option>
                         </select>
                     </div>
-                    <p class="text-[10px] text-slate-500 italic">In Global Mode, a currency switcher will appear on the dashboard header.</p>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-4">Currency Preference</label>
+                        <div class="flex gap-4">
+                            <button onclick="setCurrency('INR')" class="px-6 py-3 rounded-xl border ${currentCurrency === 'INR' ? 'bg-amber-600 border-amber-600 text-white' : 'border-white/10 text-slate-400'} text-xs font-bold">INR (₹)</button>
+                            <button onclick="setCurrency('USD')" class="px-6 py-3 rounded-xl border ${currentCurrency === 'USD' ? 'bg-amber-600 border-amber-600 text-white' : 'border-white/10 text-slate-400'} text-xs font-bold">USD ($)</button>
+                        </div>
+                    </div>
                 </div>
             </div>`;
     }
@@ -120,7 +131,11 @@
 
     function setCurrency(cur) {
         currentCurrency = cur;
-        renderDashboard();
+        if (document.getElementById('pageTitle').innerText === "System Settings") {
+            renderSettings();
+        } else {
+            renderDashboard();
+        }
     }
 </script>
 </body>
