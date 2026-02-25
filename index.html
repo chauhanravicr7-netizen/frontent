@@ -9,12 +9,13 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0B1220; margin: 0; overflow: hidden; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
-        .glass-panel { background: rgba(19, 29, 51, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .glass-panel { background: rgba(19, 29, 51, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); border-radius: 12px; transition: all 250ms; }
+        .glass-panel:hover { background: rgba(19, 29, 51, 0.8); border-color: rgba(255, 255, 255, 0.12); transform: translateY(-2px); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #D97706; border-radius: 10px; }
         .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; border: 1px solid #94a3b8; width: 460px; }
         .action-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; }
-        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: #111A2E; border-left: 1px solid rgba(255,255,255,0.1); transform: translateX(100%); transition: transform 0.3s; z-index: 100; }
+        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: #111A2E; border-left: 1px solid rgba(255,255,255,0.1); transform: translateX(100%); transition: transform 0.3s; z-index: 100; overflow-y: auto; }
         .modal-panel.active { transform: translateX(0); }
         .form-input { width: 100%; background: #0B1220; border: 1px solid rgba(255,255,255,0.1); padding: 10px; color: white; font-size: 13px; border-radius: 4px; }
     </style>
@@ -34,7 +35,7 @@
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#0B1220]">
-            <div class="corporate-card">
+            <div class="corporate-card shadow-2xl">
                 <div class="bg-slate-800 text-white p-4 flex justify-between items-center font-bold text-xs">
                     <span>USER LOGIN</span><span class="text-amber-500 uppercase tracking-widest font-black">Gandhidham Hub</span>
                 </div>
@@ -43,7 +44,7 @@
                     <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label><input type="password" id="password" class="form-input text-black bg-white" value="demo123456"></div>
                     <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Type</label><select class="form-input text-black bg-white"><option>Admin</option></select></div>
                     <div class="flex items-center gap-4"><label class="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">Period</label><select class="form-input text-black bg-white"><option>2025-2026</option></select></div>
-                    <div class="flex justify-center pt-8 border-t"><button onclick="handleLogin()" class="action-btn uppercase">Login Terminal</button></div>
+                    <div class="flex justify-center pt-8 border-t"><button onclick="handleLogin()" class="action-btn uppercase shadow-lg">Login Terminal</button></div>
                 </div>
             </div>
         </div>
@@ -55,7 +56,6 @@
         authenticated: false,
         currentView: 'dashboard',
         currency: 'INR',
-        // Updated data structure with logistics stage and entry date
         inventory: [
             { id: 'SKU001', name: 'Premium Teak Logs', volume: '145.50', unit: 'CFT', warehouse: 'Plot 10, Gandhidham Hub', price: '850', entryDate: '24-02-26', stage: 'In Warehouse' },
             { id: 'SKU002', name: 'Gurjan Plywood 18mm', volume: '22.40', unit: 'CBM', warehouse: 'Adani Warehouse A1', price: '42000', entryDate: '25-02-26', stage: 'Ordered' }
@@ -81,7 +81,7 @@
                     ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
                             class="w-full text-left px-6 py-3 rounded font-black text-[10px] uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}">
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
                             ${item}
                         </button>
                     `).join('')}
@@ -94,42 +94,117 @@
                     <h3 class="text-sm font-black text-white uppercase tracking-[0.3em]">${state.currentView}</h3>
                     <div class="text-right"><p class="text-[10px] font-black text-white uppercase">Operational Status: <span class="text-green-500">● Online</span></p></div>
                 </header>
-                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar">${renderContent(symbol)}</main>
+                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar transition-all duration-300">${renderContent(symbol)}</main>
             </div>
         </div>
 
-        <div id="regPanel" class="modal-panel custom-scrollbar overflow-y-auto shadow-2xl text-slate-300">
+        <div id="regPanel" class="modal-panel custom-scrollbar shadow-2xl text-slate-300">
             <div class="p-8 border-b border-white/5 flex justify-between items-center bg-[#111A2E]">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest">Register Timber Stock</h3>
+                <h3 class="text-lg font-black text-white uppercase tracking-widest italic">Register Timber Stock</h3>
                 <button onclick="togglePanel(false)" class="text-slate-500 hover:text-white text-2xl">&times;</button>
             </div>
             <div class="p-8 space-y-6">
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Product Name</label><input type="text" id="newProdName" placeholder="e.g. Teak Logs" class="form-input"></div>
+                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Product Name</label><input type="text" class="form-input"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Purchase Price (₹)</label><input type="number" id="newPrice" class="form-input"></div>
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Unit</label><select id="newUnit" class="form-input"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Purchase Price (₹)</label><input type="number" class="form-input"></div>
+                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Unit</label><select class="form-input"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
                 </div>
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Logistics Stage</label><select id="newStage" class="form-input"><option>In Warehouse</option><option>In Transit</option><option>Ordered</option></select></div>
-                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Warehouse (Gandhidham)</label><select id="newWarehouse" class="form-input"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
-                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-500 transition-all mt-6">Register Stock Entry</button>
+                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2">Logistics Stage</label><select class="form-input"><option>In Warehouse</option><option>In Transit</option><option>Ordered</option></select></div>
+                <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-2 text-amber-500">Gandhidham Warehouse</label><select class="form-input"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
+                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-500 transition-all mt-6">Confirm Stock Entry</button>
             </div>
         </div>`;
     }
 
     function renderContent(symbol) {
         if (state.currentView === 'dashboard') {
-            return `<div class="grid grid-cols-3 gap-8 mb-8">
-                ${['Total Stock Value', 'Open Orders', 'Transit Volume'].map(l => `<div class="glass-panel p-8 border-l-4 border-amber-600"><p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">${l}</p><h4 class="text-3xl font-black text-white">${l.includes('Value') ? symbol + ' 12.4 Cr' : l.includes('Volume') ? '450 m³' : '24'}</h4></div>`).join('')}
-            </div>
-            <div class="glass-panel p-10 h-80 flex flex-col justify-center items-center text-center">
-                <div class="w-2 h-2 bg-amber-600 rounded-full animate-ping mb-4"></div>
-                <p class="text-sm italic text-slate-400 italic font-light leading-relaxed italic">"Executive Terminal tracking active for Period 2025-26 Hub."</p>
-            </div>`;
+            return `
+                <div class="grid grid-cols-4 gap-6 mb-10">
+                    ${[
+                        { label: 'Total Stock Value', value: symbol + ' 12.4 Cr', trend: '+8.2%' },
+                        { label: 'Open Orders', value: '24', trend: '+3 Today' },
+                        { label: 'Active SKUs', value: '186', trend: '+5 Added' },
+                        { label: 'Pending Payments', value: symbol + ' 1.2 Cr', trend: '-2.1%' }
+                    ].map(card => `
+                        <div class="glass-panel p-6 relative group transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                            <div class="flex justify-between items-start">
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${card.label}</p>
+                                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            </div>
+                            <h4 class="text-2xl font-black text-white mt-4">${card.value}</h4>
+                            <p class="text-[10px] mt-3 font-bold ${card.trend.includes('-') ? 'text-red-400' : 'text-emerald-400'}">
+                                ${card.trend} • Operational Trend
+                            </p>
+                            <div class="mt-4 flex items-end gap-1 opacity-40">
+                                ${[30, 50, 40, 60, 55, 75, 65].map(h => `<div style="height:${h}%" class="w-2 bg-amber-600 rounded-t"></div>`).join('')}
+                            </div>
+                        </div>`).join('')}
+                </div>
+
+                <div class="grid grid-cols-12 gap-8 mb-10">
+                    <div class="col-span-7 glass-panel p-8">
+                        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                            <h5 class="text-[11px] font-black text-white uppercase tracking-widest">Revenue vs Order Flow</h5>
+                            <span class="text-[9px] text-slate-500 uppercase italic">Gandhidham Period 2025-26</span>
+                        </div>
+                        <div class="flex items-end justify-between h-52 opacity-50">
+                            ${[60, 80, 70, 90, 75, 100].map(h => `<div style="height:${h}%" class="w-10 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t"></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="col-span-5 glass-panel p-8">
+                        <div class="border-b border-white/5 pb-4 mb-6"><h5 class="text-[11px] font-black text-white uppercase tracking-widest">Warehouse Utilization</h5></div>
+                        <div class="flex flex-col items-center justify-center mt-6">
+                            <div class="relative w-40 h-40">
+                                <div class="absolute inset-0 rounded-full border-[12px] border-slate-700"></div>
+                                <div class="absolute inset-0 rounded-full border-[12px] border-amber-600 border-t-transparent border-l-transparent rotate-45"></div>
+                                <div class="absolute inset-0 flex items-center justify-center"><span class="text-3xl font-black text-white">72%</span></div>
+                            </div>
+                            <p class="text-[10px] mt-6 text-slate-500 uppercase tracking-widest text-center">Plot 10 Capacity Usage</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-12 gap-8">
+                    <div class="col-span-8 glass-panel p-8">
+                        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                            <h5 class="text-[11px] font-black text-white uppercase tracking-widest">Recent Commercial Orders</h5>
+                            <button class="text-[9px] text-amber-600 font-bold uppercase hover:underline">View Pipeline</button>
+                        </div>
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="text-slate-500 uppercase tracking-widest">
+                                <tr><th class="pb-3">Order ID</th><th class="pb-3">Client</th><th class="pb-3">Volume</th><th class="pb-3">Status</th><th class="pb-3 text-right">Value</th></tr>
+                            </thead>
+                            <tbody class="text-white">
+                                ${[['ORD-2041', 'Shree Timber', '120 m³', 'Processing', symbol + ' 24L'], ['ORD-2042', 'RK Ply', '80 m³', 'Dispatched', symbol + ' 18L'], ['ORD-2043', 'Urban Boards', '65 m³', 'Pending', symbol + ' 12L']].map(row => `
+                                    <tr class="border-t border-white/5 hover:bg-white/5 transition-all">
+                                        <td class="py-3">${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td>
+                                        <td><span class="px-2 py-1 rounded text-[9px] font-bold uppercase ${row[3] === 'Dispatched' ? 'bg-blue-600/20 text-blue-400' : 'bg-amber-600/20 text-amber-400'}">${row[3]}</span></td>
+                                        <td class="text-right font-bold">${row[4]}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-span-4 glass-panel p-8">
+                        <div class="border-b border-white/5 pb-4 mb-6"><h5 class="text-[11px] font-black text-white uppercase tracking-widest">Activity Feed</h5></div>
+                        <div class="space-y-5 text-[11px]">
+                            ${['New stock added: Teak 40mm – 80m³', 'Payment received from RK Ply', 'Warehouse A reached 70% capacity', 'Order ORD-2042 dispatched'].map(item => `<div class="flex gap-3"><span class="w-2 h-2 bg-amber-600 rounded-full mt-1"></span><p class="text-slate-400 font-medium">${item}</p></div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
         } else if (state.currentView === 'inventory') {
             return `<div class="flex justify-between items-center mb-8"><h4 class="text-lg font-black text-white uppercase italic tracking-widest">Timber Stock Ledger</h4><button onclick="togglePanel(true)" class="bg-amber-600 text-white px-6 py-3 font-black text-[10px] uppercase shadow-lg shadow-amber-600/20 hover:scale-105 transition-all">+ Add New Stock</button></div>
-            <div class="glass-panel overflow-hidden"><table class="w-full text-left text-[11px]"><thead class="bg-white/5 font-black text-slate-500 border-b border-white/5 uppercase"><tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4">Price</th></tr></thead><tbody class="divide-y divide-white/5">${state.inventory.map(i => `<tr class="hover:bg-white/[0.02] cursor-pointer"><td class="p-4 font-black text-amber-500">${i.id}</td><td class="p-4 text-slate-400">${i.entryDate}</td><td class="p-4 text-white">${i.name}</td><td class="p-4">${i.volume} ${i.unit}</td><td class="p-4 text-slate-500 font-bold">${i.warehouse}</td><td class="p-4"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${i.stage === 'In Warehouse' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : i.stage === 'In Transit' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}">${i.stage}</span></td><td class="p-4 text-white font-black">${symbol} ${i.price}</td></tr>`).join('')}</tbody></table></div>`;
+            <div class="glass-panel overflow-hidden">
+                <table class="w-full text-left text-[11px]">
+                    <thead class="bg-white/5 font-black text-slate-500 border-b border-white/5 uppercase">
+                        <tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4">Price</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        ${state.inventory.map(i => `<tr class="hover:bg-white/[0.02] cursor-pointer"><td class="p-4 font-black text-amber-500">${i.id}</td><td class="p-4 text-slate-400 italic">${i.entryDate}</td><td class="p-4 text-white">${i.name}</td><td class="p-4">${i.volume} ${i.unit}</td><td class="p-4 text-slate-500 font-bold">${i.warehouse}</td><td class="p-4"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${i.stage === 'In Warehouse' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : i.stage === 'In Transit' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}">${i.stage}</span></td><td class="p-4 text-white font-black">${symbol} ${i.price}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
         }
-        return `<div class="glass-panel p-20 text-center uppercase tracking-[0.5em] text-slate-500 italic">Terminal [${state.currentView.toUpperCase()}] Operational • Awaiting Data</div>`;
+        return `<div class="glass-panel p-20 text-center uppercase tracking-[0.5em] text-slate-500 italic">Terminal [${state.currentView.toUpperCase()}] Operational Hub • Awaiting Data</div>`;
     }
 </script>
 </body>
