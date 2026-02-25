@@ -13,7 +13,7 @@
         .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
         .form-label { width: 110px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
         .form-input { flex: 1; padding: 5px 8px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; }
-        .corporate-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 8px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .corporate-btn { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 8px 20px; font-weight: 900; font-size: 11px; color: #1e293b; cursor: pointer; }
     </style>
 </head>
 <body class="antialiased">
@@ -23,10 +23,10 @@
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-black">
             <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-screen object-cover opacity-40">
             <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
-                <h1 class="text-6xl font-black text-white mb-8 italic italic">DOCKSIDE</h1>
+                <h1 class="text-6xl font-black text-white mb-8 italic">DOCKSIDE</h1>
                 <div class="space-y-10">
                     <div class="border-l-4 border-amber-600 pl-6"><p class="text-2xl text-slate-200 italic font-light">"Transparency is the grain of our business."</p></div>
-                    <div class="border-l-4 border-amber-600 pl-6"><p class="text-2xl text-slate-200 italic font-light">"Precision in every measurement, trust in every deal."</p></div>
+                    <div class="border-l-4 border-amber-600 pl-6"><p class="text-2xl text-slate-200 italic font-light">"Precision in every measurement."</p></div>
                 </div>
             </div>
         </div>
@@ -37,15 +37,18 @@
                 <form id="loginForm" class="p-8">
                     <div class="form-row"><label class="form-label">Login ID</label><input type="email" id="email" required class="form-input" value="demo@dockside.com"></div>
                     <div class="form-row"><label class="form-label">Password</label><input type="password" id="password" required class="form-input" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input"><option>Admin</option><option>Buyer</option></select></div>
-                    <div class="form-row"><label class="form-label">Period</label><select class="form-input"><option>2025-2026</option></select></div>
+                    <div class="form-row">
+                        <label class="form-label">User Type</label>
+                        <select id="userType" class="form-input"><option value="admin">Admin</option><option value="buyer">Buyer</option></select>
+                    </div>
                     <div id="status" class="text-[10px] text-center font-black py-4 text-slate-500 uppercase">System Ready</div>
+                    <div id="debugInfo" class="hidden text-[9px] bg-red-900/20 text-red-400 p-2 mb-4 border border-red-900/50 rounded"></div>
                     <div class="flex justify-center gap-4 border-t border-slate-300 pt-6">
                         <button type="submit" id="loginBtn" class="corporate-btn">LOGIN</button>
                         <button type="button" onclick="location.reload()" class="corporate-btn">CANCEL</button>
                     </div>
                     <div class="mt-4 text-center">
-                        <button type="button" onclick="renderDashboard('demo@dockside.com')" class="text-[9px] text-slate-400 underline uppercase tracking-widest opacity-50 hover:opacity-100">Force Open Dashboard (Bypass Wait)</button>
+                        <button type="button" onclick="renderDashboard('demo@dockside.com')" class="text-[9px] text-slate-500 underline uppercase tracking-widest opacity-30 hover:opacity-100">Force Dashboard</button>
                     </div>
                 </form>
             </div>
@@ -58,26 +61,35 @@
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
         const status = document.getElementById('status');
-        status.innerText = "AUTHENTICATING...";
+        const debug = document.getElementById('debugInfo');
         
+        btn.disabled = true;
+        status.innerText = "AUTHENTICATING...";
+        debug.classList.add('hidden');
+
         try {
             const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ 
+                    email: document.getElementById('email').value, 
+                    password: document.getElementById('password').value 
+                })
             });
             const data = await res.json();
             if (res.ok) {
                 localStorage.setItem('token', data.token);
-                localStorage.setItem('email', email);
-                renderDashboard(email);
-            } else { alert(data.error); status.innerText = "Access Denied"; }
-        } catch (err) { 
-            console.log("Network error, use Force Open if server is OK.");
-            status.innerText = "CONNECTION PENDING..."; 
+                localStorage.setItem('email', data.email || 'Admin');
+                renderDashboard(data.email || 'Admin');
+            } else { throw new Error(data.error || "Access Denied"); }
+        } catch (err) {
+            console.error(err);
+            status.innerText = "CONNECTION FAILED";
+            debug.innerText = `ERROR: ${err.message}. If Health is OK, this is likely a CORS block.`;
+            debug.classList.remove('hidden');
+            btn.disabled = false;
         }
     });
 
@@ -86,8 +98,7 @@
             <div class="flex h-screen bg-[#0b0f1a]">
                 <nav class="w-72 bg-[#0d121f] border-r border-slate-800/50 flex flex-col p-8">
                     <h2 class="text-2xl font-black text-white italic mb-10">DOCKSIDE.</h2>
-                    <button class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase tracking-widest border-l-4 border-amber-600">🏠 Dashboard</button>
-                    <button onclick="location.reload()" class="w-full text-left p-4 mt-2 text-slate-400 text-xs font-bold uppercase hover:text-white">📦 Inventory</button>
+                    <button class="w-full text-left p-4 rounded bg-white/5 text-white text-xs font-bold uppercase border-l-4 border-amber-600">🏠 Dashboard</button>
                     <button onclick="localStorage.clear(); location.reload();" class="mt-auto text-red-500 text-xs font-bold uppercase">Sign Out</button>
                 </nav>
                 <main class="flex-1 p-12 overflow-y-auto">
@@ -96,15 +107,14 @@
                         <span class="text-[10px] font-black text-green-500 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em]">● Operational</span>
                     </header>
                     <div class="grid grid-cols-3 gap-8 text-white">
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2">STOCK VALUE</p><p class="text-3xl font-black">$1.2M</p></div>
-                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2">OPEN ORDERS</p><p class="text-3xl font-black">24</p></div>
-                        <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl"><p class="text-[10px] text-amber-500 font-bold mb-2">TRANSIT VOLUME</p><p class="text-3xl font-black">450 m³</p></div>
+                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Stock Value</p><p class="text-3xl font-black">$1.2M</p></div>
+                        <div class="bg-slate-900/50 p-8 rounded border border-white/10 shadow-xl"><p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">Open Orders</p><p class="text-3xl font-black">24</p></div>
+                        <div class="bg-amber-600/10 p-8 rounded border-l-8 border-amber-600 shadow-xl"><p class="text-[10px] text-amber-500 font-bold mb-2 uppercase">Transit Volume</p><p class="text-3xl font-black">450 m³</p></div>
                     </div>
                 </main>
             </div>`;
     }
 
-    // Auto-load if token exists
     window.onload = () => { if(localStorage.getItem('token')) renderDashboard(localStorage.getItem('email')); };
 </script>
 </body>
