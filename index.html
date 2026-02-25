@@ -3,550 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal</title>
+    <title>Dockside - Timber ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: linear-gradient(145deg, #0B1220, #111A2E);
-            color: #e2e8f0;
-            overflow: hidden;
-        }
-        
-        /* INDUSTRIAL GRAIN TEXTURE OVERLAY */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: 
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' seed='1'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .app-container { position: relative; z-index: 2; }
-        
+        body { font-family: 'Inter', sans-serif; background-color: #0B1220; margin: 0; overflow: hidden; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
         
-        /* GLASS PANEL SYSTEM */
+        /* GLASS PANEL */
         .glass-panel { 
             background: rgba(19, 29, 51, 0.6);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 
-                0 8px 32px 0 rgba(0, 0, 0, 0.37),
-                inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             border-radius: 12px;
-            transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 250ms;
         }
         
         .glass-panel:hover {
             background: rgba(19, 29, 51, 0.8);
             border-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 
-                0 12px 48px 0 rgba(0, 0, 0, 0.45),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.45);
             transform: translateY(-2px);
         }
         
-        /* SCROLLBAR STYLING */
+        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
-        ::-webkit-scrollbar-thumb { 
-            background: rgba(217, 119, 6, 0.4);
-            border-radius: 3px;
-            transition: background 250ms;
-        }
+        ::-webkit-scrollbar-thumb { background: rgba(217, 119, 6, 0.4); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(217, 119, 6, 0.6); }
         
         /* ANIMATIONS */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0); }
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: slideIn 250ms ease-out; }
-        .animate-pulse-glow { animation: pulse-glow 2s infinite; }
         
-        /* STATUS INDICATORS */
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
+        /* STATUS DOT */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .status-in-stock { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
         .status-low { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
         .status-reserved { background: #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.5); }
         
-        /* TABLE STYLES */
-        .inventory-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        /* TABLE */
+        .inventory-table { width: 100%; border-collapse: collapse; }
+        .inventory-table thead { position: sticky; top: 0; background: rgba(17, 26, 46, 0.95); backdrop-filter: blur(8px); z-index: 10; }
+        .inventory-table th { padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; user-select: none; transition: color 250ms; }
+        .inventory-table th:hover { color: #d97706; }
+        .inventory-table tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.02); transition: all 250ms; }
+        .inventory-table tbody tr:hover { background: rgba(217, 119, 6, 0.05); }
+        .inventory-table td { padding: 12px 16px; font-size: 13px; color: #cbd5e1; }
+        .inventory-table .sku-cell { font-family: 'Courier New', monospace; font-size: 11px; font-weight: 700; color: #d97706; letter-spacing: 1px; }
         
-        .inventory-table thead {
-            position: sticky;
-            top: 0;
-            background: rgba(17, 26, 46, 0.95);
-            backdrop-filter: blur(8px);
-            z-index: 10;
-        }
+        /* FORMS */
+        .form-input { width: 100%; background: rgba(71, 85, 105, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 13px; transition: all 250ms; }
+        .form-input:focus { outline: none; background: rgba(71, 85, 105, 0.3); border-color: rgba(217, 119, 6, 0.5); box-shadow: 0 0 12px rgba(217, 119, 6, 0.2); }
         
-        .inventory-table th {
-            padding: 14px 16px;
-            text-align: left;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            color: #94a3b8;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-            user-select: none;
-            transition: color 250ms;
-        }
-        
-        .inventory-table th:hover {
-            color: #d97706;
-        }
-        
-        .inventory-table tbody tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            transition: all 250ms;
-        }
-        
-        .inventory-table tbody tr:hover {
-            background: rgba(217, 119, 6, 0.05);
-        }
-        
-        .inventory-table td {
-            padding: 12px 16px;
-            font-size: 13px;
-            color: #cbd5e1;
-        }
-        
-        .inventory-table .sku-cell {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            font-weight: 700;
-            color: #d97706;
-            letter-spacing: 1px;
-        }
-        
-        /* FORM STYLES */
-        .form-input {
-            width: 100%;
-            background: rgba(71, 85, 105, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: #e2e8f0;
-            font-size: 13px;
-            transition: all 250ms;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            background: rgba(71, 85, 105, 0.3);
-            border-color: rgba(217, 119, 6, 0.5);
-            box-shadow: 0 0 12px rgba(217, 119, 6, 0.2);
-        }
-        
-        .form-input::placeholder {
-            color: #64748b;
-        }
-        
-        /* BUTTON STYLES */
-        .btn-primary {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            cursor: pointer;
-            transition: all 250ms;
-            box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(217, 119, 6, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 250ms;
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(217, 119, 6, 0.3);
-        }
+        /* BUTTONS */
+        .btn-primary { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; transition: all 250ms; box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(217, 119, 6, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 18px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 250ms; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(217, 119, 6, 0.3); }
         
         /* SIDEBAR */
         .sidebar-collapsed .sidebar-label { display: none; }
         .sidebar-collapsed .nav-btn { justify-content: center; }
-        .sidebar-collapsed .sidebar-footer { text-align: center; }
         
-        /* DROPDOWN MENUS */
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: rgba(17, 26, 46, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            backdrop-filter: blur(16px);
-            min-width: 240px;
-            z-index: 50;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-8px);
-            transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        /* DROPDOWN */
+        .dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(17, 26, 46, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; backdrop-filter: blur(16px); min-width: 240px; z-index: 50; opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 250ms; }
+        .dropdown-menu.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-item { display: block; width: 100%; padding: 12px 16px; background: none; border: none; text-align: left; color: #cbd5e1; font-size: 13px; cursor: pointer; transition: all 250ms; border-bottom: 1px solid rgba(255, 255, 255, 0.02); }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: rgba(217, 119, 6, 0.1); color: #d97706; padding-left: 20px; }
         
-        .dropdown-menu.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 100; opacity: 0; visibility: hidden; transition: all 250ms; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: rgba(17, 26, 46, 0.95); backdrop-filter: blur(16px); border-left: 1px solid rgba(255, 255, 255, 0.08); transform: translateX(100%); transition: transform 250ms; z-index: 101; overflow-y: auto; }
+        .modal-panel.active { transform: translateX(0); }
         
-        .dropdown-item {
-            display: block;
-            width: 100%;
-            padding: 12px 16px;
-            background: none;
-            border: none;
-            text-align: left;
-            color: #cbd5e1;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 250ms;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-        }
-        
-        .dropdown-item:last-child {
-            border-bottom: none;
-        }
-        
-        .dropdown-item:hover {
-            background: rgba(217, 119, 6, 0.1);
-            color: #d97706;
-            padding-left: 20px;
-        }
-        
-        /* MODAL PANEL */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 250ms;
-        }
-        
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .modal-panel {
-            position: fixed;
-            right: 0;
-            top: 0;
-            width: 480px;
-            height: 100vh;
-            background: rgba(17, 26, 46, 0.95);
-            backdrop-filter: blur(16px);
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
-            transform: translateX(100%);
-            transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 101;
-            overflow-y: auto;
-        }
-        
-        .modal-panel.active {
-            transform: translateX(0);
-        }
-        
-        /* CHART PLACEHOLDERS */
-        .chart-container {
-            width: 100%;
-            height: 240px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-around;
-            padding: 20px;
-            gap: 8px;
-        }
-        
-        .chart-bar {
-            flex: 1;
-            background: linear-gradient(180deg, #d97706, #b45309);
-            border-radius: 4px 4px 0 0;
-            min-height: 20px;
-            transition: all 250ms;
-            opacity: 0.7;
-        }
-        
-        .chart-bar:hover {
-            opacity: 1;
-            transform: scaleY(1.05);
-        }
-        
-        /* TIMELINE */
-        .timeline-item {
-            display: flex;
-            gap: 16px;
-            padding: 16px 0;
-            border-left: 2px solid rgba(217, 119, 6, 0.2);
-            padding-left: 20px;
-            margin-left: 8px;
-        }
-        
-        .timeline-dot {
-            width: 12px;
-            height: 12px;
-            background: #d97706;
-            border-radius: 50%;
-            margin-top: 4px;
-            margin-left: -27px;
-            box-shadow: 0 0 12px rgba(217, 119, 6, 0.4);
-        }
-        
-        .timeline-content {
-            flex: 1;
-        }
-        
-        .timeline-time {
-            font-size: 11px;
-            color: #94a3b8;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-        }
-        
-        .timeline-text {
-            font-size: 13px;
-            color: #cbd5e1;
-            margin-top: 4px;
-        }
-
-        /* ORIGINAL LOGIN PAGE STYLES */
-        .login-container {
-            min-h-screen;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .login-bg-left {
-            position: relative;
-            background: black;
-            flex: 1;
-        }
-
-        .login-bg-left img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.4;
-        }
-
-        .login-bg-left::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
-        }
-
-        .login-content-left {
-            position: relative;
-            z-index: 10;
-            padding: 80px 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100%;
-        }
-
-        .login-form-card {
-            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%);
-            border-radius: 4px;
-            border: 1px solid #94a3b8;
-            width: 460px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .login-form-card-header {
-            background: linear-gradient(to right, #1e293b 0%, #475569 100%);
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 900;
-            font-size: 11px;
-        }
-
-        .login-form-card-body {
-            padding: 40px 32px;
-            space-y: 16px;
-        }
-
-        .login-form-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .login-form-label {
-            width: 100px;
-            font-size: 10px;
-            font-weight: 900;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .login-form-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 13px;
-            color: black;
-            background: white;
-        }
-
-        .login-form-select {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 13px;
-            color: black;
-            background: white;
-        }
-
-        .login-btn {
-            background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%);
-            border: 1px solid #64748b;
-            padding: 10px 20px;
-            font-weight: 900;
-            font-size: 11px;
-            color: #1e293b;
-            text-transform: uppercase;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        .login-btn:hover {
-            background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
-        }
-
-        .login-test-account {
-            text-align: center;
-            font-size: 11px;
-            color: #475569;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #cbd5e1;
-        }
-
-        .login-test-account strong {
-            font-weight: 900;
-            color: #1e293b;
-        }
+        /* CHART */
+        .chart-bar { flex: 1; background: linear-gradient(180deg, #d97706, #b45309); border-radius: 4px 4px 0 0; min-height: 20px; transition: all 250ms; opacity: 0.7; }
+        .chart-bar:hover { opacity: 1; transform: scaleY(1.05); }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased text-slate-300">
 
-<div id="app" class="app-container">
-    <!-- ORIGINAL LOGIN PAGE -->
-    <div class="login-container lg:flex">
-        <div class="hidden lg:flex lg:w-1/2 login-bg-left">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" alt="">
-            <div class="login-content-left">
-                <h1 style="font-size: 56px; font-weight: 900; color: white; margin-bottom: 20px; font-family: 'Plus Jakarta Sans'; font-style: italic;">DOCKSIDE</h1>
-                <div style="border-left: 4px solid #d97706; padding-left: 32px; margin-top: 40px; space-y: 24px;">
-                    <p style="font-size: 20px; color: #e2e8f0; margin-bottom: 24px; font-style: italic;">
-                        "Transparency is the grain of our business."
-                    </p>
-                    <p style="font-size: 20px; color: #e2e8f0; font-style: italic;">
-                        "Precision in every measurement, trust in every deal."
-                    </p>
+<div id="app">
+    <!-- LOGIN PAGE (ORIGINAL DESIGN) -->
+    <div class="min-h-screen flex flex-col lg:flex-row">
+        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-50">
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen bg-gradient-to-r from-black/80 to-transparent">
+                <h1 class="text-7xl font-black text-white italic-brand tracking-tighter">DOCKSIDE</h1>
+                <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8 font-light italic text-2xl text-slate-200">
+                    <p>"Transparency is the grain of our business."</p>
+                    <p>"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
-
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(to bottom-right, #0B1220, #111A2E);">
-            <div class="login-form-card">
-                <div class="login-form-card-header">
+        <div class="flex-1 flex items-center justify-center p-6 bg-[#0B1220]">
+            <div class="corporate-card bg-white rounded-sm border border-slate-300" style="width: 460px;">
+                <div class="bg-slate-800 text-white p-3 flex justify-between items-center font-bold text-xs">
                     <span>USER LOGIN</span>
-                    <span style="color: #d97706; text-transform: uppercase; letter-spacing: 2px;">Gandhidham Hub</span>
+                    <span class="text-amber-500 uppercase tracking-widest text-xs">GANDHIDHAM HUB</span>
                 </div>
-                <div class="login-form-card-body">
-                    <div class="login-form-row">
-                        <label class="login-form-label">Login ID</label>
-                        <input type="email" id="email" class="login-form-input" value="demo@dockside.com">
+                <div class="py-10 px-8 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Email</label>
+                        <input type="email" id="email" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo@dockside.com">
                     </div>
-                    <div class="login-form-row">
-                        <label class="login-form-label">Password</label>
-                        <input type="password" id="password" class="login-form-input" value="demo123456">
+                    <div class="flex items-center gap-4">
+                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Password</label>
+                        <input type="password" id="password" class="flex-1 p-2 border border-slate-300 text-sm text-black rounded" value="demo123456">
                     </div>
-                    <div class="login-form-row">
-                        <label class="login-form-label">User Type</label>
-                        <select class="login-form-select">
+                    <div class="flex items-center gap-4">
+                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">User Type</label>
+                        <select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded">
                             <option>Admin</option>
-                            <option>Manager</option>
-                            <option>Staff</option>
                         </select>
                     </div>
-                    <div class="login-form-row">
-                        <label class="login-form-label">Period</label>
-                        <select class="login-form-select">
+                    <div class="flex items-center gap-4">
+                        <label class="w-24 text-[10px] font-black text-slate-600 uppercase tracking-widest">Period</label>
+                        <select class="flex-1 p-2 border border-slate-300 text-sm text-black rounded">
                             <option>2025-2026</option>
-                            <option>2024-2025</option>
                         </select>
                     </div>
-                    <button onclick="handleLogin()" class="login-btn">Login</button>
-                    <div class="login-test-account">
-                        <p>Test Account:</p>
-                        <p><strong>demo@dockside.com</strong></p>
-                        <p><strong>demo123456</strong></p>
+                    <div class="flex justify-center pt-8 border-t">
+                        <button onclick="handleLogin()" class="px-8 py-2 bg-gradient-to-b from-slate-200 to-slate-300 border border-slate-500 font-black text-xs text-slate-800 uppercase tracking-wider rounded hover:from-slate-300 hover:to-slate-400">Login</button>
                     </div>
+                </div>
+                <div class="text-center text-slate-700 text-xs px-8 pb-8">
+                    <p class="font-bold">Test Account:</p>
+                    <p>demo@dockside.com</p>
+                    <p>demo123456</p>
                 </div>
             </div>
         </div>
@@ -554,28 +142,20 @@
 </div>
 
 <script>
-    // GLOBAL STATE MANAGEMENT
     const state = {
         authenticated: false,
         currentView: 'dashboard',
         sidebarCollapsed: false,
         currency: 'INR',
-        notifications: [],
         inventory: [
             { id: 'SKU001', name: 'Teak Plywood 12mm', category: 'Plywood', thickness: 12, length: 2440, volume: 29.28, quantity: 150, location: 'WH-A-01', status: 'In Stock', updated: '2 hours ago' },
             { id: 'SKU002', name: 'Birch Veneer Sheet', category: 'Veneer', thickness: 2, length: 2440, volume: 2.44, quantity: 420, location: 'WH-B-02', status: 'In Stock', updated: '5 hours ago' },
             { id: 'SKU003', name: 'Pine Log Grade A', category: 'Logs', thickness: 250, length: 4000, volume: 1000, quantity: 12, location: 'WH-C-01', status: 'Low', updated: '1 hour ago' },
             { id: 'SKU004', name: 'MDF Board 18mm', category: 'Composite', thickness: 18, length: 1830, volume: 32.94, quantity: 80, location: 'WH-A-03', status: 'In Stock', updated: '3 hours ago' },
             { id: 'SKU005', name: 'Hardwood Plank Oak', category: 'Planks', thickness: 25, length: 3600, volume: 90, quantity: 45, location: 'WH-B-01', status: 'Reserved', updated: '30 mins ago' }
-        ],
-        inventoryFilters: {
-            search: '',
-            category: 'All',
-            status: 'All'
-        }
+        ]
     };
 
-    // EVENT HANDLERS
     function handleLogin() {
         state.authenticated = true;
         renderShell();
@@ -637,16 +217,6 @@
         renderShell();
     }
 
-    function updateInventoryFilter(type, value) {
-        state.inventoryFilters[type] = value;
-        renderShell();
-    }
-
-    function sortInventoryTable(field) {
-        state.inventory.reverse();
-        renderShell();
-    }
-
     function updateClock() {
         const clockEl = document.getElementById('clock');
         if (clockEl) {
@@ -655,12 +225,15 @@
         }
     }
 
-    // RENDER SHELL
     function renderShell() {
         if (!state.authenticated) return;
 
         const symbol = state.currency === 'INR' ? '₹' : '$';
-        
+        const inStockCount = state.inventory.filter(i => i.status === 'In Stock').length;
+        const lowStockCount = state.inventory.filter(i => i.status === 'Low').length;
+        const totalVolume = state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0);
+        const totalValue = totalVolume * 2500;
+
         document.getElementById('app').innerHTML = `
         <div class="flex h-screen overflow-hidden bg-gradient-to-br from-[#0B1220] to-[#111A2E]">
             <!-- SIDEBAR -->
@@ -672,7 +245,7 @@
                     ${!state.sidebarCollapsed ? '<p class="text-[9px] font-bold text-amber-600 tracking-[0.2em] uppercase mt-1">Executive Terminal</p>' : ''}
                 </div>
 
-                <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
                     ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
                             class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all duration-250
@@ -685,7 +258,7 @@
                     `).join('')}
                 </nav>
 
-                <div class="sidebar-footer p-4 border-t border-white/5">
+                <div class="p-4 border-t border-white/5">
                     <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-wide w-full">Sign Out</button>
                 </div>
             </aside>
@@ -726,38 +299,21 @@
                         </div>
 
                         <div class="relative">
-                            <button onclick="toggleDropdown('notifications-menu')" class="relative p-2 hover:bg-white/5 rounded-lg transition-all duration-250">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                                </svg>
-                                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                            </button>
-                            <div id="notifications-menu" class="dropdown-menu right-0">
-                                <div class="dropdown-item cursor-default hover:bg-transparent">Low Stock Alert: SKU003</div>
-                                <div class="dropdown-item cursor-default hover:bg-transparent">Order #ORD-2025-1032 Dispatched</div>
-                                <div class="dropdown-item cursor-default hover:bg-transparent">Warehouse WH-A at 95% Capacity</div>
-                            </div>
-                        </div>
-
-                        <div class="relative">
                             <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-all duration-250">
-                                <div class="w-8 h-8 rounded-lg bg-amber-600/20 flex items-center justify-center text-amber-400 font-bold text-sm">A</div>
+                                <div class="w-8 h-8 rounded-lg bg-amber-600/20 flex items-center justify-center text-amber-400 font-bold">A</div>
                                 <span class="text-[11px] font-bold text-white hidden sm:block">Admin</span>
                             </button>
                             <div id="profile-menu" class="dropdown-menu right-0 min-w-[280px]">
                                 <div class="dropdown-item cursor-default text-amber-400 font-bold">admin@dockside.com</div>
-                                <button class="dropdown-item">Profile Settings</button>
-                                <button class="dropdown-item">Workspace</button>
-                                <button class="dropdown-item">Preferences</button>
                                 <button onclick="location.reload()" class="dropdown-item text-red-400">Sign Out</button>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <!-- MAIN CONTENT AREA -->
-                <main class="flex-1 overflow-y-auto custom-scrollbar p-8 animate-in">
-                    ${renderContentByView(symbol)}
+                <!-- MAIN CONTENT -->
+                <main class="flex-1 overflow-y-auto p-8 animate-in">
+                    ${state.currentView === 'dashboard' ? renderDashboard(symbol) : renderInventory(symbol)}
                 </main>
             </div>
         </div>
@@ -768,103 +324,61 @@
         <!-- ADD STOCK PANEL -->
         <div id="add-stock-panel" class="modal-panel">
             <div class="p-8 border-b border-white/5">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-bold text-white uppercase tracking-wide">Add New Stock</h3>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-white uppercase">Add New Stock</h3>
                     <button onclick="closeAddStockPanel()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
                 </div>
-                <p class="text-[11px] text-slate-500 uppercase tracking-wider">Register inventory item</p>
             </div>
-
             <form onsubmit="handleAddStock(event)" class="p-8 space-y-5">
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Product Name *</label>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Product Name *</label>
                     <input type="text" name="productName" class="form-input" required>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Category *</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Category</label>
                         <select name="category" class="form-input" required>
                             <option value="Plywood">Plywood</option>
                             <option value="Logs">Logs</option>
                             <option value="Planks">Planks</option>
-                            <option value="Veneer">Veneer</option>
-                            <option value="Composite">Composite</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Status *</label>
-                        <select name="status" class="form-input" required>
-                            <option value="In Stock">In Stock</option>
-                            <option value="Low">Low</option>
-                            <option value="Reserved">Reserved</option>
-                        </select>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Quantity</label>
+                        <input type="number" name="quantity" class="form-input" required>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Thickness (mm) *</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Thickness (mm)</label>
                         <input type="number" name="thickness" class="form-input" step="0.1" required>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Length (mm) *</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Length (mm)</label>
                         <input type="number" name="length" class="form-input" step="0.1" required>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Width (mm) *</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Width (mm)</label>
                         <input type="number" name="width" class="form-input" step="0.1" required>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Quantity *</label>
-                        <input type="number" name="quantity" class="form-input" min="1" required>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Warehouse Location *</label>
-                        <select name="location" class="form-input" required>
-                            <option value="WH-A-01">WH-A-01</option>
-                            <option value="WH-A-02">WH-A-02</option>
-                            <option value="WH-B-01">WH-B-01</option>
-                            <option value="WH-B-02">WH-B-02</option>
-                            <option value="WH-C-01">WH-C-01</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Location</label>
+                    <select name="location" class="form-input" required>
+                        <option value="WH-A-01">WH-A-01</option>
+                        <option value="WH-B-01">WH-B-01</option>
+                        <option value="WH-C-01">WH-C-01</option>
+                    </select>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Supplier</label>
-                        <input type="text" name="supplier" class="form-input" placeholder="Optional">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Purchase Rate (${state.currency})</label>
-                        <input type="number" name="rate" class="form-input" step="0.01" placeholder="Optional">
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-white/5 space-y-3">
-                    <button type="submit" class="btn-primary w-full uppercase tracking-[0.2em]">Add to Inventory →</button>
-                    <button type="button" onclick="closeAddStockPanel()" class="btn-secondary w-full uppercase tracking-[0.2em]">Cancel</button>
+                <div class="pt-4 space-y-2">
+                    <button type="submit" class="btn-primary w-full">Add Stock</button>
+                    <button type="button" onclick="closeAddStockPanel()" class="btn-secondary w-full">Cancel</button>
                 </div>
             </form>
         </div>`;
 
         updateClock();
         setInterval(updateClock, 1000);
-    }
-
-    function renderContentByView(symbol) {
-        switch(state.currentView) {
-            case 'dashboard':
-                return renderDashboard(symbol);
-            case 'inventory':
-                return renderInventory(symbol);
-            default:
-                return '<div class="text-center text-slate-500 mt-20">Section Loading...</div>';
-        }
     }
 
     function renderDashboard(symbol) {
@@ -876,34 +390,21 @@
         return `
         <div class="grid grid-cols-5 gap-4 mb-8">
             ${[
-                { label: 'Total Value', value: symbol + totalValue.toLocaleString(), trend: '+12.5%', status: 'up' },
-                { label: 'Active SKUs', value: state.inventory.length, trend: '+3', status: 'up' },
-                { label: 'In Stock', value: inStockCount, trend: '-2', status: 'down' },
-                { label: 'Low Stock', value: lowStockCount, trend: '+1', status: 'alert' },
-                { label: 'Total Volume (m³)', value: totalVolume.toFixed(2), trend: '+8%', status: 'up' }
+                { label: 'Total Value', value: symbol + totalValue.toLocaleString(), status: 'up' },
+                { label: 'Active SKUs', value: state.inventory.length, status: 'up' },
+                { label: 'In Stock', value: inStockCount, status: 'down' },
+                { label: 'Low Stock', value: lowStockCount, status: 'alert' },
+                { label: 'Total Volume (m³)', value: totalVolume.toFixed(2), status: 'up' }
             ].map(card => `
                 <div class="glass-panel p-6 border-l-4 ${card.status === 'up' ? 'border-green-600' : card.status === 'alert' ? 'border-amber-600' : 'border-red-600'}">
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">${card.label}</p>
-                    <h4 class="text-2xl font-black text-white mb-2">${card.value}</h4>
-                    <p class="text-[10px] font-bold ${card.status === 'up' ? 'text-green-400' : card.status === 'alert' ? 'text-amber-400' : 'text-red-400'}">${card.trend}</p>
+                    <p class="text-[9px] font-black text-slate-500 uppercase mb-2">${card.label}</p>
+                    <h4 class="text-2xl font-black text-white">${card.value}</h4>
                 </div>
             `).join('')}
         </div>
-
         <div class="grid grid-cols-2 gap-6">
             <div class="glass-panel p-8">
-                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Recent Orders</h5>
-                <div class="space-y-4">
-                    ${[
-                        { id: 'ORD-2025-1032', status: 'Shipped' },
-                        { id: 'ORD-2025-1031', status: 'Processing' },
-                        { id: 'ORD-2025-1030', status: 'Confirmed' }
-                    ].map(o => `<div class="flex justify-between items-center"><span class="text-[11px] font-bold text-amber-400">${o.id}</span><span class="text-[10px] text-slate-400">${o.status}</span></div>`).join('')}
-                </div>
-            </div>
-
-            <div class="glass-panel p-8">
-                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Warehouse Utilization</h5>
+                <h5 class="text-[11px] font-black text-white uppercase mb-6">Warehouse Utilization</h5>
                 <div class="space-y-4">
                     ${[
                         { name: 'WH-A', usage: 78 },
@@ -912,73 +413,67 @@
                     ].map(w => `
                         <div>
                             <div class="flex justify-between mb-2">
-                                <span class="text-[11px] font-bold">${w.name}</span>
-                                <span class="text-[10px] text-amber-400">${w.usage}%</span>
+                                <span class="text-[11px]">${w.name}</span>
+                                <span class="text-amber-400">${w.usage}%</span>
                             </div>
                             <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-                                <div style="width: ${w.usage}%" class="h-full bg-gradient-to-r from-amber-600 to-amber-400"></div>
+                                <div style="width: ${w.usage}%" class="h-full bg-amber-600"></div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
-        </div>`;
+            <div class="glass-panel p-8">
+                <h5 class="text-[11px] font-black text-white uppercase mb-6">Recent Orders</h5>
+                <div class="space-y-4">
+                    ${[
+                        { id: 'ORD-2025-1032', status: 'Shipped' },
+                        { id: 'ORD-2025-1031', status: 'Processing' },
+                        { id: 'ORD-2025-1030', status: 'Confirmed' }
+                    ].map(o => `<div class="flex justify-between"><span class="text-amber-400">${o.id}</span><span>${o.status}</span></div>`).join('')}
+                </div>
+            </div>
+        </div>
+        `;
     }
 
     function renderInventory(symbol) {
         return `
         <div class="space-y-6">
-            <!-- INVENTORY HEADER -->
             <div class="glass-panel p-8 border-l-4 border-amber-600">
                 <div class="grid grid-cols-4 gap-8 mb-6">
-                    ${[
-                        { label: 'Total Items', value: state.inventory.length },
-                        { label: 'Total Volume (m³)', value: state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0).toFixed(2) },
-                        { label: 'Low Stock Count', value: state.inventory.filter(i => i.status === 'Low').length },
-                        { label: 'Last Updated', value: 'Just Now' }
-                    ].map(item => `
-                        <div>
-                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">${item.label}</p>
-                            <h4 class="text-2xl font-black text-white">${item.value}</h4>
-                        </div>
-                    `).join('')}
+                    <div>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Total Items</p>
+                        <h4 class="text-2xl font-black text-white">${state.inventory.length}</h4>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Total Volume (m³)</p>
+                        <h4 class="text-2xl font-black text-white">${state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0).toFixed(2)}</h4>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Low Stock</p>
+                        <h4 class="text-2xl font-black text-white">${state.inventory.filter(i => i.status === 'Low').length}</h4>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Last Updated</p>
+                        <h4 class="text-2xl font-black text-white">Now</h4>
+                    </div>
                 </div>
-                <button onclick="openAddStockPanel()" class="btn-primary">+ Add New Stock Item</button>
+                <button onclick="openAddStockPanel()" class="btn-primary">+ Add New Stock</button>
             </div>
 
-            <!-- FILTERS -->
-            <div class="glass-panel p-6 flex gap-4">
-                <input type="text" placeholder="Search SKU, Product..." class="form-input flex-1">
-                <select class="form-input w-40" onchange="updateInventoryFilter('category', this.value)">
-                    <option value="All">All Categories</option>
-                    <option value="Plywood">Plywood</option>
-                    <option value="Logs">Logs</option>
-                    <option value="Planks">Planks</option>
-                </select>
-                <select class="form-input w-40" onchange="updateInventoryFilter('status', this.value)">
-                    <option value="All">All Status</option>
-                    <option value="In Stock">In Stock</option>
-                    <option value="Low">Low</option>
-                    <option value="Reserved">Reserved</option>
-                </select>
-            </div>
-
-            <!-- INVENTORY TABLE -->
             <div class="glass-panel p-8 overflow-x-auto">
                 <table class="inventory-table">
                     <thead>
                         <tr>
-                            <th onclick="sortInventoryTable('id')">SKU ID</th>
-                            <th onclick="sortInventoryTable('name')">Product Name</th>
-                            <th onclick="sortInventoryTable('category')">Category</th>
-                            <th>Thickness</th>
-                            <th>Length</th>
+                            <th>SKU</th>
+                            <th>Product</th>
+                            <th>Category</th>
                             <th>Volume (m³)</th>
-                            <th onclick="sortInventoryTable('qty')">Quantity</th>
+                            <th>Qty</th>
                             <th>Location</th>
                             <th>Status</th>
                             <th>Updated</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -987,14 +482,11 @@
                                 <td class="sku-cell">${item.id}</td>
                                 <td>${item.name}</td>
                                 <td>${item.category}</td>
-                                <td>${item.thickness} mm</td>
-                                <td>${item.length} mm</td>
-                                <td>${item.volume} m³</td>
-                                <td>${item.quantity} units</td>
+                                <td>${item.volume}</td>
+                                <td>${item.quantity}</td>
                                 <td>${item.location}</td>
                                 <td><span class="status-dot ${item.status === 'In Stock' ? 'status-in-stock' : item.status === 'Low' ? 'status-low' : 'status-reserved'}"></span> ${item.status}</td>
                                 <td>${item.updated}</td>
-                                <td><button class="text-amber-400 text-[11px] font-bold hover:text-amber-300">Edit</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
