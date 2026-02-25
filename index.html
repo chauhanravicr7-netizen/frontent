@@ -358,48 +358,195 @@
             color: #cbd5e1;
             margin-top: 4px;
         }
-        
-        /* LOADING STATE */
-        .loading-shimmer {
-            background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.02) 100%);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
+
+        /* ORIGINAL LOGIN PAGE STYLES */
+        .login-container {
+            min-h-screen;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-bg-left {
+            position: relative;
+            background: black;
+            flex: 1;
+        }
+
+        .login-bg-left img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.4;
+        }
+
+        .login-bg-left::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .login-content-left {
+            position: relative;
+            z-index: 10;
+            padding: 80px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .login-form-card {
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%);
+            border-radius: 4px;
+            border: 1px solid #94a3b8;
+            width: 460px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-form-card-header {
+            background: linear-gradient(to right, #1e293b 0%, #475569 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 900;
+            font-size: 11px;
+        }
+
+        .login-form-card-body {
+            padding: 40px 32px;
+            space-y: 16px;
+        }
+
+        .login-form-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .login-form-label {
+            width: 100px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-form-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 13px;
+            color: black;
+            background: white;
+        }
+
+        .login-form-select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 13px;
+            color: black;
+            background: white;
+        }
+
+        .login-btn {
+            background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%);
+            border: 1px solid #64748b;
+            padding: 10px 20px;
+            font-weight: 900;
+            font-size: 11px;
+            color: #1e293b;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
+        }
+
+        .login-test-account {
+            text-align: center;
+            font-size: 11px;
+            color: #475569;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #cbd5e1;
+        }
+
+        .login-test-account strong {
+            font-weight: 900;
+            color: #1e293b;
         }
     </style>
 </head>
 <body class="antialiased">
 
 <div id="app" class="app-container">
-    <!-- LOGIN SCREEN -->
-    <div class="min-h-screen flex flex-col lg:flex-row">
-        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen bg-gradient-to-r from-black/90 to-transparent">
-                <h1 class="text-7xl font-black text-white italic-brand tracking-tighter">DOCKSIDE</h1>
-                <div class="space-y-6 mt-10 border-l-4 border-amber-600 pl-8 font-light italic text-2xl text-slate-200">
-                    <p>"Precision in every shipment. Control in every move."</p>
-                    <p>"Real-time visibility. Zero compromise."</p>
+    <!-- ORIGINAL LOGIN PAGE -->
+    <div class="login-container lg:flex">
+        <div class="hidden lg:flex lg:w-1/2 login-bg-left">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" alt="">
+            <div class="login-content-left">
+                <h1 style="font-size: 56px; font-weight: 900; color: white; margin-bottom: 20px; font-family: 'Plus Jakarta Sans'; font-style: italic;">DOCKSIDE</h1>
+                <div style="border-left: 4px solid #d97706; padding-left: 32px; margin-top: 40px; space-y: 24px;">
+                    <p style="font-size: 20px; color: #e2e8f0; margin-bottom: 24px; font-style: italic;">
+                        "Transparency is the grain of our business."
+                    </p>
+                    <p style="font-size: 20px; color: #e2e8f0; font-style: italic;">
+                        "Precision in every measurement, trust in every deal."
+                    </p>
                 </div>
             </div>
         </div>
-        
-        <div class="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-[#0B1220] to-[#111A2E]">
-            <div class="w-full max-w-md glass-panel p-8">
-                <div class="mb-8">
-                    <h2 class="text-2xl font-black text-white italic-brand uppercase tracking-tight">Executive Terminal</h2>
-                    <p class="text-[10px] font-bold text-amber-600 tracking-[0.2em] uppercase mt-2">Gandhidham Operations Hub</p>
+
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(to bottom-right, #0B1220, #111A2E);">
+            <div class="login-form-card">
+                <div class="login-form-card-header">
+                    <span>USER LOGIN</span>
+                    <span style="color: #d97706; text-transform: uppercase; letter-spacing: 2px;">Gandhidham Hub</span>
                 </div>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Email</label>
-                        <input type="email" id="email" class="form-input" value="demo@dockside.com">
+                <div class="login-form-card-body">
+                    <div class="login-form-row">
+                        <label class="login-form-label">Login ID</label>
+                        <input type="email" id="email" class="login-form-input" value="demo@dockside.com">
                     </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Password</label>
-                        <input type="password" id="password" class="form-input" value="demo123456">
+                    <div class="login-form-row">
+                        <label class="login-form-label">Password</label>
+                        <input type="password" id="password" class="login-form-input" value="demo123456">
                     </div>
-                    <button onclick="handleLogin()" class="btn-primary w-full mt-6 uppercase tracking-[0.2em]">Login →</button>
+                    <div class="login-form-row">
+                        <label class="login-form-label">User Type</label>
+                        <select class="login-form-select">
+                            <option>Admin</option>
+                            <option>Manager</option>
+                            <option>Staff</option>
+                        </select>
+                    </div>
+                    <div class="login-form-row">
+                        <label class="login-form-label">Period</label>
+                        <select class="login-form-select">
+                            <option>2025-2026</option>
+                            <option>2024-2025</option>
+                        </select>
+                    </div>
+                    <button onclick="handleLogin()" class="login-btn">Login</button>
+                    <div class="login-test-account">
+                        <p>Test Account:</p>
+                        <p><strong>demo@dockside.com</strong></p>
+                        <p><strong>demo123456</strong></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -469,7 +616,7 @@
         const width = parseFloat(formData.get('width')) || 1;
         const length = parseFloat(formData.get('length')) || 1;
         const thickness = parseFloat(formData.get('thickness')) || 1;
-        const volume = (width * length * thickness) / 1000000; // Convert to m³
+        const volume = (width * length * thickness) / 1000000;
 
         const newStock = {
             id: 'SKU' + String(state.inventory.length + 1).padStart(3, '0'),
@@ -496,12 +643,19 @@
     }
 
     function sortInventoryTable(field) {
-        // Simple sort toggle - in production, use proper comparison
         state.inventory.reverse();
         renderShell();
     }
 
-    // RENDER FUNCTIONS
+    function updateClock() {
+        const clockEl = document.getElementById('clock');
+        if (clockEl) {
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+    }
+
+    // RENDER SHELL
     function renderShell() {
         if (!state.authenticated) return;
 
@@ -510,8 +664,7 @@
         document.getElementById('app').innerHTML = `
         <div class="flex h-screen overflow-hidden bg-gradient-to-br from-[#0B1220] to-[#111A2E]">
             <!-- SIDEBAR -->
-            <aside class="w-64 ${state.sidebarCollapsed ? 'w-20' : 'w-64'} bg-[#111A2E]/80 backdrop-blur-xl border-r border-white/5 flex flex-col transition-all duration-250 z-30">
-                <!-- LOGO -->
+            <aside class="${state.sidebarCollapsed ? 'w-20' : 'w-64'} bg-[#111A2E]/80 backdrop-blur-xl border-r border-white/5 flex flex-col transition-all duration-250 z-30">
                 <div class="p-6 border-b border-white/5">
                     <h2 class="text-lg font-black text-white italic-brand uppercase tracking-tighter ${state.sidebarCollapsed ? 'text-center text-sm' : ''}">
                         ${state.sidebarCollapsed ? 'DS' : 'DOCKSIDE'}
@@ -519,7 +672,6 @@
                     ${!state.sidebarCollapsed ? '<p class="text-[9px] font-bold text-amber-600 tracking-[0.2em] uppercase mt-1">Executive Terminal</p>' : ''}
                 </div>
 
-                <!-- NAVIGATION -->
                 <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto custom-scrollbar">
                     ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
@@ -527,13 +679,12 @@
                             ${state.currentView === item.toLowerCase() 
                                 ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' 
                                 : 'text-slate-400 hover:text-white hover:bg-white/5'}">
-                            <span class="w-4 h-4 flex items-center justify-center">●</span>
+                            <span class="w-4 h-4">●</span>
                             <span class="sidebar-label">${item}</span>
                         </button>
                     `).join('')}
                 </nav>
 
-                <!-- FOOTER -->
                 <div class="sidebar-footer p-4 border-t border-white/5">
                     <button onclick="location.reload()" class="text-red-500 text-[10px] font-black uppercase tracking-wide w-full">Sign Out</button>
                 </div>
@@ -554,20 +705,16 @@
                         <span class="text-sm font-bold text-white uppercase tracking-[0.2em]">${state.currentView.toUpperCase()}</span>
                     </div>
 
-                    <!-- TOP SEARCH -->
                     <div class="flex-1 max-w-xs">
                         <input type="text" placeholder="Search..." class="form-input text-[12px]">
                     </div>
 
-                    <!-- RIGHT CONTROLS -->
                     <div class="flex items-center gap-4">
-                        <!-- CLOCK -->
                         <div class="text-right hidden sm:block">
                             <p class="text-[11px] font-bold text-white uppercase tracking-wider" id="clock">00:00</p>
                             <p class="text-[9px] text-slate-500">Gandhidham Hub</p>
                         </div>
 
-                        <!-- CURRENCY SWITCHER -->
                         <div class="relative">
                             <button onclick="toggleDropdown('currency-menu')" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold text-white uppercase hover:bg-white/10 transition-all duration-250">
                                 ${state.currency}
@@ -578,7 +725,6 @@
                             </div>
                         </div>
 
-                        <!-- NOTIFICATIONS -->
                         <div class="relative">
                             <button onclick="toggleDropdown('notifications-menu')" class="relative p-2 hover:bg-white/5 rounded-lg transition-all duration-250">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -593,7 +739,6 @@
                             </div>
                         </div>
 
-                        <!-- USER PROFILE -->
                         <div class="relative">
                             <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-all duration-250">
                                 <div class="w-8 h-8 rounded-lg bg-amber-600/20 flex items-center justify-center text-amber-400 font-bold text-sm">A</div>
@@ -707,7 +852,6 @@
             </form>
         </div>`;
 
-        // Update clock
         updateClock();
         setInterval(updateClock, 1000);
     }
@@ -718,16 +862,6 @@
                 return renderDashboard(symbol);
             case 'inventory':
                 return renderInventory(symbol);
-            case 'orders':
-                return renderOrders(symbol);
-            case 'transit':
-                return renderTransit(symbol);
-            case 'finance':
-                return renderFinance(symbol);
-            case 'analytics':
-                return renderAnalytics(symbol);
-            case 'settings':
-                return renderSettings(symbol);
             default:
                 return '<div class="text-center text-slate-500 mt-20">Section Loading...</div>';
         }
@@ -737,42 +871,39 @@
         const inStockCount = state.inventory.filter(i => i.status === 'In Stock').length;
         const lowStockCount = state.inventory.filter(i => i.status === 'Low').length;
         const totalVolume = state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0);
-        const totalValue = totalVolume * 2500; // Mock value
+        const totalValue = totalVolume * 2500;
 
         return `
-        <!-- KPI CARDS -->
         <div class="grid grid-cols-5 gap-4 mb-8">
             ${[
                 { label: 'Total Value', value: symbol + totalValue.toLocaleString(), trend: '+12.5%', status: 'up' },
                 { label: 'Active SKUs', value: state.inventory.length, trend: '+3', status: 'up' },
-                { label: 'In Stock Items', value: inStockCount, trend: state.currentView === 'dashboard' ? '-2' : '0', status: 'down' },
-                { label: 'Low Stock Alert', value: lowStockCount, trend: '+1', status: 'alert' },
+                { label: 'In Stock', value: inStockCount, trend: '-2', status: 'down' },
+                { label: 'Low Stock', value: lowStockCount, trend: '+1', status: 'alert' },
                 { label: 'Total Volume (m³)', value: totalVolume.toFixed(2), trend: '+8%', status: 'up' }
             ].map(card => `
                 <div class="glass-panel p-6 border-l-4 ${card.status === 'up' ? 'border-green-600' : card.status === 'alert' ? 'border-amber-600' : 'border-red-600'}">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">${card.label}</p>
                     <h4 class="text-2xl font-black text-white mb-2">${card.value}</h4>
                     <p class="text-[10px] font-bold ${card.status === 'up' ? 'text-green-400' : card.status === 'alert' ? 'text-amber-400' : 'text-red-400'}">${card.trend}</p>
-                    <div class="mt-3 flex gap-1">
-                        ${[40, 60, 45, 70, 50].map(h => `<div style="height: ${h}%" class="flex-1 bg-white/10 rounded-sm"></div>`).join('')}
-                    </div>
                 </div>
             `).join('')}
         </div>
 
-        <!-- CHARTS -->
-        <div class="grid grid-cols-12 gap-6 mb-8">
-            <!-- REVENUE VS STOCK -->
-            <div class="col-span-8 glass-panel p-8">
-                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Revenue vs Stock Flow (Monthly)</h5>
-                <div class="chart-container">
-                    ${[65, 45, 78, 42, 68, 55, 82, 71, 60].map(h => `<div class="chart-bar" style="height: ${h}%"></div>`).join('')}
+        <div class="grid grid-cols-2 gap-6">
+            <div class="glass-panel p-8">
+                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Recent Orders</h5>
+                <div class="space-y-4">
+                    ${[
+                        { id: 'ORD-2025-1032', status: 'Shipped' },
+                        { id: 'ORD-2025-1031', status: 'Processing' },
+                        { id: 'ORD-2025-1030', status: 'Confirmed' }
+                    ].map(o => `<div class="flex justify-between items-center"><span class="text-[11px] font-bold text-amber-400">${o.id}</span><span class="text-[10px] text-slate-400">${o.status}</span></div>`).join('')}
                 </div>
             </div>
 
-            <!-- WAREHOUSE UTILIZATION -->
-            <div class="col-span-4 glass-panel p-8">
-                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6">Warehouse Utilization</h5>
+            <div class="glass-panel p-8">
+                <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Warehouse Utilization</h5>
                 <div class="space-y-4">
                     ${[
                         { name: 'WH-A', usage: 78 },
@@ -780,81 +911,97 @@
                         { name: 'WH-C', usage: 45 }
                     ].map(w => `
                         <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-[11px] font-bold text-slate-300">${w.name}</span>
-                                <span class="text-[10px] font-bold text-amber-400">${w.usage}%</span>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-[11px] font-bold">${w.name}</span>
+                                <span class="text-[10px] text-amber-400">${w.usage}%</span>
                             </div>
                             <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-                                <div style="width: ${w.usage}%" class="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"></div>
+                                <div style="width: ${w.usage}%" class="h-full bg-gradient-to-r from-amber-600 to-amber-400"></div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
-        </div>
+        </div>`;
+    }
 
-        <!-- TRANSIT MAP SIMULATION -->
-        <div class="glass-panel p-8 mb-8">
-            <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Transit Map Simulation</h5>
-            <div class="h-48 bg-[#0B1220] rounded-lg border border-white/5 flex items-center justify-center">
-                <div class="text-center">
-                    <svg class="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 003 16.382V5.618a1 1 0 011.553-.894L9 7.5m0 0l6.553-3.776A1 1 0 0117 5.618v10.764a1 1 0 01-1.553.894L9 7.5m0 0v10m6-10l5.447-2.724A1 1 0 0121 5.618v10.764a1 1 0 01-1.553.894l-5.447-2.724m0 0v10"></path>
-                    </svg>
-                    <p class="text-slate-500 text-[11px]">GPS Tracking Active • 12 Shipments In Transit</p>
+    function renderInventory(symbol) {
+        return `
+        <div class="space-y-6">
+            <!-- INVENTORY HEADER -->
+            <div class="glass-panel p-8 border-l-4 border-amber-600">
+                <div class="grid grid-cols-4 gap-8 mb-6">
+                    ${[
+                        { label: 'Total Items', value: state.inventory.length },
+                        { label: 'Total Volume (m³)', value: state.inventory.reduce((sum, i) => sum + parseFloat(i.volume), 0).toFixed(2) },
+                        { label: 'Low Stock Count', value: state.inventory.filter(i => i.status === 'Low').length },
+                        { label: 'Last Updated', value: 'Just Now' }
+                    ].map(item => `
+                        <div>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">${item.label}</p>
+                            <h4 class="text-2xl font-black text-white">${item.value}</h4>
+                        </div>
+                    `).join('')}
                 </div>
+                <button onclick="openAddStockPanel()" class="btn-primary">+ Add New Stock Item</button>
             </div>
-        </div>
 
-        <!-- RECENT ORDERS TABLE -->
-        <div class="glass-panel p-8 mb-8">
-            <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Recent Orders</h5>
-            <div class="overflow-x-auto">
-                <table class="w-full">
+            <!-- FILTERS -->
+            <div class="glass-panel p-6 flex gap-4">
+                <input type="text" placeholder="Search SKU, Product..." class="form-input flex-1">
+                <select class="form-input w-40" onchange="updateInventoryFilter('category', this.value)">
+                    <option value="All">All Categories</option>
+                    <option value="Plywood">Plywood</option>
+                    <option value="Logs">Logs</option>
+                    <option value="Planks">Planks</option>
+                </select>
+                <select class="form-input w-40" onchange="updateInventoryFilter('status', this.value)">
+                    <option value="All">All Status</option>
+                    <option value="In Stock">In Stock</option>
+                    <option value="Low">Low</option>
+                    <option value="Reserved">Reserved</option>
+                </select>
+            </div>
+
+            <!-- INVENTORY TABLE -->
+            <div class="glass-panel p-8 overflow-x-auto">
+                <table class="inventory-table">
                     <thead>
                         <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Product</th>
-                            <th>Qty (m³)</th>
-                            <th>Value</th>
+                            <th onclick="sortInventoryTable('id')">SKU ID</th>
+                            <th onclick="sortInventoryTable('name')">Product Name</th>
+                            <th onclick="sortInventoryTable('category')">Category</th>
+                            <th>Thickness</th>
+                            <th>Length</th>
+                            <th>Volume (m³)</th>
+                            <th onclick="sortInventoryTable('qty')">Quantity</th>
+                            <th>Location</th>
                             <th>Status</th>
-                            <th>Due Date</th>
+                            <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${[
-                            { id: 'ORD-2025-1032', customer: 'BuildCo Industries', product: 'Teak Plywood', qty: 45.6, value: symbol + '1,14,000', status: 'Shipped', due: '2025-03-05' },
-                            { id: 'ORD-2025-1031', customer: 'TimberTrade PLC', product: 'Pine Logs', qty: 120, value: symbol + '3,00,000', status: 'Processing', due: '2025-03-08' },
-                            { id: 'ORD-2025-1030', customer: 'Global Exports Ltd', product: 'Birch Veneer', qty: 78.9, value: symbol + '1,97,250', status: 'Confirmed', due: '2025-03-12' }
-                        ].map(order => `
+                        ${state.inventory.map(item => `
                             <tr>
-                                <td class="sku-cell">${order.id}</td>
-                                <td>${order.customer}</td>
-                                <td>${order.product}</td>
-                                <td>${order.qty}</td>
-                                <td class="font-bold text-amber-400">${order.value}</td>
-                                <td><span class="status-dot ${order.status === 'Shipped' ? 'status-in-stock' : 'status-reserved'}"></span> ${order.status}</td>
-                                <td>${order.due}</td>
+                                <td class="sku-cell">${item.id}</td>
+                                <td>${item.name}</td>
+                                <td>${item.category}</td>
+                                <td>${item.thickness} mm</td>
+                                <td>${item.length} mm</td>
+                                <td>${item.volume} m³</td>
+                                <td>${item.quantity} units</td>
+                                <td>${item.location}</td>
+                                <td><span class="status-dot ${item.status === 'In Stock' ? 'status-in-stock' : item.status === 'Low' ? 'status-low' : 'status-reserved'}"></span> ${item.status}</td>
+                                <td>${item.updated}</td>
+                                <td><button class="text-amber-400 text-[11px] font-bold hover:text-amber-300">Edit</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>
-        </div>
-
-        <!-- ACTIVITY TIMELINE -->
-        <div class="glass-panel p-8">
-            <h5 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Activity Timeline</h5>
-            <div class="space-y-2">
-                ${[
-                    { time: '14:32', action: 'SKU004 stock updated: +80 units' },
-                    { time: '13:15', action: 'Order ORD-2025-1032 marked as Shipped' },
-                    { time: '12:48', action: 'Low stock alert triggered for SKU003' },
-                    { time: '11:20', action: 'New inventory received at WH-B-02' },
-                    { time: '10:05', action: 'System backup completed successfully' }
-                ].map(item => `
-                    <div class="timeline-item">
-                        <div class="timeline-dot"></div>
-                        <div class="timeline-content">
-                            <p class="timeline-time">${item.time}</p>
+        </div>`;
+    }
+</script>
+</body>
+</html>
