@@ -98,11 +98,22 @@
 
 <script>
     // ==================== API CONFIGURATION ====================
-    // Change this to your Render API URL after deployment
     const API_BASE_URL = 'https://dockside-api.onrender.com/api';
-    // For local development, use: 'http://localhost:3000/api'
+    // For local development: 'http://localhost:3000/api'
 
-    // ==================== API HELPER FUNCTION ====================
+    // ==================== STATE MANAGEMENT ====================
+    let state = {
+        authenticated: false,
+        currentView: 'dashboard',
+        currency: 'INR',
+        hub: 'Gandhidham Hub',
+        inventory: [
+            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' },
+            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' },
+            { id: 'SKU003', entry: '22-02-26', prod: 'Pine Wood', vol: '220.00', unit: 'CFT', loc: 'Plot 08', stage: 'Dispatched', price: '650' }
+        ]
+    };
+
     async function apiCall(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
         const token = localStorage.getItem('auth_token');
@@ -133,132 +144,16 @@
         }
     }
 
-    // ==================== STATE MANAGEMENT ====================
-    let state = {
-        authenticated: false,
-        currentView: 'dashboard',
-        currency: 'INR',
-        hub: 'Gandhidham Hub',
-        inventory: [
-            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' }
-        ]
-    };
-
-    // ==================== LOAD INVENTORY FROM API ====================
-    async function loadInventoryFromAPI() {
-        try {
-            const data = await apiCall('/inventory');
-            if (Array.isArray(data)) {
-                state.inventory = data;
-            }
-        } catch (error) {
-            console.error('Failed to load inventory from API:', error);
-            console.log('Using demo data instead');
-        }
-        renderShell();
+    function handleLogin() { 
+        state.authenticated = true; 
+        renderShell(); 
     }
 
-    // ==================== LOGIN FUNCTION ====================
-    function handleLogin() {
-        // Demo mode - just authenticate locally
-        state.authenticated = true;
-        
-        // To enable real API login, uncomment below:
-        // const email = document.getElementById('loginEmail').value;
-        // const password = document.getElementById('loginPassword').value;
-        // handleLoginAPI(email, password);
-        
-        loadInventoryFromAPI();
-    }
-
-    // ==================== OPTIONAL: API LOGIN FUNCTION ====================
-    async function handleLoginAPI(email, password) {
-        try {
-            const response = await apiCall('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            });
-            
-            if (response.token) {
-                localStorage.setItem('auth_token', response.token);
-                localStorage.setItem('user', JSON.stringify(response.user));
-                state.authenticated = true;
-                await loadInventoryFromAPI();
-                renderShell();
-            }
-        } catch (error) {
-            alert('Login failed: ' + error.message);
-        }
-    }
-
-    // ==================== SWITCH VIEW ====================
     function switchView(view) { 
         state.currentView = view; 
         renderShell(); 
     }
 
-    // ==================== ADD INVENTORY FUNCTION ====================
-    async function addInventoryItem(skuData) {
-        try {
-            const result = await apiCall('/inventory', {
-                method: 'POST',
-                body: JSON.stringify({
-                    sku: skuData.id,
-                    product_name: skuData.prod,
-                    volume: parseFloat(skuData.vol),
-                    unit: skuData.unit,
-                    warehouse_location: skuData.loc,
-                    status: skuData.stage,
-                    price: parseFloat(skuData.price)
-                })
-            });
-            
-            await loadInventoryFromAPI();
-            return result;
-        } catch (error) {
-            console.error('Failed to add inventory:', error);
-            throw error;
-        }
-    }
-
-    // ==================== UPDATE INVENTORY FUNCTION ====================
-    async function updateInventoryItem(skuId, skuData) {
-        try {
-            const result = await apiCall(`/inventory/${skuId}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    product_name: skuData.prod,
-                    volume: parseFloat(skuData.vol),
-                    unit: skuData.unit,
-                    warehouse_location: skuData.loc,
-                    status: skuData.stage,
-                    price: parseFloat(skuData.price)
-                })
-            });
-            
-            await loadInventoryFromAPI();
-            return result;
-        } catch (error) {
-            console.error('Failed to update inventory:', error);
-            throw error;
-        }
-    }
-
-    // ==================== DELETE INVENTORY FUNCTION ====================
-    async function deleteInventoryItem(skuId) {
-        try {
-            await apiCall(`/inventory/${skuId}`, {
-                method: 'DELETE'
-            });
-            
-            await loadInventoryFromAPI();
-        } catch (error) {
-            console.error('Failed to delete inventory:', error);
-            throw error;
-        }
-    }
-
-    // ==================== RENDER SHELL ====================
     function renderShell() {
         if (!state.authenticated) return;
         const symbol = state.currency === 'INR' ? '₹' : '$';
@@ -291,26 +186,101 @@
         </div>`;
     }
 
-    // ==================== RENDER MAIN CONTENT ====================
     function renderMainContent(symbol) {
         if (state.currentView === 'dashboard') {
             return `
             <div class="grid grid-cols-4 gap-6 mb-10">
-                ${[{l: 'Stock Value', v: symbol+' 12.4 Cr'}, {l: 'Open Orders', v: '24'}, {l: 'Pending Payments', v: symbol+' 1.2 Cr'}, {l: 'Risk Alerts', v: '04'}].map(k => `
-                    <div class="deck-panel p-6">
-                        <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">${k.l}</p>
-                        <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${k.v}</h4>
-                    </div>
-                `).join('')}
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Stock Value</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 12.4 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Open Orders</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">24</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Pending Payments</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 1.2 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Risk Alerts</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">04</h4>
+                </div>
             </div>
-            <div class="deck-panel p-10 h-64 flex items-center justify-center italic text-gray-400 font-black tracking-[0.5em] uppercase">
-                Operational Terminal Active ✓
+            <div class="grid grid-cols-2 gap-6">
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Portfolio Performance</h5>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-600">Teak Logs</span>
+                                <span class="text-xs font-black text-gray-800">78%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded h-2">
+                                <div class="bg-amber-600 h-2 rounded" style="width: 78%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-600">Mahogany</span>
+                                <span class="text-xs font-black text-gray-800">65%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded h-2">
+                                <div class="bg-amber-600 h-2 rounded" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-600">Pine Wood</span>
+                                <span class="text-xs font-black text-gray-800">92%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded h-2">
+                                <div class="bg-amber-600 h-2 rounded" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Quick Actions</h5>
+                    <div class="space-y-3">
+                        <button class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
+                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Track Shipment</button>
+                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Generate Invoice</button>
+                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Sync Data</button>
+                    </div>
+                </div>
+            </div>
+            <div class="deck-panel p-8 mt-6">
+                <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Operational Status</h5>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="inline-block w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                            <span class="text-2xl font-black text-green-600">✓</span>
+                        </div>
+                        <p class="text-xs font-bold text-gray-600 uppercase">System Health</p>
+                        <p class="text-sm font-black text-gray-800 mt-1">Optimal</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                            <span class="text-2xl font-black text-blue-600">✓</span>
+                        </div>
+                        <p class="text-xs font-bold text-gray-600 uppercase">All Connections</p>
+                        <p class="text-sm font-black text-gray-800 mt-1">Active</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="inline-block w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+                            <span class="text-2xl font-black text-amber-600">✓</span>
+                        </div>
+                        <p class="text-xs font-bold text-gray-600 uppercase">Data Sync</p>
+                        <p class="text-sm font-black text-gray-800 mt-1">Real-Time</p>
+                    </div>
+                </div>
             </div>`;
         } else if (state.currentView === 'inventory') {
             return `
             <div class="flex justify-between items-center mb-10">
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger Terminal</h4>
-                <button onclick="alert('Add new item feature coming soon!')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ Add Item</button>
+                <button onclick="alert('Add new item feature')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ Add Item</button>
             </div>
             <div class="deck-panel overflow-hidden border border-gray-200">
                 <table class="w-full text-left text-[11px]">
@@ -328,16 +298,16 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-gray-700">
                         ${state.inventory.map(i => `
-                            <tr>
+                            <tr class="hover:bg-gray-50">
                                 <td class="p-4 font-black text-amber-600">${i.id}</td>
                                 <td class="p-4 font-bold text-gray-400 italic">${i.entry}</td>
                                 <td class="p-4 font-black uppercase text-gray-800">${i.prod}</td>
                                 <td class="p-4">${i.vol} ${i.unit}</td>
                                 <td class="p-4 font-bold italic text-gray-500">${i.loc}</td>
-                                <td class="p-4 text-green-600 font-black">${i.stage}</td>
+                                <td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black">${i.stage}</span></td>
                                 <td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td>
                                 <td class="p-4 text-center">
-                                    <button onclick="alert('Edit feature coming soon!')" class="text-amber-600 hover:text-amber-800 font-bold">✎</button>
+                                    <button onclick="alert('Edit ' + '${i.id}')" class="text-amber-600 hover:text-amber-800 font-bold">✎</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -348,47 +318,94 @@
             return `
             <div class="flex justify-between items-center mb-10">
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Orders Management</h4>
-                <button onclick="alert('Create order feature coming soon!')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
+                <button onclick="alert('Create order')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
             </div>
-            <div class="grid grid-cols-3 gap-6">
+            <div class="grid grid-cols-3 gap-6 mb-6">
                 <div class="deck-panel p-6">
                     <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Pending Orders</p>
                     <p class="text-3xl font-black text-orange-600">12</p>
+                    <p class="text-[10px] text-gray-500 mt-2">Awaiting payment</p>
                 </div>
                 <div class="deck-panel p-6">
                     <p class="text-[10px] font-black text-gray-500 uppercase mb-2">In Transit</p>
                     <p class="text-3xl font-black text-blue-600">8</p>
+                    <p class="text-[10px] text-gray-500 mt-2">On the way</p>
                 </div>
                 <div class="deck-panel p-6">
                     <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Delivered</p>
                     <p class="text-3xl font-black text-green-600">45</p>
+                    <p class="text-[10px] text-gray-500 mt-2">This month</p>
                 </div>
             </div>
-            <div class="deck-panel p-10 mt-6 text-center text-gray-400 italic font-bold">
-                Order Details Coming Soon...
+            <div class="deck-panel p-8">
+                <h5 class="text-sm font-black text-gray-800 uppercase mb-4">Recent Orders</h5>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div>
+                            <p class="text-xs font-black text-gray-800">ORD-2025-001</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST001</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black text-gray-800">${symbol} 50,000</p>
+                            <span class="text-[10px] px-2 py-1 bg-orange-100 text-orange-700 rounded">Pending</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div>
+                            <p class="text-xs font-black text-gray-800">ORD-2025-002</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST002</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black text-gray-800">${symbol} 75,000</p>
+                            <span class="text-[10px] px-2 py-1 bg-blue-100 text-blue-700 rounded">In Transit</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center p-3">
+                        <div>
+                            <p class="text-xs font-black text-gray-800">ORD-2025-003</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST003</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black text-gray-800">${symbol} 1,00,000</p>
+                            <span class="text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded">Delivered</span>
+                        </div>
+                    </div>
+                </div>
             </div>`;
         } else if (state.currentView === 'transit') {
             return `
             <div class="space-y-6">
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Transit Management</h4>
                 <div class="grid grid-cols-2 gap-6">
-                    <div class="deck-panel p-6">
-                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Active Shipments</h5>
-                        <div class="space-y-3">
-                            <div class="p-3 bg-blue-50 rounded">
-                                <p class="text-xs font-bold">SHP-2025-001</p>
-                                <p class="text-[10px] text-gray-600 mt-1">Delhi Port - 60% Complete</p>
+                    <div class="deck-panel p-8">
+                        <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Active Shipments</h5>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-001</p>
+                                <p class="text-sm font-bold text-gray-800 mt-2">Delhi Port</p>
+                                <div class="w-full bg-gray-200 rounded h-2 mt-2">
+                                    <div class="bg-blue-600 h-2 rounded" style="width: 60%"></div>
+                                </div>
+                                <p class="text-[10px] text-gray-600 mt-2">60% Complete - ETA: 2 days</p>
                             </div>
-                            <div class="p-3 bg-blue-50 rounded">
-                                <p class="text-xs font-bold">SHP-2025-002</p>
-                                <p class="text-[10px] text-gray-600 mt-1">Mumbai Port - 35% Complete</p>
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-002</p>
+                                <p class="text-sm font-bold text-gray-800 mt-2">Mumbai Port</p>
+                                <div class="w-full bg-gray-200 rounded h-2 mt-2">
+                                    <div class="bg-blue-600 h-2 rounded" style="width: 35%"></div>
+                                </div>
+                                <p class="text-[10px] text-gray-600 mt-2">35% Complete - ETA: 4 days</p>
                             </div>
                         </div>
                     </div>
-                    <div class="deck-panel p-6">
-                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Quick Actions</h5>
-                        <button onclick="alert('Track Location feature coming soon!')" class="w-full px-3 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700 mb-2">Track Location</button>
-                        <button onclick="alert('Schedule Delivery feature coming soon!')" class="w-full px-3 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Schedule Delivery</button>
+                    <div class="deck-panel p-8">
+                        <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Transit Commands</h5>
+                        <div class="space-y-3">
+                            <button onclick="alert('Track Location')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">📍 Track Location</button>
+                            <button onclick="alert('Schedule Delivery')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📅 Schedule Delivery</button>
+                            <button onclick="alert('Generate Documents')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📄 Generate Documents</button>
+                            <button onclick="alert('Report Issue')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">⚠️ Report Issue</button>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -398,28 +415,42 @@
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Financial Dashboard</h4>
                 <div class="grid grid-cols-4 gap-6">
                     <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Total Revenue</p>
-                        <p class="text-2xl font-black text-gray-800">${symbol} 45.8 Cr</p>
-                        <p class="text-[10px] text-green-600 mt-2">↑ 12% YoY</p>
+                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Revenue</p>
+                        <h4 class="text-2xl font-black text-gray-800">${symbol} 45.8 Cr</h4>
+                        <p class="text-[11px] text-green-600 mt-2 font-bold">↑ 12% YoY</p>
                     </div>
                     <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Total Expenses</p>
-                        <p class="text-2xl font-black text-gray-800">${symbol} 12.3 Cr</p>
-                        <p class="text-[10px] text-red-600 mt-2">↓ 5% YoY</p>
+                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Expenses</p>
+                        <h4 class="text-2xl font-black text-gray-800">${symbol} 12.3 Cr</h4>
+                        <p class="text-[11px] text-red-600 mt-2 font-bold">↓ 5% YoY</p>
                     </div>
                     <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Net Profit</p>
-                        <p class="text-2xl font-black text-gray-800">${symbol} 33.5 Cr</p>
-                        <p class="text-[10px] text-green-600 mt-2">↑ 18% YoY</p>
+                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Net Profit</p>
+                        <h4 class="text-2xl font-black text-gray-800">${symbol} 33.5 Cr</h4>
+                        <p class="text-[11px] text-green-600 mt-2 font-bold">↑ 18% YoY</p>
                     </div>
                     <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Pending Invoices</p>
-                        <p class="text-2xl font-black text-gray-800">23</p>
-                        <p class="text-[10px] text-orange-600 mt-2">Worth ${symbol} 2.1 Cr</p>
+                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Pending Invoices</p>
+                        <h4 class="text-2xl font-black text-gray-800">23</h4>
+                        <p class="text-[11px] text-orange-600 mt-2 font-bold">Worth ${symbol} 2.1 Cr</p>
                     </div>
                 </div>
-                <div class="deck-panel p-10 text-center text-gray-400 italic font-bold">
-                    Financial Charts Coming Soon...
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Monthly Breakdown</h5>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 border-b">
+                            <span class="text-xs font-bold text-gray-600">January 2025</span>
+                            <span class="text-xs font-black text-gray-800">${symbol} 8.5 Cr</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 border-b">
+                            <span class="text-xs font-bold text-gray-600">December 2024</span>
+                            <span class="text-xs font-black text-gray-800">${symbol} 7.2 Cr</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3">
+                            <span class="text-xs font-bold text-gray-600">November 2024</span>
+                            <span class="text-xs font-black text-gray-800">${symbol} 6.8 Cr</span>
+                        </div>
+                    </div>
                 </div>
             </div>`;
         } else if (state.currentView === 'analytics') {
@@ -427,15 +458,51 @@
             <div class="space-y-6">
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Analytics & Insights</h4>
                 <div class="grid grid-cols-2 gap-6">
-                    <div class="deck-panel p-8 h-64 flex items-center justify-center">
-                        <p class="text-gray-400 italic font-bold">Sales Trend Chart</p>
+                    <div class="deck-panel p-8 h-64 flex flex-col justify-between">
+                        <h5 class="text-sm font-black text-gray-800 uppercase">Sales Trend</h5>
+                        <div class="flex items-end justify-around h-40">
+                            <div class="bg-amber-600 w-8" style="height: 60%"></div>
+                            <div class="bg-amber-600 w-8" style="height: 75%"></div>
+                            <div class="bg-amber-600 w-8" style="height: 85%"></div>
+                            <div class="bg-amber-600 w-8" style="height: 70%"></div>
+                            <div class="bg-amber-600 w-8" style="height: 90%"></div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 text-center">Last 5 months trend</p>
                     </div>
-                    <div class="deck-panel p-8 h-64 flex items-center justify-center">
-                        <p class="text-gray-400 italic font-bold">Product Mix Chart</p>
+                    <div class="deck-panel p-8 h-64 flex flex-col justify-between">
+                        <h5 class="text-sm font-black text-gray-800 uppercase">Product Mix</h5>
+                        <div class="flex items-center justify-center gap-4">
+                            <div class="text-center">
+                                <div class="w-16 h-16 rounded-full bg-amber-600 flex items-center justify-center text-white font-black">45%</div>
+                                <p class="text-[10px] text-gray-600 mt-2">Teak</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-black">35%</div>
+                                <p class="text-[10px] text-gray-600 mt-2">Mahogany</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center text-white font-black">20%</div>
+                                <p class="text-[10px] text-gray-600 mt-2">Pine</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="deck-panel p-10 text-center text-gray-400 italic font-bold">
-                    Advanced Analytics Dashboard Coming Soon...
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-4">Key Metrics</h5>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 bg-gray-50 rounded">
+                            <p class="text-[10px] text-gray-600 uppercase font-bold">Avg Order Value</p>
+                            <p class="text-lg font-black text-gray-800 mt-1">${symbol} 2.5L</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded">
+                            <p class="text-[10px] text-gray-600 uppercase font-bold">Conversion Rate</p>
+                            <p class="text-lg font-black text-gray-800 mt-1">8.5%</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded">
+                            <p class="text-[10px] text-gray-600 uppercase font-bold">Customer Retention</p>
+                            <p class="text-lg font-black text-gray-800 mt-1">92%</p>
+                        </div>
+                    </div>
                 </div>
             </div>`;
         } else if (state.currentView === 'settings') {
@@ -444,14 +511,18 @@
                 <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Settings</h4>
                 <div class="grid grid-cols-2 gap-6">
                     <div class="deck-panel p-6">
-                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Account</h5>
-                        <div class="space-y-3">
+                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Account Information</h5>
+                        <div class="space-y-4">
                             <div>
-                                <label class="text-xs font-bold text-gray-600">Email</label>
+                                <label class="text-xs font-bold text-gray-600">Email Address</label>
                                 <input type="email" value="admin@dockside.com" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
                             </div>
                             <div>
-                                <label class="text-xs font-bold text-gray-600">Hub</label>
+                                <label class="text-xs font-bold text-gray-600">Full Name</label>
+                                <input type="text" value="Administrator" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-600">Hub Location</label>
                                 <input type="text" value="Gandhidham Hub" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
                             </div>
                         </div>
@@ -460,21 +531,36 @@
                         <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Preferences</h5>
                         <div class="space-y-3">
                             <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-2">
-                                <span class="text-sm">Email Notifications</span>
+                                <input type="checkbox" checked class="mr-3">
+                                <span class="text-sm text-gray-700">Email Notifications</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="mr-2">
-                                <span class="text-sm">SMS Alerts</span>
+                                <input type="checkbox" class="mr-3">
+                                <span class="text-sm text-gray-700">SMS Alerts</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-2">
-                                <span class="text-sm">2FA Enabled</span>
+                                <input type="checkbox" checked class="mr-3">
+                                <span class="text-sm text-gray-700">Two-Factor Authentication</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" checked class="mr-3">
+                                <span class="text-sm text-gray-700">Auto Backup</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" checked class="mr-3">
+                                <span class="text-sm text-gray-700">Data Analytics</span>
                             </label>
                         </div>
                     </div>
                 </div>
-                <button onclick="alert('Logout feature coming soon!')" class="px-6 py-2 bg-red-600 text-white font-black rounded hover:bg-red-700">Logout</button>
+                <div class="deck-panel p-6">
+                    <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Security</h5>
+                    <div class="space-y-2">
+                        <button onclick="alert('Change Password')" class="w-full px-4 py-2 border border-gray-300 text-gray-700 text-xs font-black rounded hover:bg-gray-50">🔐 Change Password</button>
+                        <button onclick="alert('View Activity Log')" class="w-full px-4 py-2 border border-gray-300 text-gray-700 text-xs font-black rounded hover:bg-gray-50">📋 View Activity Log</button>
+                    </div>
+                </div>
+                <button onclick="alert('Logged out!')" class="w-full px-6 py-2 bg-red-600 text-white font-black rounded hover:bg-red-700">🚪 Logout</button>
             </div>`;
         }
         
