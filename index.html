@@ -10,14 +10,19 @@
 :root { --obsidian:#05070A; --panel:#0D1117; --glass:rgba(22,27,34,0.7); }
 body{font-family:'Inter',sans-serif;background:var(--obsidian);margin:0;overflow:hidden;color:#94a3b8;}
 .italic-brand{font-family:'Plus Jakarta Sans',sans-serif;font-style:italic;}
+
+/* LOGIN UI */
 .corporate-card{background:linear-gradient(to bottom,#fff 0%,#e2e8f0 100%);border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,0.6);border:1px solid #94a3b8;max-width:460px;width:100%;}
 .corporate-header{background:linear-gradient(180deg,#475569 0%,#1e293b 100%);color:white;padding:12px 18px;font-weight:800;display:flex;justify-content:space-between;border-radius:4px 4px 0 0;}
 .form-row{display:flex;align-items:center;margin-bottom:12px;gap:12px;padding:0 30px;}
 .form-label{width:120px;font-size:11px;font-weight:800;color:#334155;text-transform:uppercase;}
 .form-input-login{flex:1;padding:6px 10px;border:1px solid #94a3b8;font-size:13px;color:#000;border-radius:2px;background:white;}
 .action-btn-login{background:linear-gradient(to bottom,#f8fafc 0%,#cbd5e1 100%);border:1px solid #64748b;padding:10px 20px;font-weight:900;font-size:12px;color:#1e293b;cursor:pointer;}
+
+/* DASHBOARD COMPONENTS */
 .glass-panel{background:var(--glass);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.05);border-radius:8px;}
 .metric-value{color:white;font-weight:900;}
+.status-pill{padding:2px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-thumb{background:#D97706;border-radius:10px;}
 </style>
@@ -31,17 +36,19 @@ let state={
 authenticated:false,
 currentView:'dashboard',
 currency:'INR',
+// Extended Data Structures
 inventory:[
-{id:'SKU001',entry:'24-02-26',prod:'Teak Logs',vol:'145.5',unit:'CFT',loc:'Plot 10',stage:'In Warehouse',price:850},
-{id:'SKU002',entry:'18-02-26',prod:'Sal Wood',vol:'88',unit:'CFT',loc:'Mundra CFS',stage:'Reserved',price:720}
+    {id:'SKU001',entry:'24-02-26',prod:'Teak Logs',cat:'Logs',stock:450,res:30,avail:420,reorder:100,loc:'Plot 10',price:850,unit:'CFT',stage:'In Warehouse'},
+    {id:'SKU002',entry:'18-02-26',prod:'Sal Wood',cat:'Timber',stock:200,res:112,avail:88,reorder:50,loc:'Mundra CFS',price:720,unit:'CFT',stage:'Reserved'}
 ],
 orders:[
-{id:'ORD901',client:'Shree Timber',date:'25-02-26',status:'Packed',value:240000},
-{id:'ORD902',client:'Metro Ply',date:'24-02-26',status:'Dispatched',value:540000}
+    {id:'ORD901',client:'Shree Timber',date:'25-02-26',deadline:'28-02-26',status:'Packed',payment:'Pending',value:240000,hub:'Gandhidham'},
+    {id:'ORD902',client:'Metro Ply',date:'24-02-26',deadline:'26-02-26',status:'Dispatched',payment:'Partial',value:540000,hub:'Gandhidham'}
 ],
 transit:[
-{id:'TR441',origin:'Gandhidham',dest:'Ahmedabad',eta:'27-02-26',status:'In Transit',cost:18000}
-]
+    {id:'TR441',origin:'Gandhidham',dest:'Ahmedabad',carrier:'VRL Logistics',dispatch:'25-02-26',eta:'27-02-26',status:'In Transit',cost:18000,dist:'300km'}
+],
+finance:{ revenueMTD: 4.2, receivables: 84.5, opsCost: 1.8, netProfit: 2.4, margin: 24.2 }
 };
 
 function handleLogin(){state.authenticated=true;renderShell();}
@@ -50,17 +57,24 @@ function switchView(v){state.currentView=v;renderShell();}
 function renderShell(){
 if(!state.authenticated){
 document.getElementById('app').innerHTML=`
-<div class="min-h-screen flex items-center justify-center bg-black text-white">
-<div class="corporate-card">
-<div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
-<div class="py-10">
-<div class="form-row"><label class="form-label">Login ID</label><input class="form-input-login" value="demo@dockside.com"></div>
-<div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
-<div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option></select></div>
-<div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-26</option></select></div>
-<div class="flex justify-center mt-8"><button onclick="handleLogin()" class="action-btn-login">LOGIN</button></div>
-</div>
-</div>
+<div class="min-h-screen flex items-center justify-center bg-black relative">
+    <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-30">
+    <div class="corporate-card relative z-10">
+        <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black tracking-widest">GANDHIDHAM HUB</span></div>
+        <div class="py-10">
+            <div class="form-row"><label class="form-label">Login ID</label><input class="form-input-login" value="demo@dockside.com"></div>
+            <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
+            <div class="form-row"><label class="form-label">User Type</label>
+                <select class="form-input-login">
+                    <option>Admin</option>
+                    <option>Buyer</option>
+                    <option>Seller</option>
+                </select>
+            </div>
+            <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-26</option></select></div>
+            <div class="flex justify-center mt-8"><button onclick="handleLogin()" class="action-btn-login">LOGIN TERMINAL</button></div>
+        </div>
+    </div>
 </div>`;
 return;
 }
@@ -69,159 +83,249 @@ const symbol=state.currency==='INR'?'₹':'$';
 
 document.getElementById('app').innerHTML=`
 <div class="flex h-screen overflow-hidden">
-<aside class="w-64 bg-[#0D1117] border-r border-white/5 flex flex-col">
-<div class="p-8 text-white font-black italic-brand text-2xl">DOCKSIDE.</div>
-<nav class="flex-1 px-4 space-y-2">
-${['dashboard','inventory','orders','transit','finance','analytics','settings'].map(i=>`
-<button onclick="switchView('${i}')" class="w-full text-left px-4 py-3 rounded text-xs font-bold uppercase ${state.currentView===i?'bg-amber-600 text-white':'text-slate-500 hover:text-white'}">${i}</button>`).join('')}
-</nav>
+<aside class="w-64 bg-[#0D1117] border-r border-white/5 flex flex-col shadow-2xl z-20">
+    <div class="p-8 text-white font-black italic-brand text-2xl tracking-tighter">DOCKSIDE.</div>
+    <nav class="flex-1 px-4 space-y-1">
+    ${['dashboard','inventory','orders','transit','finance','analytics','settings'].map(i=>`
+    <button onclick="switchView('${i}')" class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all ${state.currentView===i?'bg-amber-600 text-white shadow-lg':'text-slate-500 hover:text-white hover:bg-white/5'}">${i}</button>`).join('')}
+    </nav>
+    <div class="p-6 border-t border-white/5 text-[9px] font-bold text-slate-600 uppercase">v1.0.0 • Operational</div>
 </aside>
 
 <div class="flex-1 flex flex-col overflow-hidden">
-<header class="h-16 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]">
-<h3 class="text-white uppercase text-sm font-black">${state.currentView}</h3>
-<div>
-<button onclick="state.currency='INR';renderShell();" class="px-3 py-1 text-xs ${state.currency==='INR'?'bg-amber-600 text-white':'text-slate-400'}">INR</button>
-<button onclick="state.currency='USD';renderShell();" class="px-3 py-1 text-xs ${state.currency==='USD'?'bg-amber-600 text-white':'text-slate-400'}">USD</button>
-</div>
-</header>
-<main class="flex-1 overflow-y-auto p-10">${renderContent(symbol)}</main>
+    <header class="h-16 flex items-center justify-between px-10 border-b border-white/5 bg-[#0D1117]/80 backdrop-blur-md">
+        <h3 class="text-white uppercase text-xs font-black tracking-widest">${state.currentView}</h3>
+        <div class="flex items-center gap-6">
+            <div class="flex bg-black/40 rounded p-1 border border-white/5">
+                <button onclick="state.currency='INR';renderShell();" class="px-3 py-1 text-[9px] font-bold rounded ${state.currency==='INR'?'bg-amber-600 text-white':'text-slate-400'}">INR</button>
+                <button onclick="state.currency='USD';renderShell();" class="px-3 py-1 text-[9px] font-bold rounded ${state.currency==='USD'?'bg-amber-600 text-white':'text-slate-400'}">USD</button>
+            </div>
+            <span class="text-green-500 text-[10px] font-black uppercase">● Gandhidham Hub</span>
+        </div>
+    </header>
+    <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderContent(symbol)}</main>
 </div>
 </div>`;
 }
 
 function renderContent(symbol){
+    const units = state.currency === 'INR' ? 'Cr' : 'M';
 
-if(state.currentView==='dashboard'){
-return`
-<div class="grid grid-cols-4 gap-6 mb-10">
-${[
-['Total Stock',symbol+' 12.4 Cr'],
-['Open Orders','24'],
-['Active SKUs','186'],
-['Pending Payments',symbol+' 1.2 Cr']
-].map(c=>`
-<div class="glass-panel p-6">
-<p class="text-xs uppercase text-slate-500">${c[0]}</p>
-<h4 class="metric-value text-2xl mt-2">${c[1]}</h4>
-</div>`).join('')}
-</div>
+    if(state.currentView==='dashboard'){
+        return `
+        <div class="grid grid-cols-4 gap-6 mb-10">
+            ${[
+                {l:'Stock Value', v:symbol+' 12.4 '+units, t:'+8.2%', c:'text-green-500'},
+                {l:'Open Orders', v:state.orders.length, t:'+3 Today', c:'text-amber-500'},
+                {l:'Low Stock Alerts', v:'12', t:'Critical', c:'text-red-500'},
+                {l:'Delayed Shipments', v:'04', t:'Urgent', c:'text-red-600'}
+            ].map(c=>`
+            <div class="glass-panel p-6 border-b-2 border-transparent hover:border-amber-600">
+                <p class="text-[9px] font-black text-slate-500 uppercase mb-3 tracking-widest">${c.l}</p>
+                <h4 class="metric-value text-2xl">${c.v}</h4>
+                <p class="${c.c} text-[9px] font-bold mt-2 italic uppercase">${c.t} Trend</p>
+            </div>`).join('')}
+        </div>
 
-<div class="grid grid-cols-3 gap-6">
-<div class="glass-panel p-6 col-span-2">
-<h4 class="text-white font-bold mb-4">Revenue (Last 6 Months)</h4>
-<div class="flex items-end gap-4 h-40">
-${[30,50,70,60,90,75].map(h=>`<div style="height:${h}%" class="flex-1 bg-amber-600"></div>`).join('')}
-</div>
-</div>
-<div class="glass-panel p-6">
-<h4 class="text-white font-bold mb-4">Capacity Usage</h4>
-<div class="text-4xl text-white font-black">72%</div>
-<p class="text-green-500 text-xs mt-2">Operationally Stable</p>
-</div>
-</div>`;
-}
+        <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-8 glass-panel p-8">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest mb-8">Revenue flow analysis</h4>
+                <div class="flex items-end gap-3 h-48 opacity-40">
+                    ${[30,60,45,90,70,55,85,40].map(h=>`<div style="height:${h}%" class="flex-1 bg-amber-600 rounded-t-sm shadow-[0_0_15px_rgba(217,119,6,0.1)]"></div>`).join('')}
+                </div>
+            </div>
+            <div class="col-span-4 glass-panel p-8">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest mb-8">Capacity Utilization</h4>
+                <div class="relative w-32 h-32 mx-auto">
+                    <div class="absolute inset-0 rounded-full border-8 border-slate-800"></div>
+                    <div class="absolute inset-0 rounded-full border-8 border-amber-600 border-t-transparent border-l-transparent rotate-45"></div>
+                    <div class="absolute inset-0 flex items-center justify-center font-black text-white text-2xl">72%</div>
+                </div>
+                <p class="text-center text-[10px] mt-6 font-bold text-slate-500 uppercase">Plot 10 Gandhidham Hub</p>
+            </div>
+        </div>`;
+    }
 
-if(state.currentView==='inventory'){
-return`
-<h4 class="text-white font-bold mb-6">Inventory Ledger</h4>
-<div class="glass-panel overflow-hidden">
-<table class="w-full text-xs">
-<thead class="bg-white/5 text-slate-400 uppercase">
-<tr><th class="p-4">SKU</th><th>Product</th><th>Volume</th><th>Location</th><th>Status</th><th class="text-right pr-4">Price</th></tr>
-</thead>
-<tbody>
-${state.inventory.map(i=>`
-<tr class="border-t border-white/5">
-<td class="p-4 text-amber-500">${i.id}</td>
-<td>${i.prod}</td>
-<td>${i.vol} ${i.unit}</td>
-<td>${i.loc}</td>
-<td>${i.stage}</td>
-<td class="text-right pr-4">${symbol} ${i.price}</td>
-</tr>`).join('')}
-</tbody>
-</table>
-</div>`;
-}
+    if(state.currentView==='inventory'){
+        return `
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            ${['Total SKU: 186','Aging > 60d: 14%','Fast Moving: 22','Slow Moving: 08'].map(m=>`
+            <div class="bg-white/5 p-3 rounded text-[10px] font-bold text-white text-center uppercase tracking-widest border border-white/5">${m}</div>`)}
+        </div>
+        <div class="flex justify-between items-center mb-6">
+            <h4 class="text-white font-black uppercase tracking-widest text-xs italic">Industrial Stock Ledger</h4>
+            <div class="flex gap-2">
+                <button class="bg-white/5 text-[9px] px-4 py-2 font-black uppercase rounded border border-white/10 hover:bg-white/10">Export CSV</button>
+                <button class="bg-amber-600 text-white text-[9px] px-4 py-2 font-black uppercase rounded shadow-lg">+ Add SKU</button>
+            </div>
+        </div>
+        <div class="glass-panel overflow-hidden">
+            <table class="w-full text-left text-[10px]">
+                <thead class="bg-white/5 text-slate-500 font-black uppercase tracking-widest">
+                    <tr><th class="p-5">SKU ID</th><th>Product</th><th>Cat</th><th>Stock</th><th>Avail</th><th>Whse</th><th>Stage</th><th class="text-right pr-5">Value</th></tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    ${state.inventory.map(i=>`
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-5 text-amber-500 font-black tracking-widest">${i.id}</td>
+                        <td class="text-white font-bold uppercase">${i.prod}</td>
+                        <td>${i.cat}</td>
+                        <td>${i.stock} ${i.unit}</td>
+                        <td class="text-green-500 font-bold">${i.avail} ${i.unit}</td>
+                        <td class="text-slate-500 italic">${i.loc}</td>
+                        <td><span class="status-pill ${i.stage==='In Warehouse'?'bg-green-500/10 text-green-500':'bg-amber-500/10 text-amber-500'}">${i.stage}</span></td>
+                        <td class="text-right pr-5 text-white font-black">${symbol}${(i.stock*i.price).toLocaleString()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
 
-if(state.currentView==='orders'){
-return`
-<h4 class="text-white font-bold mb-6">Order Management</h4>
-<div class="glass-panel overflow-hidden">
-<table class="w-full text-xs">
-<thead class="bg-white/5 text-slate-400 uppercase">
-<tr><th class="p-4">Order ID</th><th>Client</th><th>Date</th><th>Status</th><th class="text-right pr-4">Value</th></tr>
-</thead>
-<tbody>
-${state.orders.map(o=>`
-<tr class="border-t border-white/5">
-<td class="p-4 text-amber-500">${o.id}</td>
-<td>${o.client}</td>
-<td>${o.date}</td>
-<td>${o.status}</td>
-<td class="text-right pr-4">${symbol} ${o.value}</td>
-</tr>`).join('')}
-</tbody>
-</table>
-</div>`;
-}
+    if(state.currentView==='orders'){
+        return `
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="glass-panel p-6 border-l-4 border-amber-600"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Orders Today</p><h4 class="text-xl metric-value">12</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-blue-500"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">In Fulfillment</p><h4 class="text-xl metric-value">08</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-green-500"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Success Rate</p><h4 class="text-xl metric-value">98.2%</h4></div>
+            <div class="glass-panel p-6 border-l-4 border-white/5 flex items-center justify-center font-black text-[10px] text-amber-600 uppercase cursor-pointer">View Order Trends →</div>
+        </div>
+        <div class="glass-panel overflow-hidden">
+            <table class="w-full text-left text-[10px]">
+                <thead class="bg-white/5 text-slate-500 font-black uppercase tracking-widest">
+                    <tr><th class="p-5">Order ID</th><th>Client</th><th>Deadline</th><th>Hub</th><th>Payment</th><th>Status</th><th class="text-right pr-5">Value</th></tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    ${state.orders.map(o=>`
+                    <tr class="hover:bg-white/[0.02]">
+                        <td class="p-5 text-amber-500 font-black tracking-widest">${o.id}</td>
+                        <td class="text-white font-bold">${o.client}</td>
+                        <td class="text-red-500/70 italic">${o.deadline}</td>
+                        <td>${o.hub}</td>
+                        <td class="font-bold">${o.payment}</td>
+                        <td><span class="status-pill bg-blue-500/10 text-blue-400">${o.status}</span></td>
+                        <td class="text-right pr-5 text-white font-black">${symbol}${o.value.toLocaleString()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
 
-if(state.currentView==='transit'){
-return`
-<h4 class="text-white font-bold mb-6">Transit Tracking</h4>
-<div class="glass-panel p-6 space-y-4">
-${state.transit.map(t=>`
-<div class="border-b border-white/5 pb-4">
-<p class="text-white font-bold">${t.id}</p>
-<p class="text-xs text-slate-400">${t.origin} → ${t.dest}</p>
-<p class="text-xs">ETA: ${t.eta}</p>
-<p class="text-green-500 text-xs">${t.status}</p>
-<p class="text-xs">Cost: ${symbol} ${t.cost}</p>
-</div>`).join('')}
-</div>`;
-}
+    if(state.currentView==='transit'){
+        return `
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="glass-panel p-6"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">On-Time %</p><h4 class="text-xl metric-value">94.5%</h4></div>
+            <div class="glass-panel p-6"><p class="text-[9px] font-black text-slate-500 uppercase mb-2">Avg Duration</p><h4 class="text-xl metric-value">18.4 Hrs</h4></div>
+            <div class="glass-panel p-6 bg-amber-600/5"><p class="text-[9px] font-black text-amber-600 uppercase mb-2">Fleet Active</p><h4 class="text-xl metric-value">05 Vehicles</h4></div>
+        </div>
+        <div class="glass-panel overflow-hidden">
+            <table class="w-full text-left text-[10px]">
+                <thead class="bg-white/5 text-slate-500 font-black uppercase tracking-widest">
+                    <tr><th class="p-5">Shipment ID</th><th>Route</th><th>Carrier</th><th>ETA</th><th>Dist.</th><th>Status</th><th class="text-right pr-5">Freight</th></tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    ${state.transit.map(t=>`
+                    <tr class="hover:bg-white/[0.02]">
+                        <td class="p-5 text-amber-500 font-black tracking-widest">${t.id}</td>
+                        <td class="text-white uppercase font-bold">${t.origin} → ${t.dest}</td>
+                        <td>${t.carrier}</td>
+                        <td class="text-blue-400 italic">${t.eta}</td>
+                        <td>${t.dist}</td>
+                        <td><span class="status-pill bg-blue-500/10 text-blue-400">${t.status}</span></td>
+                        <td class="text-right pr-5 text-white font-black">${symbol}${t.cost.toLocaleString()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
 
-if(state.currentView==='finance'){
-return`
-<div class="grid grid-cols-3 gap-6">
-${[
-['Total Revenue',symbol+' 8.4 Cr'],
-['Operational Cost',symbol+' 5.1 Cr'],
-['Net Profit',symbol+' 3.3 Cr']
-].map(c=>`
-<div class="glass-panel p-6">
-<p class="text-xs uppercase text-slate-400">${c[0]}</p>
-<h4 class="text-white font-black text-2xl mt-2">${c[1]}</h4>
-</div>`).join('')}
-</div>`;
-}
+    if(state.currentView==='finance'){
+        return `
+        <div class="grid grid-cols-4 gap-6 mb-10">
+            ${[
+                {l:'Net Profit', v:symbol+' '+state.finance.netProfit+' '+units, c:'text-green-500'},
+                {l:'Receivables', v:symbol+' '+state.finance.receivables+' L', c:'text-red-500'},
+                {l:'Operational Cost', v:symbol+' '+state.finance.opsCost+' '+units, c:'text-slate-400'},
+                {l:'Profit Margin', v:state.finance.margin+'%', c:'text-amber-500'}
+            ].map(c=>`
+            <div class="glass-panel p-8">
+                <p class="text-[9px] font-black text-slate-500 uppercase mb-3 tracking-widest">${c.l}</p>
+                <h4 class="metric-value text-3xl ${c.c}">${c.v}</h4>
+            </div>`).join('')}
+        </div>
+        <div class="grid grid-cols-2 gap-8">
+            <div class="glass-panel p-8">
+                <h4 class="text-white text-xs font-black uppercase mb-8">Monthly Revenue Trend</h4>
+                <div class="h-48 flex items-end justify-between gap-1 opacity-20">
+                    ${[20,30,40,50,60,70,80,70,60,50,40,30,20,40,60,80,100].map(h=>`<div style="height:${h}%" class="flex-1 bg-green-500 rounded-t-sm"></div>`).join('')}
+                </div>
+            </div>
+            <div class="glass-panel p-8">
+                <h4 class="text-white text-xs font-black uppercase mb-8">Financial Reports</h4>
+                <div class="space-y-3">
+                    ${['Download P&L Statement','Download GST Summary','Export Invoice Ledger'].map(r=>`
+                    <button class="w-full text-left p-4 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-slate-300 hover:bg-white/10 uppercase tracking-widest">
+                        ↓ ${r}
+                    </button>`)}
+                </div>
+            </div>
+        </div>`;
+    }
 
-if(state.currentView==='analytics'){
-return`
-<div class="glass-panel p-6">
-<h4 class="text-white font-bold mb-4">Performance Metrics</h4>
-<ul class="space-y-2 text-xs">
-<li>Inventory Turnover Ratio: <span class="text-white font-bold">4.2x</span></li>
-<li>Fulfillment Accuracy: <span class="text-green-500 font-bold">96%</span></li>
-<li>Average Order Value: <span class="text-white font-bold">${symbol} 2.4L</span></li>
-<li>Revenue per SKU: <span class="text-white font-bold">${symbol} 1.8L</span></li>
-</ul>
-</div>`;
-}
+    if(state.currentView==='analytics'){
+        return `
+        <div class="grid grid-cols-12 gap-8">
+            <div class="col-span-4 glass-panel p-8 space-y-8">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4 italic">Strategic KPIs</h4>
+                ${[
+                    {l:'Inventory Turnover', v:'4.2x'},
+                    {l:'Fullfillment Accuracy', v:'96%'},
+                    {l:'Avg Order Value', v:symbol+' 2.4L'},
+                    {l:'Cost per Shipment', v:symbol+' 18k'}
+                ].map(k=>`
+                <div><p class="text-[9px] font-black text-slate-500 uppercase mb-2">${k.l}</p><h4 class="text-2xl metric-value text-amber-500">${k.v}</h4></div>`)}
+            </div>
+            <div class="col-span-8 glass-panel p-8">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest mb-10 text-center italic">Hub Efficiency Comparison</h4>
+                <div class="flex items-center justify-center gap-16 h-64">
+                    <div class="flex flex-col items-center">
+                        <div class="w-24 bg-amber-600 rounded shadow-2xl h-48 opacity-80"></div>
+                        <p class="mt-4 text-[10px] font-black text-white uppercase tracking-widest">Gandhidham</p>
+                    </div>
+                    <div class="flex flex-col items-center opacity-30">
+                        <div class="w-24 bg-slate-600 rounded h-32"></div>
+                        <p class="mt-4 text-[10px] font-black uppercase tracking-widest">Mundra Hub</p>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
 
-if(state.currentView==='settings'){
-return`
-<div class="glass-panel p-6 space-y-4">
-<h4 class="text-white font-bold">Admin Settings</h4>
-<p class="text-xs">Admin Name: <span class="text-white">Executive Operator</span></p>
-<p class="text-xs">Hub: <span class="text-white">Gandhidham</span></p>
-<p class="text-xs">Financial Year: <span class="text-white">2025-26</span></p>
-<p class="text-xs">System Version: <span class="text-white">v1.0.0</span></p>
-</div>`;
-}
+    if(state.currentView==='settings'){
+        return `
+        <div class="grid grid-cols-12 gap-8">
+            <div class="col-span-6 glass-panel p-8 space-y-6">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4 italic">Organization Profile</h4>
+                <div class="grid grid-cols-2 gap-6">
+                    <div><p class="text-[9px] font-black text-slate-500 uppercase mb-1">Company</p><p class="text-xs font-bold text-white">Dockside Timber Logs Ltd.</p></div>
+                    <div><p class="text-[9px] font-black text-slate-500 uppercase mb-1">GST Number</p><p class="text-xs font-bold text-white tracking-widest">24AAAAA0000A1Z5</p></div>
+                    <div><p class="text-[9px] font-black text-slate-500 uppercase mb-1">Financial Year</p><p class="text-xs font-bold text-white">2025-2026</p></div>
+                    <div><p class="text-[9px] font-black text-slate-500 uppercase mb-1">Current Currency</p><p class="text-xs font-bold text-amber-500">${state.currency}</p></div>
+                </div>
+            </div>
+            <div class="col-span-6 glass-panel p-8 space-y-6">
+                <h4 class="text-white text-xs font-black uppercase tracking-widest border-b border-white/5 pb-4 italic">Security Terminal</h4>
+                <div class="space-y-4">
+                    <button class="w-full p-4 bg-white/5 border border-white/5 rounded text-[10px] font-black text-white text-left uppercase">Change Administrator Password</button>
+                    <div class="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded">
+                        <span class="text-[10px] font-black text-white uppercase">2-Factor Authentication (2FA)</span>
+                        <div class="w-10 h-5 bg-green-500/20 rounded-full flex items-center px-1 border border-green-500/50"><div class="w-3 h-3 bg-green-500 rounded-full ml-auto"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
 
-return``;
+    return``;
 }
 
 renderShell();
