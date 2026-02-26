@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
-        /* CHALK WHITE TRANSITION */
         :root { 
             --chalk-white: #F3F4F6; 
             --panel-light: rgba(255, 255, 255, 0.8); 
@@ -15,52 +14,33 @@
             --accent: #D97706; 
         }
         
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--chalk-white); 
-            margin: 0; 
-            overflow: hidden; 
-            color: #374151; 
-        }
-        
+        body { font-family: 'Inter', sans-serif; background-color: var(--chalk-white); margin: 0; overflow: hidden; color: #374151; }
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
 
-        /* 3D GLASSMORPHISM ON LIGHT THEME */
         .deck-panel {
             background: var(--panel-light);
             backdrop-filter: blur(25px);
             border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1),
-                        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8);
             border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .deck-panel:hover {
-            transform: translateY(-5px) translateZ(20px);
-            border-color: var(--accent);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-        }
+        .deck-panel:hover { transform: translateY(-5px) translateZ(20px); border-color: var(--accent); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15); }
 
-        /* RESTORED CORPORATE GATEWAY */
-        .corporate-card { 
-            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
-            border-radius: 4px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
-            border: 1px solid #94a3b8; 
-            max-width: 460px; 
-            width: 100%; 
-        }
-        .corporate-header { 
-            background: linear-gradient(180deg, #475569 0%, #1e293b 100%); 
-            color: white; padding: 12px 18px; font-weight: 800; 
-            display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; 
-        }
+        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #94a3b8; max-width: 460px; width: 100%; }
+        .corporate-header { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); color: white; padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; }
         .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
         .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
         .form-input-login { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; background: white; }
         .action-btn-login { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; }
 
-        /* SCROLLBAR */
+        /* MODAL SLIDING PANEL STYLES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: white; box-shadow: -10px 0 40px rgba(0,0,0,0.2); border-left: 1px solid #ddd; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 101; overflow-y: auto; }
+        .modal-panel.active { transform: translateX(0); }
+        .form-input-reg { width: 100%; border: 1px solid #ddd; padding: 10px; color: #333; font-size: 13px; border-radius: 4px; background: #f9f9f9; }
+
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
@@ -71,11 +51,11 @@
     <div class="min-h-screen flex flex-col lg:flex-row">
         <div class="hidden lg:flex lg:w-1/2 relative bg-black">
             <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
-                <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen text-white">
+                <h1 class="text-6xl font-black italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
                 <div class="space-y-6">
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
+                    <p class="text-2xl italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
@@ -83,8 +63,8 @@
             <div class="corporate-card">
                 <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
                 <div class="py-10">
-                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" id="loginEmail" value="demo@dockside.com"></div>
-                    <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" id="loginPassword" value="demo123456"></div>
+                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" value="demo@dockside.com"></div>
+                    <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
                     <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
                     <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
                     <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
@@ -97,11 +77,6 @@
 </div>
 
 <script>
-    // ==================== API CONFIGURATION ====================
-    const API_BASE_URL = 'https://dockside-api.onrender.com/api';
-    // For local development: 'http://localhost:3000/api'
-
-    // ==================== STATE MANAGEMENT ====================
     let state = {
         authenticated: false,
         currentView: 'dashboard',
@@ -109,49 +84,15 @@
         hub: 'Gandhidham Hub',
         inventory: [
             { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' },
-            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' },
-            { id: 'SKU003', entry: '22-02-26', prod: 'Pine Wood', vol: '220.00', unit: 'CFT', loc: 'Plot 08', stage: 'Dispatched', price: '650' }
+            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' }
         ]
     };
 
-    async function apiCall(endpoint, options = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        const token = localStorage.getItem('auth_token');
-        
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        try {
-            const response = await fetch(url, {
-                ...options,
-                headers
-            });
-            
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error(`API Call failed for ${endpoint}:`, error);
-            throw error;
-        }
-    }
-
-    function handleLogin() { 
-        state.authenticated = true; 
-        renderShell(); 
-    }
-
-    function switchView(view) { 
-        state.currentView = view; 
-        renderShell(); 
+    function handleLogin() { state.authenticated = true; renderShell(); }
+    function switchView(view) { state.currentView = view; renderShell(); }
+    function togglePanel(show) { 
+        document.getElementById('modalOverlay').classList.toggle('active', show);
+        document.getElementById('addStockPanel').classList.toggle('active', show);
     }
 
     function renderShell() {
@@ -167,404 +108,57 @@
                             class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
                             ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
                             ${item}
-                        </button>
-                    `).join('')}
+                        </button>`).join('')}
                 </nav>
             </aside>
-
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
                     <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
-                    <div class="flex items-center gap-4 text-[10px] font-black">
-                        <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
-                        <div class="w-px h-6 bg-gray-300 mx-2"></div>
-                        <p class="text-gray-400">v2.0.0</p>
-                    </div>
+                    <div class="flex items-center gap-4 text-[10px] font-black"><span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span></div>
                 </header>
                 <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderMainContent(symbol)}</main>
+            </div>
+        </div>
+
+        <div id="modalOverlay" class="modal-overlay" onclick="togglePanel(false)"></div>
+        <div id="addStockPanel" class="modal-panel">
+            <div class="p-8 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-black text-gray-800 uppercase italic">Register New Stock</h3>
+                <button onclick="togglePanel(false)" class="text-gray-400 hover:text-red-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Product Name</label><input type="text" placeholder="e.g. Teak Logs" class="form-input-reg"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Purchase Price (₹)</label><input type="number" class="form-input-reg"></div>
+                    <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Unit</label><select class="form-input-reg"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
+                </div>
+                <div><label class="text-[10px] font-black text-amber-600 uppercase block mb-2">Warehouse Location</label><select class="form-input-reg"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS</option><option>Adani Logi-Park</option></select></div>
+                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-widest shadow-lg hover:bg-amber-700 transition-all mt-6">Confirm Entry</button>
             </div>
         </div>`;
     }
 
     function renderMainContent(symbol) {
         if (state.currentView === 'dashboard') {
-            return `
-            <div class="grid grid-cols-4 gap-6 mb-10">
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Stock Value</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 12.4 Cr</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Open Orders</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">24</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Pending Payments</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 1.2 Cr</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Risk Alerts</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">04</h4>
-                </div>
+            return `<div class="grid grid-cols-4 gap-6 mb-10">
+                ${[{l:'Stock Value', v:symbol+' 12.4 Cr'}, {l:'Open Orders', v:'24'}, {l:'Pending Payments', v:symbol+' 1.2 Cr'}, {l:'Risk Alerts', v:'04'}].map(k => `
+                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">${k.l}</p><h4 class="text-2xl font-black text-gray-800 tracking-tighter">${k.v}</h4></div>`).join('')}
             </div>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Portfolio Performance</h5>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-600">Teak Logs</span>
-                                <span class="text-xs font-black text-gray-800">78%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded h-2">
-                                <div class="bg-amber-600 h-2 rounded" style="width: 78%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-600">Mahogany</span>
-                                <span class="text-xs font-black text-gray-800">65%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded h-2">
-                                <div class="bg-amber-600 h-2 rounded" style="width: 65%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-600">Pine Wood</span>
-                                <span class="text-xs font-black text-gray-800">92%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded h-2">
-                                <div class="bg-amber-600 h-2 rounded" style="width: 92%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Quick Actions</h5>
-                    <div class="space-y-3">
-                        <button class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
-                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Track Shipment</button>
-                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Generate Invoice</button>
-                        <button class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Sync Data</button>
-                    </div>
-                </div>
-            </div>
-            <div class="deck-panel p-8 mt-6">
-                <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Operational Status</h5>
-                <div class="grid grid-cols-3 gap-6">
-                    <div class="text-center">
-                        <div class="inline-block w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                            <span class="text-2xl font-black text-green-600">✓</span>
-                        </div>
-                        <p class="text-xs font-bold text-gray-600 uppercase">System Health</p>
-                        <p class="text-sm font-black text-gray-800 mt-1">Optimal</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                            <span class="text-2xl font-black text-blue-600">✓</span>
-                        </div>
-                        <p class="text-xs font-bold text-gray-600 uppercase">All Connections</p>
-                        <p class="text-sm font-black text-gray-800 mt-1">Active</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="inline-block w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                            <span class="text-2xl font-black text-amber-600">✓</span>
-                        </div>
-                        <p class="text-xs font-bold text-gray-600 uppercase">Data Sync</p>
-                        <p class="text-sm font-black text-gray-800 mt-1">Real-Time</p>
-                    </div>
-                </div>
-            </div>`;
+            <div class="deck-panel p-10 h-64 flex items-center justify-center italic text-gray-400 font-black tracking-[0.5em] uppercase">Operational Terminal Active</div>`;
         } else if (state.currentView === 'inventory') {
-            return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger Terminal</h4>
-                <button onclick="alert('Add new item feature')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ Add Item</button>
-            </div>
+            return `<div class="flex justify-between items-center mb-10"><h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger Terminal</h4><button onclick="togglePanel(true)" class="px-6 py-2 bg-amber-600 text-white text-[10px] font-black rounded hover:bg-amber-700 uppercase tracking-widest shadow-lg">+ Add Item</button></div>
             <div class="deck-panel overflow-hidden border border-gray-200">
                 <table class="w-full text-left text-[11px]">
                     <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase">
-                        <tr>
-                            <th class="p-4">SKU</th>
-                            <th class="p-4">Entry Date</th>
-                            <th class="p-4">Product</th>
-                            <th class="p-4">Volume</th>
-                            <th class="p-4">Warehouse</th>
-                            <th class="p-4">Stage</th>
-                            <th class="p-4 text-right">Price</th>
-                            <th class="p-4 text-center">Action</th>
-                        </tr>
+                        <tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-right">Price</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-gray-700">
-                        ${state.inventory.map(i => `
-                            <tr class="hover:bg-gray-50">
-                                <td class="p-4 font-black text-amber-600">${i.id}</td>
-                                <td class="p-4 font-bold text-gray-400 italic">${i.entry}</td>
-                                <td class="p-4 font-black uppercase text-gray-800">${i.prod}</td>
-                                <td class="p-4">${i.vol} ${i.unit}</td>
-                                <td class="p-4 font-bold italic text-gray-500">${i.loc}</td>
-                                <td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black">${i.stage}</span></td>
-                                <td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td>
-                                <td class="p-4 text-center">
-                                    <button onclick="alert('Edit ' + '${i.id}')" class="text-amber-600 hover:text-amber-800 font-bold">✎</button>
-                                </td>
-                            </tr>
-                        `).join('')}
+                        ${state.inventory.map(i => `<tr><td class="p-4 font-black text-amber-600">${i.id}</td><td class="p-4 font-bold text-gray-400 italic">${i.entry}</td><td class="p-4 font-black uppercase text-gray-800">${i.prod}</td><td class="p-4">${i.vol} ${i.unit}</td><td class="p-4 font-bold italic text-gray-500">${i.loc}</td><td class="p-4 text-green-600 font-black uppercase text-[9px]">${i.stage}</td><td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td></tr>`).join('')}
                     </tbody>
                 </table>
             </div>`;
-        } else if (state.currentView === 'orders') {
-            return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Orders Management</h4>
-                <button onclick="alert('Create order')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
-            </div>
-            <div class="grid grid-cols-3 gap-6 mb-6">
-                <div class="deck-panel p-6">
-                    <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Pending Orders</p>
-                    <p class="text-3xl font-black text-orange-600">12</p>
-                    <p class="text-[10px] text-gray-500 mt-2">Awaiting payment</p>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[10px] font-black text-gray-500 uppercase mb-2">In Transit</p>
-                    <p class="text-3xl font-black text-blue-600">8</p>
-                    <p class="text-[10px] text-gray-500 mt-2">On the way</p>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Delivered</p>
-                    <p class="text-3xl font-black text-green-600">45</p>
-                    <p class="text-[10px] text-gray-500 mt-2">This month</p>
-                </div>
-            </div>
-            <div class="deck-panel p-8">
-                <h5 class="text-sm font-black text-gray-800 uppercase mb-4">Recent Orders</h5>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center p-3 border-b">
-                        <div>
-                            <p class="text-xs font-black text-gray-800">ORD-2025-001</p>
-                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST001</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-black text-gray-800">${symbol} 50,000</p>
-                            <span class="text-[10px] px-2 py-1 bg-orange-100 text-orange-700 rounded">Pending</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center p-3 border-b">
-                        <div>
-                            <p class="text-xs font-black text-gray-800">ORD-2025-002</p>
-                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST002</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-black text-gray-800">${symbol} 75,000</p>
-                            <span class="text-[10px] px-2 py-1 bg-blue-100 text-blue-700 rounded">In Transit</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center p-3">
-                        <div>
-                            <p class="text-xs font-black text-gray-800">ORD-2025-003</p>
-                            <p class="text-[10px] text-gray-500 mt-1">Customer ID: CUST003</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-black text-gray-800">${symbol} 1,00,000</p>
-                            <span class="text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded">Delivered</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.currentView === 'transit') {
-            return `
-            <div class="space-y-6">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Transit Management</h4>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="deck-panel p-8">
-                        <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Active Shipments</h5>
-                        <div class="space-y-4">
-                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-001</p>
-                                <p class="text-sm font-bold text-gray-800 mt-2">Delhi Port</p>
-                                <div class="w-full bg-gray-200 rounded h-2 mt-2">
-                                    <div class="bg-blue-600 h-2 rounded" style="width: 60%"></div>
-                                </div>
-                                <p class="text-[10px] text-gray-600 mt-2">60% Complete - ETA: 2 days</p>
-                            </div>
-                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-002</p>
-                                <p class="text-sm font-bold text-gray-800 mt-2">Mumbai Port</p>
-                                <div class="w-full bg-gray-200 rounded h-2 mt-2">
-                                    <div class="bg-blue-600 h-2 rounded" style="width: 35%"></div>
-                                </div>
-                                <p class="text-[10px] text-gray-600 mt-2">35% Complete - ETA: 4 days</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="deck-panel p-8">
-                        <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Transit Commands</h5>
-                        <div class="space-y-3">
-                            <button onclick="alert('Track Location')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">📍 Track Location</button>
-                            <button onclick="alert('Schedule Delivery')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📅 Schedule Delivery</button>
-                            <button onclick="alert('Generate Documents')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📄 Generate Documents</button>
-                            <button onclick="alert('Report Issue')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">⚠️ Report Issue</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.currentView === 'finance') {
-            return `
-            <div class="space-y-6">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Financial Dashboard</h4>
-                <div class="grid grid-cols-4 gap-6">
-                    <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Revenue</p>
-                        <h4 class="text-2xl font-black text-gray-800">${symbol} 45.8 Cr</h4>
-                        <p class="text-[11px] text-green-600 mt-2 font-bold">↑ 12% YoY</p>
-                    </div>
-                    <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Expenses</p>
-                        <h4 class="text-2xl font-black text-gray-800">${symbol} 12.3 Cr</h4>
-                        <p class="text-[11px] text-red-600 mt-2 font-bold">↓ 5% YoY</p>
-                    </div>
-                    <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Net Profit</p>
-                        <h4 class="text-2xl font-black text-gray-800">${symbol} 33.5 Cr</h4>
-                        <p class="text-[11px] text-green-600 mt-2 font-bold">↑ 18% YoY</p>
-                    </div>
-                    <div class="deck-panel p-6">
-                        <p class="text-[10px] font-black text-gray-500 uppercase mb-3">Pending Invoices</p>
-                        <h4 class="text-2xl font-black text-gray-800">23</h4>
-                        <p class="text-[11px] text-orange-600 mt-2 font-bold">Worth ${symbol} 2.1 Cr</p>
-                    </div>
-                </div>
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Monthly Breakdown</h5>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center p-3 border-b">
-                            <span class="text-xs font-bold text-gray-600">January 2025</span>
-                            <span class="text-xs font-black text-gray-800">${symbol} 8.5 Cr</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 border-b">
-                            <span class="text-xs font-bold text-gray-600">December 2024</span>
-                            <span class="text-xs font-black text-gray-800">${symbol} 7.2 Cr</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3">
-                            <span class="text-xs font-bold text-gray-600">November 2024</span>
-                            <span class="text-xs font-black text-gray-800">${symbol} 6.8 Cr</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.currentView === 'analytics') {
-            return `
-            <div class="space-y-6">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Analytics & Insights</h4>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="deck-panel p-8 h-64 flex flex-col justify-between">
-                        <h5 class="text-sm font-black text-gray-800 uppercase">Sales Trend</h5>
-                        <div class="flex items-end justify-around h-40">
-                            <div class="bg-amber-600 w-8" style="height: 60%"></div>
-                            <div class="bg-amber-600 w-8" style="height: 75%"></div>
-                            <div class="bg-amber-600 w-8" style="height: 85%"></div>
-                            <div class="bg-amber-600 w-8" style="height: 70%"></div>
-                            <div class="bg-amber-600 w-8" style="height: 90%"></div>
-                        </div>
-                        <p class="text-[10px] text-gray-500 text-center">Last 5 months trend</p>
-                    </div>
-                    <div class="deck-panel p-8 h-64 flex flex-col justify-between">
-                        <h5 class="text-sm font-black text-gray-800 uppercase">Product Mix</h5>
-                        <div class="flex items-center justify-center gap-4">
-                            <div class="text-center">
-                                <div class="w-16 h-16 rounded-full bg-amber-600 flex items-center justify-center text-white font-black">45%</div>
-                                <p class="text-[10px] text-gray-600 mt-2">Teak</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-black">35%</div>
-                                <p class="text-[10px] text-gray-600 mt-2">Mahogany</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center text-white font-black">20%</div>
-                                <p class="text-[10px] text-gray-600 mt-2">Pine</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-4">Key Metrics</h5>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="p-4 bg-gray-50 rounded">
-                            <p class="text-[10px] text-gray-600 uppercase font-bold">Avg Order Value</p>
-                            <p class="text-lg font-black text-gray-800 mt-1">${symbol} 2.5L</p>
-                        </div>
-                        <div class="p-4 bg-gray-50 rounded">
-                            <p class="text-[10px] text-gray-600 uppercase font-bold">Conversion Rate</p>
-                            <p class="text-lg font-black text-gray-800 mt-1">8.5%</p>
-                        </div>
-                        <div class="p-4 bg-gray-50 rounded">
-                            <p class="text-[10px] text-gray-600 uppercase font-bold">Customer Retention</p>
-                            <p class="text-lg font-black text-gray-800 mt-1">92%</p>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.currentView === 'settings') {
-            return `
-            <div class="space-y-6">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Settings</h4>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="deck-panel p-6">
-                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Account Information</h5>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-xs font-bold text-gray-600">Email Address</label>
-                                <input type="email" value="admin@dockside.com" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-600">Full Name</label>
-                                <input type="text" value="Administrator" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-600">Hub Location</label>
-                                <input type="text" value="Gandhidham Hub" class="w-full mt-1 p-2 border border-gray-300 rounded text-sm" disabled>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="deck-panel p-6">
-                        <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Preferences</h5>
-                        <div class="space-y-3">
-                            <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-3">
-                                <span class="text-sm text-gray-700">Email Notifications</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3">
-                                <span class="text-sm text-gray-700">SMS Alerts</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-3">
-                                <span class="text-sm text-gray-700">Two-Factor Authentication</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-3">
-                                <span class="text-sm text-gray-700">Auto Backup</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" checked class="mr-3">
-                                <span class="text-sm text-gray-700">Data Analytics</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="deck-panel p-6">
-                    <h5 class="text-xs font-black text-gray-800 uppercase mb-4">Security</h5>
-                    <div class="space-y-2">
-                        <button onclick="alert('Change Password')" class="w-full px-4 py-2 border border-gray-300 text-gray-700 text-xs font-black rounded hover:bg-gray-50">🔐 Change Password</button>
-                        <button onclick="alert('View Activity Log')" class="w-full px-4 py-2 border border-gray-300 text-gray-700 text-xs font-black rounded hover:bg-gray-50">📋 View Activity Log</button>
-                    </div>
-                </div>
-                <button onclick="alert('Logged out!')" class="w-full px-6 py-2 bg-red-600 text-white font-black rounded hover:bg-red-700">🚪 Logout</button>
-            </div>`;
         }
-        
-        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Link Established • Awaiting Data</div>`;
+        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Section [${state.currentView}] Awaiting Data</div>`;
     }
 </script>
 </body>
