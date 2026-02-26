@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal v2.0.0</title>
+    <title>DOCKSIDE | Executive Terminal v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
@@ -32,6 +32,7 @@
                         inset 0 1px 1px rgba(255, 255, 255, 0.8);
             border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
         }
         .deck-panel:hover {
             transform: translateY(-5px) translateZ(20px);
@@ -79,7 +80,7 @@
             padding: 30px;
             border-radius: 8px;
             width: 90%;
-            max-width: 500px;
+            max-width: 900px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             max-height: 90vh;
             overflow-y: auto;
@@ -179,46 +180,67 @@
             background-color: #d1d5db;
         }
 
+        .sidebar-active {
+            background-color: rgba(217, 119, 6, 0.1) !important;
+            border-left: 3px solid #D97706;
+            padding-left: calc(1.25rem - 3px);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .status-warehouse { background-color: #dbeafe; color: #1e40af; }
+        .status-dispatched { background-color: #fee2e2; color: #991b1b; }
+        .status-completed { background-color: #dcfce7; color: #15803d; }
+        .status-pending { background-color: #fed7aa; color: #92400e; }
+        .status-placed { background-color: #e0e7ff; color: #3730a3; }
+
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
 <body class="antialiased">
 
-<!-- MODALS OUTSIDE APP DIV -->
 <div id="addStockModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Add New Stock Item</span>
+            <span>Add New Stock</span>
             <button class="close-btn" onclick="closeModal('addStockModal')">&times;</button>
         </div>
-        <div class="form-group">
-            <label>SKU</label>
-            <input type="text" id="newSKU" placeholder="e.g., SKU004">
-        </div>
-        <div class="form-group">
-            <label>Product Name</label>
-            <input type="text" id="newProduct" placeholder="e.g., Cedar Wood">
-        </div>
-        <div class="form-group">
-            <label>Volume</label>
-            <input type="number" id="newVolume" placeholder="e.g., 100" step="0.01">
-        </div>
-        <div class="form-group">
-            <label>Unit</label>
-            <select id="newUnit">
-                <option>CFT</option>
-                <option>Meter</option>
-                <option>Ton</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Warehouse Location</label>
-            <input type="text" id="newLocation" placeholder="e.g., Plot 15">
-        </div>
-        <div class="form-group">
-            <label>Price (₹)</label>
-            <input type="number" id="newPrice" placeholder="e.g., 1000" step="0.01">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label>Order Number</label>
+                <input type="text" id="newOrderNum" placeholder="e.g., ORD-001">
+            </div>
+            <div class="form-group">
+                <label>Supplier Name</label>
+                <input type="text" id="newSupplier" placeholder="e.g., Forest Ltd">
+            </div>
+            <div class="form-group">
+                <label>Buyer/Seller Name</label>
+                <input type="text" id="newBuyerSeller" placeholder="e.g., John Doe">
+            </div>
+            <div class="form-group">
+                <label>Warehouse</label>
+                <input type="text" id="newWarehouse" placeholder="e.g., Plot 10">
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" id="newQuantity" placeholder="e.g., 100" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Purchase Date</label>
+                <input type="date" id="newPurchaseDate">
+            </div>
+            <div class="form-group">
+                <label>Stock Value (₹)</label>
+                <input type="number" id="newStockValue" placeholder="e.g., 50000" step="0.01">
+            </div>
         </div>
         <div class="modal-buttons">
             <button class="btn-submit" onclick="addNewStock()">✓ Add Stock</button>
@@ -227,66 +249,285 @@
     </div>
 </div>
 
-<div id="newOrderModal" class="modal">
+<div id="stockModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Create New Order</span>
-            <button class="close-btn" onclick="closeModal('newOrderModal')">&times;</button>
+            <span>Stock Value Details</span>
+            <button class="close-btn" onclick="closeModal('stockModal')">&times;</button>
         </div>
-        <div class="form-group">
-            <label>Order Number</label>
-            <input type="text" id="orderNumber" placeholder="e.g., ORD-2025-004">
-        </div>
-        <div class="form-group">
-            <label>Customer ID</label>
-            <input type="text" id="customerId" placeholder="e.g., CUST004">
-        </div>
-        <div class="form-group">
-            <label>Amount (₹)</label>
-            <input type="number" id="orderAmount" placeholder="e.g., 50000" step="100">
-        </div>
-        <div class="form-group">
-            <label>Status</label>
-            <select id="orderStatus">
-                <option>Pending</option>
-                <option>In Transit</option>
-                <option>Delivered</option>
-            </select>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="createNewOrder()">✓ Create Order</button>
-            <button class="btn-cancel" onclick="closeModal('newOrderModal')">Cancel</button>
+        <button onclick="openModal('addStockModal')" style="margin-bottom: 15px; padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">+ Add New Stock</button>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order Number</th>
+                        <th style="padding: 10px; text-align: left;">Supplier Name</th>
+                        <th style="padding: 10px; text-align: left;">Buyer/Seller</th>
+                        <th style="padding: 10px; text-align: left;">Warehouse</th>
+                        <th style="padding: 10px; text-align: right;">Quantity</th>
+                        <th style="padding: 10px; text-align: left;">Date</th>
+                        <th style="padding: 10px; text-align: right;">Value</th>
+                        <th style="padding: 10px; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<div id="trackShipmentModal" class="modal">
+<div id="ordersModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Track Shipment</span>
-            <button class="close-btn" onclick="closeModal('trackShipmentModal')">&times;</button>
+            <span>Open Orders & Shipments</span>
+            <button class="close-btn" onclick="closeModal('ordersModal')">&times;</button>
         </div>
-        <div class="form-group">
-            <label>Shipment ID</label>
-            <select id="shipmentSelect" onchange="updateShipmentDetails()">
-                <option value="001">SHP-2025-001 - Delhi Port</option>
-                <option value="002">SHP-2025-002 - Mumbai Port</option>
-            </select>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">PENDING</p>
+                <p id="pendingCount" style="font-size: 28px; font-weight: bold; margin: 5px 0;">0</p>
+            </div>
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">ORDER PLACED</p>
+                <p id="placedCount" style="font-size: 28px; font-weight: bold; margin: 5px 0;">0</p>
+            </div>
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">SHIPMENT COMPLETE</p>
+                <p id="completeCount" style="font-size: 28px; font-weight: bold; margin: 5px 0;">0</p>
+            </div>
         </div>
-        <div class="deck-panel p-4" id="shipmentDetails">
-            <p class="text-sm"><strong>Shipment:</strong> <span id="shipDetail1">SHP-2025-001</span></p>
-            <p class="text-sm"><strong>Destination:</strong> <span id="shipDetail2">Delhi Port</span></p>
-            <p class="text-sm"><strong>Progress:</strong> <span id="shipDetail3">60% Complete</span></p>
-            <p class="text-sm"><strong>ETA:</strong> <span id="shipDetail4">2 days</span></p>
-            <p class="text-sm"><strong>Last Updated:</strong> Today at 2:30 PM</p>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="closeModal('trackShipmentModal')">Close</button>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order Number</th>
+                        <th style="padding: 10px; text-align: left;">Cargo Name</th>
+                        <th style="padding: 10px; text-align: left;">Supplier</th>
+                        <th style="padding: 10px; text-align: left;">Buyer</th>
+                        <th style="padding: 10px; text-align: left;">Status</th>
+                        <th style="padding: 10px; text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- MAIN APP -->
+<div id="paymentsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Pending Payments</span>
+            <button class="close-btn" onclick="closeModal('paymentsModal')">&times;</button>
+        </div>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order Number</th>
+                        <th style="padding: 10px; text-align: right;">Invoice Amount</th>
+                        <th style="padding: 10px; text-align: left;">Expected Date</th>
+                        <th style="padding: 10px; text-align: center;">Status</th>
+                        <th style="padding: 10px; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="invoiceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Invoice Details</span>
+            <button class="close-btn" onclick="closeModal('invoiceModal')">&times;</button>
+        </div>
+        <div style="border: 2px solid #ddd; padding: 20px; border-radius: 8px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #1e293b;">INVOICE</h2>
+                <p style="margin: 5px 0; font-size: 12px; color: #666;">DOCKSIDE MANAGEMENT</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <p style="font-size: 11px; font-weight: bold; color: #666; margin: 0;">Bill To:</p>
+                    <p id="invBuyer" style="margin: 5px 0; font-weight: bold;"></p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 11px; font-weight: bold; color: #666; margin: 0;">Invoice Date:</p>
+                    <p id="invDate" style="margin: 5px 0; font-weight: bold;"></p>
+                </div>
+            </div>
+            <div style="border-top: 2px solid #ddd; padding-top: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-weight: bold;">Order: <span id="invOrder"></span></p>
+                    <p style="margin: 0; font-weight: bold;">Amount: ₹<span id="invAmount"></span></p>
+                </div>
+                <p id="invNote" style="margin: 10px 0; font-size: 12px; color: #666;"></p>
+            </div>
+            <div style="border-top: 2px solid #ddd; margin-top: 20px; padding-top: 15px; text-align: right;">
+                <p style="margin: 5px 0; font-weight: bold;">Total Due: ₹<span id="invTotal"></span></p>
+            </div>
+        </div>
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="btn-submit" onclick="alert('Invoice downloaded!')">Download PDF</button>
+            <button class="btn-cancel" onclick="closeModal('invoiceModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="risksModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Risk Alerts - Low Movement Stock</span>
+            <button class="close-btn" onclick="closeModal('risksModal')">&times;</button>
+        </div>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order Number</th>
+                        <th style="padding: 10px; text-align: left;">Cargo Name</th>
+                        <th style="padding: 10px; text-align: left;">Last Moved</th>
+                        <th style="padding: 10px; text-align: center;">Days Inactive</th>
+                        <th style="padding: 10px; text-align: center;">Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody id="risksTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="transitModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Transit Details</span>
+            <button class="close-btn" onclick="closeModal('transitModal')">&times;</button>
+        </div>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order ID</th>
+                        <th style="padding: 10px; text-align: left;">Cargo Name</th>
+                        <th style="padding: 10px; text-align: left;">Vehicle Number</th>
+                        <th style="padding: 10px; text-align: left;">Driver Name</th>
+                        <th style="padding: 10px; text-align: left;">Driver Contact</th>
+                        <th style="padding: 10px; text-align: left;">Transporter</th>
+                        <th style="padding: 10px; text-align: left;">Dispatch Date</th>
+                        <th style="padding: 10px; text-align: left;">Est. Arrival</th>
+                        <th style="padding: 10px; text-align: center;">Status</th>
+                        <th style="padding: 10px; text-align: center;">ETA Remaining</th>
+                    </tr>
+                </thead>
+                <tbody id="transitTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="financeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Finance Dashboard</span>
+            <button class="close-btn" onclick="closeModal('financeModal')">&times;</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">TOTAL REVENUE</p>
+                <p id="financeRevenue" style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #16a34a;">₹0</p>
+            </div>
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">PENDING RECEIVABLES</p>
+                <p id="financePending" style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #ea580c;">₹0</p>
+            </div>
+            <div class="deck-panel" style="padding: 15px; cursor: default;">
+                <p style="font-size: 10px; color: #666; margin: 0;">COMPLETED PAYMENTS</p>
+                <p id="financeCompleted" style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #0369a1;">₹0</p>
+            </div>
+        </div>
+        <div class="deck-panel" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead style="background-color: #f3f4f6; font-weight: bold;">
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left;">Order Number</th>
+                        <th style="padding: 10px; text-align: right;">Amount</th>
+                        <th style="padding: 10px; text-align: left;">Expected Date</th>
+                        <th style="padding: 10px; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="financeTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="insightsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Insights & News</span>
+            <button class="close-btn" onclick="closeModal('insightsModal')">&times;</button>
+        </div>
+        <div style="margin-bottom: 30px;">
+            <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">Analytics</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="deck-panel" style="padding: 15px; cursor: default;">
+                    <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; font-weight: bold;">TOP PERFORMING ORDER</p>
+                    <p id="topOrder" style="margin: 5px 0; font-weight: bold;">Order #1 - ₹50,000</p>
+                </div>
+                <div class="deck-panel" style="padding: 15px; cursor: default;">
+                    <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; font-weight: bold;">FASTEST MOVING CARGO</p>
+                    <p id="fastestCargo" style="margin: 5px 0; font-weight: bold;">Teak Logs - 5 days</p>
+                </div>
+                <div class="deck-panel" style="padding: 15px; cursor: default;">
+                    <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; font-weight: bold;">HIGHEST REVENUE SUPPLIER</p>
+                    <p id="topSupplier" style="margin: 5px 0; font-weight: bold;">Forest Ltd - ₹1,00,000</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">News Headlines</h3>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                <div class="deck-panel" style="padding: 12px; cursor: pointer;" onclick="openAIAssist('Timber market trends and global impact on pricing')">
+                    <p style="margin: 0; font-weight: bold; font-size: 13px;">Timber Market Surges in Q1 2025</p>
+                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Global demand increases by 15% - Click for AI analysis</p>
+                </div>
+                <div class="deck-panel" style="padding: 12px; cursor: pointer;" onclick="openAIAssist('Plywood demand and manufacturing innovations')">
+                    <p style="margin: 0; font-weight: bold; font-size: 13px;">New Plywood Technology Emerging</p>
+                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Sustainable plywood alternatives - Click for AI analysis</p>
+                </div>
+                <div class="deck-panel" style="padding: 12px; cursor: pointer;" onclick="openAIAssist('Transportation logistics improvements and costs')">
+                    <p style="margin: 0; font-weight: bold; font-size: 13px;">Transport Costs Stabilize</p>
+                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Shipping rates normalize globally - Click for AI analysis</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="aiAssistModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>AI Assistant</span>
+            <button class="close-btn" onclick="closeModal('aiAssistModal')">&times;</button>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="aiQuestion" placeholder="Ask anything about your business..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+        </div>
+        <button onclick="getAIResponse()" style="width: 100%; padding: 10px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">Ask AI</button>
+        <div id="aiResponse" style="background-color: #f0f4f8; padding: 15px; border-radius: 4px; min-height: 100px; display: none;">
+            <p id="aiResponseText" style="margin: 0; line-height: 1.6; color: #374151;"></p>
+        </div>
+    </div>
+</div>
+
 <div id="app">
     <div class="min-h-screen flex flex-col lg:flex-row">
         <div class="hidden lg:flex lg:w-1/2 relative bg-black">
@@ -324,15 +565,19 @@
         currentView: 'dashboard',
         currency: 'INR',
         hub: 'Gandhidham Hub',
+        companyName: 'DOCKSIDE Inc',
+        companyEmail: 'admin@dockside.com',
+        warehouseLocation: 'Gandhidham, Gujarat',
+        darkMode: false,
         inventory: [
-            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' },
-            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' },
-            { id: 'SKU003', entry: '22-02-26', prod: 'Pine Wood', vol: '220.00', unit: 'CFT', loc: 'Plot 08', stage: 'Dispatched', price: '650' }
+            { orderNum: 'ORD-001', supplier: 'Forest Ltd', buyerSeller: 'John Doe', warehouse: 'Plot 10', quantity: 145.5, date: '2025-02-24', value: 50000, lastMoved: '2025-02-24' },
+            { orderNum: 'ORD-002', supplier: 'Pine Co', buyerSeller: 'Jane Smith', warehouse: 'Plot 12', quantity: 89.25, date: '2025-02-23', value: 35000, lastMoved: '2025-02-10' },
+            { orderNum: 'ORD-003', supplier: 'Timber Inc', buyerSeller: 'Bob Johnson', warehouse: 'Plot 08', quantity: 220.0, date: '2025-02-22', value: 85000, lastMoved: '2025-01-20' }
         ],
         orders: [
-            { id: 'ORD-2025-001', customer: 'CUST001', amount: '50000', status: 'Pending' },
-            { id: 'ORD-2025-002', customer: 'CUST002', amount: '75000', status: 'In Transit' },
-            { id: 'ORD-2025-003', customer: 'CUST003', amount: '100000', status: 'Delivered' }
+            { orderNum: 'ORD-001', cargo: 'Teak Logs', supplier: 'Forest Ltd', buyer: 'John Doe', status: 'Pending', amount: 50000, vehicleNum: 'KA-01-AB-1234', driver: 'Rajesh Kumar', driverContact: '9876543210', transporter: 'FastShip', dispatchDate: '2025-02-24', estimatedArrival: '2025-03-02' },
+            { orderNum: 'ORD-002', cargo: 'Pine Planks', supplier: 'Pine Co', buyer: 'Jane Smith', status: 'Order Placed', amount: 35000, vehicleNum: 'KA-02-CD-5678', driver: 'Amit Singh', driverContact: '9123456789', transporter: 'LogisticsPro', dispatchDate: '2025-02-25', estimatedArrival: '2025-03-05' },
+            { orderNum: 'ORD-003', cargo: 'Wood Panels', supplier: 'Timber Inc', buyer: 'Bob Johnson', status: 'Shipment Complete', amount: 85000, vehicleNum: 'KA-03-EF-9012', driver: 'Suresh Patel', driverContact: '8765432109', transporter: 'SpeedDeliver', dispatchDate: '2025-02-20', estimatedArrival: '2025-02-28' }
         ]
     };
 
@@ -342,84 +587,6 @@
 
     function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('show');
-    }
-
-    function updateShipmentDetails() {
-        const select = document.getElementById('shipmentSelect');
-        const value = select.value;
-        
-        if (value === '001') {
-            document.getElementById('shipDetail1').textContent = 'SHP-2025-001';
-            document.getElementById('shipDetail2').textContent = 'Delhi Port';
-            document.getElementById('shipDetail3').textContent = '60% Complete';
-            document.getElementById('shipDetail4').textContent = '2 days';
-        } else {
-            document.getElementById('shipDetail1').textContent = 'SHP-2025-002';
-            document.getElementById('shipDetail2').textContent = 'Mumbai Port';
-            document.getElementById('shipDetail3').textContent = '35% Complete';
-            document.getElementById('shipDetail4').textContent = '4 days';
-        }
-    }
-
-    function addNewStock() {
-        const sku = document.getElementById('newSKU').value.trim();
-        const product = document.getElementById('newProduct').value.trim();
-        const volume = document.getElementById('newVolume').value.trim();
-        const unit = document.getElementById('newUnit').value;
-        const location = document.getElementById('newLocation').value.trim();
-        const price = document.getElementById('newPrice').value.trim();
-
-        if (!sku || !product || !volume || !price) {
-            alert('❌ Please fill all fields!');
-            return;
-        }
-
-        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        state.inventory.push({
-            id: sku,
-            entry: today,
-            prod: product,
-            vol: volume,
-            unit: unit,
-            loc: location || 'Plot 20',
-            stage: 'In Warehouse',
-            price: price
-        });
-
-        alert('✅ Stock item added successfully!\n\nSKU: ' + sku + '\nProduct: ' + product);
-        document.getElementById('newSKU').value = '';
-        document.getElementById('newProduct').value = '';
-        document.getElementById('newVolume').value = '';
-        document.getElementById('newLocation').value = '';
-        document.getElementById('newPrice').value = '';
-        closeModal('addStockModal');
-        renderShell();
-    }
-
-    function createNewOrder() {
-        const orderNum = document.getElementById('orderNumber').value.trim();
-        const customerId = document.getElementById('customerId').value.trim();
-        const amount = document.getElementById('orderAmount').value.trim();
-        const status = document.getElementById('orderStatus').value;
-
-        if (!orderNum || !customerId || !amount) {
-            alert('❌ Please fill all fields!');
-            return;
-        }
-
-        state.orders.push({
-            id: orderNum,
-            customer: customerId,
-            amount: amount,
-            status: status
-        });
-
-        alert('✅ Order created successfully!\n\nOrder: ' + orderNum + '\nAmount: ₹' + amount);
-        document.getElementById('orderNumber').value = '';
-        document.getElementById('customerId').value = '';
-        document.getElementById('orderAmount').value = '';
-        closeModal('newOrderModal');
-        renderShell();
     }
 
     function handleLogin() { 
@@ -432,18 +599,247 @@
         renderShell(); 
     }
 
+    function addNewStock() {
+        const orderNum = document.getElementById('newOrderNum').value.trim();
+        const supplier = document.getElementById('newSupplier').value.trim();
+        const buyerSeller = document.getElementById('newBuyerSeller').value.trim();
+        const warehouse = document.getElementById('newWarehouse').value.trim();
+        const quantity = parseFloat(document.getElementById('newQuantity').value);
+        const date = document.getElementById('newPurchaseDate').value;
+        const value = parseFloat(document.getElementById('newStockValue').value);
+
+        if (!orderNum || !supplier || !buyerSeller || !warehouse || !quantity || !date || !value) {
+            alert('❌ Please fill all fields!');
+            return;
+        }
+
+        state.inventory.push({
+            orderNum, supplier, buyerSeller, warehouse, quantity, date, value,
+            lastMoved: new Date().toISOString().split('T')[0]
+        });
+
+        alert('✅ Stock added successfully!');
+        document.getElementById('newOrderNum').value = '';
+        document.getElementById('newSupplier').value = '';
+        document.getElementById('newBuyerSeller').value = '';
+        document.getElementById('newWarehouse').value = '';
+        document.getElementById('newQuantity').value = '';
+        document.getElementById('newPurchaseDate').value = '';
+        document.getElementById('newStockValue').value = '';
+        closeModal('addStockModal');
+        displayStockTable();
+    }
+
+    function displayStockTable() {
+        const tbody = document.getElementById('stockTableBody');
+        tbody.innerHTML = state.inventory.map(item => `
+            <tr style="border-bottom: 1px solid #ddd; hover:background-color: #f9fafb;">
+                <td style="padding: 10px; border-right: 1px solid #eee;">${item.orderNum}</td>
+                <td style="padding: 10px; border-right: 1px solid #eee;">${item.supplier}</td>
+                <td style="padding: 10px; border-right: 1px solid #eee;">${item.buyerSeller}</td>
+                <td style="padding: 10px; border-right: 1px solid #eee;">${item.warehouse}</td>
+                <td style="padding: 10px; text-align: right; border-right: 1px solid #eee;">${item.quantity}</td>
+                <td style="padding: 10px; border-right: 1px solid #eee;">${item.date}</td>
+                <td style="padding: 10px; text-align: right; border-right: 1px solid #eee;">₹${item.value.toLocaleString()}</td>
+                <td style="padding: 10px; text-align: center;"><button onclick="alert('Edit ${item.orderNum}')" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">✎</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function displayOrdersTable() {
+        const tbody = document.getElementById('ordersTableBody');
+        document.getElementById('pendingCount').textContent = state.orders.filter(o => o.status === 'Pending').length;
+        document.getElementById('placedCount').textContent = state.orders.filter(o => o.status === 'Order Placed').length;
+        document.getElementById('completeCount').textContent = state.orders.filter(o => o.status === 'Shipment Complete').length;
+        
+        tbody.innerHTML = state.orders.map(order => {
+            let statusClass = '';
+            if (order.status === 'Pending') statusClass = 'status-pending';
+            else if (order.status === 'Order Placed') statusClass = 'status-placed';
+            else statusClass = 'status-completed';
+            
+            return `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.orderNum}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.cargo}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.supplier}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.buyer}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;"><span class="status-badge ${statusClass}">${order.status}</span></td>
+                    <td style="padding: 10px; text-align: right;">₹${order.amount.toLocaleString()}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function displayPaymentsTable() {
+        const tbody = document.getElementById('paymentsTableBody');
+        const today = new Date();
+        
+        tbody.innerHTML = state.orders.filter(o => o.status !== 'Shipment Complete').map(order => {
+            const expectedDate = new Date(order.estimatedArrival);
+            const isOverdue = expectedDate <= today;
+            
+            return `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.orderNum}</td>
+                    <td style="padding: 10px; text-align: right; border-right: 1px solid #eee;">₹${order.amount.toLocaleString()}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${order.estimatedArrival}</td>
+                    <td style="padding: 10px; text-align: center; border-right: 1px solid #eee;">${isOverdue ? '<span class="status-badge" style="background-color: #fee2e2; color: #991b1b;">OVERDUE</span>' : '<span class="status-badge status-pending">ON TIME</span>'}</td>
+                    <td style="padding: 10px; text-align: center;"><button onclick="showInvoice('${order.orderNum}', '${order.buyer}', ${order.amount})" style="background-color: #D97706; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px;">VIEW</button></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function showInvoice(orderNum, buyer, amount) {
+        document.getElementById('invOrder').textContent = orderNum;
+        document.getElementById('invBuyer').textContent = buyer;
+        document.getElementById('invAmount').textContent = amount;
+        document.getElementById('invTotal').textContent = amount;
+        document.getElementById('invDate').textContent = new Date().toLocaleDateString();
+        document.getElementById('invNote').textContent = `Payment due for shipment of order ${orderNum}. Please remit payment within 7 days.`;
+        openModal('invoiceModal');
+    }
+
+    function displayRisksTable() {
+        const tbody = document.getElementById('risksTableBody');
+        const today = new Date();
+        
+        tbody.innerHTML = state.inventory.filter(item => {
+            const lastMoved = new Date(item.lastMoved);
+            const daysInactive = Math.floor((today - lastMoved) / (1000 * 60 * 60 * 24));
+            return daysInactive >= 30;
+        }).map(item => {
+            const lastMoved = new Date(item.lastMoved);
+            const daysInactive = Math.floor((today - lastMoved) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${item.orderNum}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">Cargo from ${item.supplier}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee;">${item.lastMoved}</td>
+                    <td style="padding: 10px; text-align: center; border-right: 1px solid #eee; font-weight: bold;">${daysInactive}</td>
+                    <td style="padding: 10px; text-align: center;"><span class="status-badge" style="background-color: #fee2e2; color: #991b1b;">HIGH RISK</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function displayTransitTable() {
+        const tbody = document.getElementById('transitTableBody');
+        
+        tbody.innerHTML = state.orders.map(order => {
+            const today = new Date();
+            const arrival = new Date(order.estimatedArrival);
+            const remaining = Math.ceil((arrival - today) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.orderNum}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.cargo}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.vehicleNum}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.driver}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.driverContact}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.transporter}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.dispatchDate}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.estimatedArrival}</td>
+                    <td style="padding: 10px; border-right: 1px solid #eee; text-align: center;"><span class="status-badge ${order.status === 'Shipment Complete' ? 'status-completed' : 'status-pending'}">${order.status === 'Shipment Complete' ? 'Delivered' : 'In Transit'}</span></td>
+                    <td style="padding: 10px; text-align: center; font-size: 11px;">${remaining > 0 ? remaining + ' days' : 'Delivered'}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function displayFinanceTable() {
+        const tbody = document.getElementById('financeTableBody');
+        const pending = state.orders.filter(o => o.status !== 'Shipment Complete');
+        const completed = state.orders.filter(o => o.status === 'Shipment Complete');
+        
+        let totalRevenue = 0;
+        let totalPending = 0;
+        let totalCompleted = 0;
+        
+        state.orders.forEach(o => {
+            totalRevenue += o.amount;
+            if (o.status === 'Shipment Complete') totalCompleted += o.amount;
+            else totalPending += o.amount;
+        });
+        
+        document.getElementById('financeRevenue').textContent = '₹' + totalRevenue.toLocaleString();
+        document.getElementById('financePending').textContent = '₹' + totalPending.toLocaleString();
+        document.getElementById('financeCompleted').textContent = '₹' + totalCompleted.toLocaleString();
+        
+        tbody.innerHTML = state.orders.map(order => `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.orderNum}</td>
+                <td style="padding: 10px; text-align: right; border-right: 1px solid #eee; font-size: 11px;">₹${order.amount.toLocaleString()}</td>
+                <td style="padding: 10px; border-right: 1px solid #eee; font-size: 11px;">${order.estimatedArrival}</td>
+                <td style="padding: 10px; text-align: center; font-size: 11px;"><span class="status-badge ${order.status === 'Shipment Complete' ? 'status-completed' : 'status-pending'}">${order.status === 'Shipment Complete' ? 'Paid' : 'Pending'}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function displayInsights() {
+        let topOrder = state.orders[0];
+        let topAmount = state.orders[0].amount;
+        state.orders.forEach(o => {
+            if (o.amount > topAmount) {
+                topAmount = o.amount;
+                topOrder = o;
+            }
+        });
+        
+        document.getElementById('topOrder').textContent = topOrder.orderNum + ' - ₹' + topOrder.amount.toLocaleString();
+        document.getElementById('fastestCargo').textContent = topOrder.cargo + ' - ' + Math.ceil((new Date(topOrder.estimatedArrival) - new Date(topOrder.dispatchDate)) / (1000 * 60 * 60 * 24)) + ' days';
+        document.getElementById('topSupplier').textContent = topOrder.supplier + ' - ₹' + topAmount.toLocaleString();
+    }
+
+    function openAIAssist(topic) {
+        document.getElementById('aiQuestion').value = topic;
+        openModal('aiAssistModal');
+    }
+
+    function getAIResponse() {
+        const question = document.getElementById('aiQuestion').value;
+        if (!question.trim()) {
+            alert('Please ask a question!');
+            return;
+        }
+
+        const responses = {
+            'timber': 'Timber prices have shown a 12% increase in Q1 2025 due to increased global demand. Key trends include: increased construction activity in developing nations, sustainable timber certifications becoming mandatory, and logistics costs stabilizing. We recommend securing long-term contracts now.',
+            'plywood': 'The plywood market is experiencing innovation in sustainable alternatives. New eco-friendly manufacturing processes reduce waste by 40% and carbon footprint by 25%. Market adoption is accelerating, with premium eco-plywood commanding 15-20% price premiums. Consider upgrading your inventory.',
+            'transport': 'Transportation logistics continue to improve with reduced fuel costs and efficient routing algorithms. Current industry trends show 8-10% cost savings for optimized routes. Consider diversifying transport partners and investing in real-time tracking systems for better supply chain visibility.',
+            'market': 'Current market analysis shows strong demand for wood products globally. India specifically sees 18% YoY growth in timber exports. Key opportunities exist in value-added products and premium certifications. Risk factors include potential tariff changes and weather-related supply disruptions.',
+            'shipping': 'Shipping rates are stable with minor fluctuations. Sea freight remains 30% cheaper than air for bulk cargo. Rail transport offers a good middle ground at 15% cost savings vs road transport. Recommend negotiating volume discounts with carriers for 2025.',
+            'default': 'Based on market analysis and operational data: The current economic environment presents strong opportunities for timber and wood products. Recommended actions include inventory optimization, long-term supplier agreements, and investment in logistics efficiency. Monitor global market trends closely for competitive advantage.'
+        };
+
+        let responseKey = 'default';
+        const lowerQuestion = question.toLowerCase();
+        if (lowerQuestion.includes('timber')) responseKey = 'timber';
+        else if (lowerQuestion.includes('plywood')) responseKey = 'plywood';
+        else if (lowerQuestion.includes('transport') || lowerQuestion.includes('shipping')) responseKey = 'transport';
+        else if (lowerQuestion.includes('market')) responseKey = 'market';
+        else if (lowerQuestion.includes('cost') || lowerQuestion.includes('price')) responseKey = 'shipping';
+
+        document.getElementById('aiResponseText').textContent = responses[responseKey];
+        document.getElementById('aiResponse').style.display = 'block';
+    }
+
     function renderShell() {
         if (!state.authenticated) return;
-        const symbol = state.currency === 'INR' ? '₹' : '$';
         document.getElementById('app').innerHTML = `
         <div class="flex h-screen overflow-hidden">
             <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
-                <div class="p-8"><h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
+                <div class="p-8">
+                    <h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-weight: bold;">The Future of Management.</p>
+                </div>
                 <nav class="flex-1 px-4 space-y-1">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Insights', 'Settings'].map(item => `
                         <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all ${state.currentView === item.toLowerCase() ? 'sidebar-active bg-amber-50' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
                             ${item}
                         </button>
                     `).join('')}
@@ -456,121 +852,230 @@
                     <div class="flex items-center gap-4 text-[10px] font-black">
                         <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
                         <div class="w-px h-6 bg-gray-300 mx-2"></div>
-                        <p class="text-gray-400">v2.0.0</p>
+                        <p class="text-gray-400">v2.1.0</p>
                     </div>
                 </header>
-                <main class="flex-1 overflow-y-auto p-10">${renderMainContent(symbol)}</main>
+                <main class="flex-1 overflow-y-auto p-10">${renderMainContent()}</main>
             </div>
         </div>`;
     }
 
-    function renderMainContent(symbol) {
+    function renderMainContent() {
         if (state.currentView === 'dashboard') {
             return `
             <div class="grid grid-cols-4 gap-6 mb-10">
-                <div class="deck-panel p-6">
+                <div class="deck-panel p-6" onclick="openStockModal()">
                     <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Stock Value</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 12.4 Cr</h4>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">₹${state.inventory.reduce((s, i) => s + i.value, 0).toLocaleString()}</h4>
                 </div>
-                <div class="deck-panel p-6">
+                <div class="deck-panel p-6" onclick="openOrdersModal()">
                     <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Open Orders</p>
                     <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${state.orders.length}</h4>
                 </div>
-                <div class="deck-panel p-6">
+                <div class="deck-panel p-6" onclick="openPaymentsModal()">
                     <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Pending Payments</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 1.2 Cr</h4>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">₹${state.orders.filter(o => o.status !== 'Shipment Complete').reduce((s, o) => s + o.amount, 0).toLocaleString()}</h4>
                 </div>
-                <div class="deck-panel p-6">
+                <div class="deck-panel p-6" onclick="openRisksModal()">
                     <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Risk Alerts</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">04</h4>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Portfolio Performance</h5>
-                    <div class="space-y-4">
-                        <div><div class="flex justify-between mb-2"><span class="text-xs font-bold text-gray-600">Teak Logs</span><span class="text-xs font-black text-gray-800">78%</span></div><div class="w-full bg-gray-200 rounded h-2"><div class="bg-amber-600 h-2 rounded" style="width: 78%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-xs font-bold text-gray-600">Mahogany</span><span class="text-xs font-black text-gray-800">65%</span></div><div class="w-full bg-gray-200 rounded h-2"><div class="bg-amber-600 h-2 rounded" style="width: 65%"></div></div></div>
-                    </div>
-                </div>
-                <div class="deck-panel p-8">
-                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Quick Actions</h5>
-                    <div class="space-y-3">
-                        <button onclick="openModal('newOrderModal')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
-                        <button onclick="openModal('trackShipmentModal')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📍 Track Shipment</button>
-                        <button onclick="alert('✅ Invoice generated successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Generate Invoice</button>
-                        <button onclick="alert('✅ Data synced successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Sync Data</button>
-                    </div>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${state.inventory.filter(i => {
+                        const days = Math.floor((new Date() - new Date(i.lastMoved)) / (1000 * 60 * 60 * 24));
+                        return days >= 30;
+                    }).length}</h4>
                 </div>
             </div>`;
         } else if (state.currentView === 'inventory') {
             return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger (${state.inventory.length} items)</h4>
-                <button onclick="openModal('addStockModal')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ Add Stock</button>
-            </div>
-            <div class="deck-panel overflow-hidden border border-gray-200">
-                <table class="w-full text-left text-[11px]">
-                    <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase"><tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-right">Price</th></tr></thead>
-                    <tbody class="divide-y divide-gray-100">
-                        ${state.inventory.map(i => `<tr class="hover:bg-gray-50"><td class="p-4 font-black text-amber-600">${i.id}</td><td class="p-4 text-gray-600">${i.entry}</td><td class="p-4 font-black text-gray-800">${i.prod}</td><td class="p-4">${i.vol} ${i.unit}</td><td class="p-4 text-gray-600">${i.loc}</td><td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black">${i.stage}</span></td><td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td></tr>`).join('')}
-                    </tbody>
-                </table>
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Inventory Ledger (${state.inventory.length} items)</h4>
+                <div class="deck-panel" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead style="background-color: #f3f4f6; font-weight: bold;">
+                            <tr style="border-bottom: 2px solid #ddd;">
+                                <th style="padding: 10px; text-align: left;">Order Number</th>
+                                <th style="padding: 10px; text-align: left;">Supplier Name</th>
+                                <th style="padding: 10px; text-align: left;">Buyer/Seller</th>
+                                <th style="padding: 10px; text-align: left;">Warehouse</th>
+                                <th style="padding: 10px; text-align: right;">Quantity</th>
+                                <th style="padding: 10px; text-align: left;">Date</th>
+                                <th style="padding: 10px; text-align: right;">Value</th>
+                                <th style="padding: 10px; text-align: center;">Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${state.inventory.map(item => `
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 10px;">${item.orderNum}</td>
+                                    <td style="padding: 10px;">${item.supplier}</td>
+                                    <td style="padding: 10px;">${item.buyerSeller}</td>
+                                    <td style="padding: 10px;">${item.warehouse}</td>
+                                    <td style="padding: 10px; text-align: right;">${item.quantity}</td>
+                                    <td style="padding: 10px;">${item.date}</td>
+                                    <td style="padding: 10px; text-align: right;">₹${item.value.toLocaleString()}</td>
+                                    <td style="padding: 10px; text-align: center;"><button onclick="alert('Edit ${item.orderNum}')" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">✎</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>`;
         } else if (state.currentView === 'orders') {
             return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Orders (${state.orders.length} total)</h4>
-                <button onclick="openModal('newOrderModal')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
-            </div>
-            <div class="grid grid-cols-3 gap-6 mb-6">
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">Pending</p><p class="text-3xl font-black text-orange-600">${state.orders.filter(o => o.status === 'Pending').length}</p></div>
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">In Transit</p><p class="text-3xl font-black text-blue-600">${state.orders.filter(o => o.status === 'In Transit').length}</p></div>
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">Delivered</p><p class="text-3xl font-black text-green-600">${state.orders.filter(o => o.status === 'Delivered').length}</p></div>
-            </div>
-            <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">All Orders</h5><div class="space-y-3">${state.orders.map(o => `<div class="flex justify-between items-center p-3 border-b"><div><p class="text-xs font-black text-gray-800">${o.id}</p><p class="text-[10px] text-gray-500">Customer: ${o.customer}</p></div><div class="text-right"><p class="text-xs font-black text-gray-800">${symbol} ${o.amount}</p><span class="text-[10px] px-2 py-1 bg-${o.status === 'Pending' ? 'orange' : o.status === 'In Transit' ? 'blue' : 'green'}-100 text-${o.status === 'Pending' ? 'orange' : o.status === 'In Transit' ? 'blue' : 'green'}-700 rounded">${o.status}</span></div></div>`).join('')}</div></div>`;
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Orders & Shipments</h4>
+                <div class="deck-panel" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead style="background-color: #f3f4f6; font-weight: bold;">
+                            <tr style="border-bottom: 2px solid #ddd;">
+                                <th style="padding: 10px; text-align: left;">Order Number</th>
+                                <th style="padding: 10px; text-align: left;">Cargo Name</th>
+                                <th style="padding: 10px; text-align: left;">Supplier</th>
+                                <th style="padding: 10px; text-align: left;">Buyer</th>
+                                <th style="padding: 10px; text-align: left;">Status</th>
+                                <th style="padding: 10px; text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${state.orders.map(order => {
+                                let statusClass = '';
+                                if (order.status === 'Pending') statusClass = 'status-pending';
+                                else if (order.status === 'Order Placed') statusClass = 'status-placed';
+                                else statusClass = 'status-completed';
+                                
+                                return `
+                                    <tr style="border-bottom: 1px solid #ddd;">
+                                        <td style="padding: 10px;">${order.orderNum}</td>
+                                        <td style="padding: 10px;">${order.cargo}</td>
+                                        <td style="padding: 10px;">${order.supplier}</td>
+                                        <td style="padding: 10px;">${order.buyer}</td>
+                                        <td style="padding: 10px;"><span class="status-badge ${statusClass}">${order.status}</span></td>
+                                        <td style="padding: 10px; text-align: right;">₹${order.amount.toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
         } else if (state.currentView === 'transit') {
             return `
-            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Transit Management</h4>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-6">Active Shipments</h5><div class="space-y-4">
-                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200"><p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-001</p><p class="text-sm font-bold text-gray-800 mt-2">Delhi Port</p><div class="w-full bg-gray-200 rounded h-2 mt-2"><div class="bg-blue-600 h-2 rounded" style="width: 60%"></div></div><p class="text-[10px] text-gray-600 mt-2">60% Complete - ETA: 2 days</p></div>
-                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200"><p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-002</p><p class="text-sm font-bold text-gray-800 mt-2">Mumbai Port</p><div class="w-full bg-gray-200 rounded h-2 mt-2"><div class="bg-blue-600 h-2 rounded" style="width: 35%"></div></div><p class="text-[10px] text-gray-600 mt-2">35% Complete - ETA: 4 days</p></div>
-                </div></div>
-                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-6">Transit Commands</h5><div class="space-y-3">
-                    <button onclick="openModal('trackShipmentModal')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">📍 Track Location</button>
-                    <button onclick="alert('✅ Delivery scheduled successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📅 Schedule Delivery</button>
-                    <button onclick="alert('✅ Documents generated successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📄 Generate Documents</button>
-                    <button onclick="alert('✅ Issue reported to support team!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">⚠️ Report Issue</button>
-                </div></div>
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Transit Management</h4>
+                <button onclick="openTransitModal()" style="margin-bottom: 15px; padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">View Full Transit Details</button>
+                <div class="deck-panel" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    ${state.orders.map(order => {
+                        const remaining = Math.ceil((new Date(order.estimatedArrival) - new Date()) / (1000 * 60 * 60 * 24));
+                        return `
+                            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px;">
+                                <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 11px;">${order.orderNum}</p>
+                                <p style="margin: 5px 0; font-size: 10px;"><strong>Cargo:</strong> ${order.cargo}</p>
+                                <p style="margin: 5px 0; font-size: 10px;"><strong>Vehicle:</strong> ${order.vehicleNum}</p>
+                                <p style="margin: 5px 0; font-size: 10px;"><strong>Driver:</strong> ${order.driver}</p>
+                                <p style="margin: 5px 0; font-size: 10px;"><strong>ETA:</strong> ${remaining > 0 ? remaining + ' days' : 'Delivered'}</p>
+                                <span class="status-badge ${order.status === 'Shipment Complete' ? 'status-completed' : 'status-pending'}" style="margin-top: 8px; display: block; text-align: center;">${order.status === 'Shipment Complete' ? 'Delivered' : 'In Transit'}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
             </div>`;
         } else if (state.currentView === 'finance') {
             return `
-            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Financial Dashboard</h4>
-            <div class="grid grid-cols-4 gap-6">
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Revenue</p><h4 class="text-2xl font-black text-gray-800">${symbol} 45.8 Cr</h4><p class="text-[11px] text-green-600 mt-2 font-bold">↑ 12% YoY</p></div>
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Expenses</p><h4 class="text-2xl font-black text-gray-800">${symbol} 12.3 Cr</h4><p class="text-[11px] text-red-600 mt-2 font-bold">↓ 5% YoY</p></div>
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Net Profit</p><h4 class="text-2xl font-black text-gray-800">${symbol} 33.5 Cr</h4><p class="text-[11px] text-green-600 mt-2 font-bold">↑ 18% YoY</p></div>
-                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Pending Invoices</p><h4 class="text-2xl font-black text-gray-800">23</h4><p class="text-[11px] text-orange-600 mt-2 font-bold">Worth ${symbol} 2.1 Cr</p></div>
+            <div style="margin-bottom: 15px;">
+                <button onclick="openFinanceModal()" style="margin-bottom: 15px; padding: 10px 20px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">View Finance Dashboard</button>
             </div>`;
-        } else if (state.currentView === 'analytics') {
+        } else if (state.currentView === 'insights') {
             return `
-            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Analytics & Insights</h4>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">Monthly Sales</h5><div class="flex items-end justify-around h-40"><div class="bg-amber-600 w-8 rounded" style="height: 60%"></div><div class="bg-amber-600 w-8 rounded" style="height: 75%"></div><div class="bg-amber-600 w-8 rounded" style="height: 85%"></div><div class="bg-amber-600 w-8 rounded" style="height: 70%"></div><div class="bg-amber-600 w-8 rounded" style="height: 90%"></div></div></div>
-                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">Product Mix</h5><div class="space-y-3"><div class="flex justify-between"><span>Teak (45%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-amber-600 h-2 rounded" style="width: 45%"></div></div></div><div class="flex justify-between"><span>Mahogany (35%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-blue-600 h-2 rounded" style="width: 35%"></div></div></div><div class="flex justify-between"><span>Pine (20%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-green-600 h-2 rounded" style="width: 20%"></div></div></div></div></div>
+            <div style="margin-bottom: 15px;">
+                <button onclick="openInsightsModal()" style="margin-bottom: 15px; padding: 10px 20px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">View Insights & News</button>
             </div>`;
         } else if (state.currentView === 'settings') {
             return `
-            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Settings</h4>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="deck-panel p-6"><h5 class="text-xs font-black text-gray-800 uppercase mb-4">Account</h5><div class="space-y-3"><div><label class="text-xs font-bold text-gray-600">Email:</label><p class="text-sm text-gray-800">admin@dockside.com</p></div><div><label class="text-xs font-bold text-gray-600">Name:</label><p class="text-sm text-gray-800">Administrator</p></div><div><label class="text-xs font-bold text-gray-600">Hub:</label><p class="text-sm text-gray-800">Gandhidham Hub</p></div></div></div>
-                <div class="deck-panel p-6"><h5 class="text-xs font-black text-gray-800 uppercase mb-4">Preferences</h5><div class="space-y-2"><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm">Email Notifications</span></label><label class="flex items-center"><input type="checkbox" class="mr-2"><span class="text-sm">SMS Alerts</span></label><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm">2FA Enabled</span></label></div></div>
-            </div>
-            <button onclick="alert('✅ Logged out successfully!')" class="w-full px-6 py-3 bg-red-600 text-white font-black rounded hover:bg-red-700 mt-6">🚪 Logout</button>`;
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: bold;">Company Settings</h4>
+                    <div class="deck-panel" style="padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 5px;">Company Name</label>
+                            <input type="text" value="${state.companyName}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 5px;">Company Email</label>
+                            <input type="text" value="${state.companyEmail}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 5px;">Warehouse Location</label>
+                            <input type="text" value="${state.warehouseLocation}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 5px;">Currency</label>
+                            <select style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option>INR (₹)</option>
+                                <option>USD ($)</option>
+                                <option>EUR (€)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: bold;">Preferences</h4>
+                    <div class="deck-panel" style="padding: 20px;">
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" checked style="margin-right: 10px;">
+                            <span style="font-size: 12px;">Email Notifications</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" checked style="margin-right: 10px;">
+                            <span style="font-size: 12px;">SMS Alerts</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" checked style="margin-right: 10px;">
+                            <span style="font-size: 12px;">Push Notifications</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" style="margin-right: 10px;">
+                            <span style="font-size: 12px;">Dark Mode</span>
+                        </label>
+                    </div>
+                </div>
+            </div>`;
         }
         
-        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Link Established</div>`;
+        return '';
+    }
+
+    function openStockModal() {
+        displayStockTable();
+        openModal('stockModal');
+    }
+
+    function openOrdersModal() {
+        displayOrdersTable();
+        openModal('ordersModal');
+    }
+
+    function openPaymentsModal() {
+        displayPaymentsTable();
+        openModal('paymentsModal');
+    }
+
+    function openRisksModal() {
+        displayRisksTable();
+        openModal('risksModal');
+    }
+
+    function openTransitModal() {
+        displayTransitTable();
+        openModal('transitModal');
+    }
+
+    function openFinanceModal() {
+        displayFinanceTable();
+        openModal('financeModal');
+    }
+
+    function openInsightsModal() {
+        displayInsights();
+        openModal('insightsModal');
     }
 </script>
 </body>
