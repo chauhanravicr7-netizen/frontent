@@ -1,153 +1,577 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOCKSIDE | Executive Terminal v2.0.0</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
-<style>
-:root { 
---chalk-white: #F3F4F6; 
---panel-light: rgba(255,255,255,0.8); 
---sidebar-light:#E5E7EB; 
---accent:#D97706;
-}
-body{font-family:'Inter',sans-serif;background-color:var(--chalk-white);margin:0;overflow:hidden;color:#374151;}
-.italic-brand{font-family:'Plus Jakarta Sans',sans-serif;font-style:italic;}
-.deck-panel{
-background:var(--panel-light);
-backdrop-filter:blur(25px);
-border:1px solid rgba(0,0,0,0.05);
-box-shadow:0 15px 35px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8);
-border-radius:8px;
-transition:all .4s cubic-bezier(.4,0,.2,1);
-}
-.deck-panel:hover{
-transform:translateY(-5px);
-border-color:var(--accent);
-box-shadow:0 25px 50px rgba(0,0,0,0.15);
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCKSIDE | Executive Terminal v2.0.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --chalk-white: #F3F4F6; 
+            --panel-light: rgba(255, 255, 255, 0.8); 
+            --sidebar-light: #E5E7EB; 
+            --accent: #D97706; 
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--chalk-white); 
+            margin: 0; 
+            overflow: hidden; 
+            color: #374151; 
+        }
+        
+        .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
+
+        .deck-panel {
+            background: var(--panel-light);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .deck-panel:hover {
+            transform: translateY(-5px) translateZ(20px);
+            border-color: var(--accent);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .corporate-card { 
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
+            border-radius: 4px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+            border: 1px solid #94a3b8; 
+            max-width: 460px; 
+            width: 100%; 
+        }
+        .corporate-header { 
+            background: linear-gradient(180deg, #475569 0%, #1e293b 100%); 
+            color: white; padding: 12px 18px; font-weight: 800; 
+            display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; 
+        }
+        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
+        .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
+        .form-input-login { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; background: white; }
+        .action-btn-login { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #374151;
+        }
+
+        .close-btn {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #D97706;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-submit {
+            flex: 1;
+            padding: 10px;
+            background-color: #D97706;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .btn-submit:hover {
+            background-color: #B45309;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 10px;
+            background-color: #e5e7eb;
+            color: #374151;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #d1d5db;
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    </style>
 </head>
 <body class="antialiased">
 
+<!-- MODALS OUTSIDE APP DIV -->
+<div id="addStockModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Add New Stock Item</span>
+            <button class="close-btn" onclick="closeModal('addStockModal')">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>SKU</label>
+            <input type="text" id="newSKU" placeholder="e.g., SKU004">
+        </div>
+        <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="newProduct" placeholder="e.g., Cedar Wood">
+        </div>
+        <div class="form-group">
+            <label>Volume</label>
+            <input type="number" id="newVolume" placeholder="e.g., 100" step="0.01">
+        </div>
+        <div class="form-group">
+            <label>Unit</label>
+            <select id="newUnit">
+                <option>CFT</option>
+                <option>Meter</option>
+                <option>Ton</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Warehouse Location</label>
+            <input type="text" id="newLocation" placeholder="e.g., Plot 15">
+        </div>
+        <div class="form-group">
+            <label>Price (₹)</label>
+            <input type="number" id="newPrice" placeholder="e.g., 1000" step="0.01">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="addNewStock()">✓ Add Stock</button>
+            <button class="btn-cancel" onclick="closeModal('addStockModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="newOrderModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Create New Order</span>
+            <button class="close-btn" onclick="closeModal('newOrderModal')">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Order Number</label>
+            <input type="text" id="orderNumber" placeholder="e.g., ORD-2025-004">
+        </div>
+        <div class="form-group">
+            <label>Customer ID</label>
+            <input type="text" id="customerId" placeholder="e.g., CUST004">
+        </div>
+        <div class="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" id="orderAmount" placeholder="e.g., 50000" step="100">
+        </div>
+        <div class="form-group">
+            <label>Status</label>
+            <select id="orderStatus">
+                <option>Pending</option>
+                <option>In Transit</option>
+                <option>Delivered</option>
+            </select>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="createNewOrder()">✓ Create Order</button>
+            <button class="btn-cancel" onclick="closeModal('newOrderModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="trackShipmentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Track Shipment</span>
+            <button class="close-btn" onclick="closeModal('trackShipmentModal')">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Shipment ID</label>
+            <select id="shipmentSelect" onchange="updateShipmentDetails()">
+                <option value="001">SHP-2025-001 - Delhi Port</option>
+                <option value="002">SHP-2025-002 - Mumbai Port</option>
+            </select>
+        </div>
+        <div class="deck-panel p-4" id="shipmentDetails">
+            <p class="text-sm"><strong>Shipment:</strong> <span id="shipDetail1">SHP-2025-001</span></p>
+            <p class="text-sm"><strong>Destination:</strong> <span id="shipDetail2">Delhi Port</span></p>
+            <p class="text-sm"><strong>Progress:</strong> <span id="shipDetail3">60% Complete</span></p>
+            <p class="text-sm"><strong>ETA:</strong> <span id="shipDetail4">2 days</span></p>
+            <p class="text-sm"><strong>Last Updated:</strong> Today at 2:30 PM</p>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="closeModal('trackShipmentModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
 <div id="app">
-<!-- LOGIN SCREEN REMAINS SAME -->
-<div class="min-h-screen flex flex-col lg:flex-row">
-<div class="flex-1 flex items-center justify-center p-6 bg-[#F3F4F6]">
-<div class="border p-10 bg-white shadow-md w-full max-w-md">
-<h2 class="text-xl font-black mb-6">DOCKSIDE Login</h2>
-<input type="email" id="loginEmail" class="w-full border p-2 mb-3" value="demo@dockside.com">
-<input type="password" id="loginPassword" class="w-full border p-2 mb-4" value="demo123456">
-<button onclick="handleLogin()" class="w-full bg-amber-600 text-white py-2 font-black">Login Terminal</button>
-</div>
-</div>
-</div>
+    <div class="min-h-screen flex flex-col lg:flex-row">
+        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
+                <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
+                <div class="space-y-6">
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center p-6 bg-[#F3F4F6]">
+            <div class="corporate-card">
+                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
+                <div class="py-10">
+                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" id="loginEmail" value="demo@dockside.com"></div>
+                    <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" id="loginPassword" value="demo123456"></div>
+                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
+                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
+                        <button onclick="handleLogin()" class="action-btn-login uppercase">Login Terminal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-const API_BASE_URL='https://dockside-api.onrender.com/api';
+    const API_BASE_URL = 'https://dockside-api.onrender.com/api';
 
-let state={
-authenticated:false,
-currentView:'dashboard',
-currency:'INR',
-hub:'Gandhidham Hub',
-inventory:[
-{id:'SKU001',entry:'24-02-26',prod:'Teak Logs',vol:'145.50',unit:'CFT',loc:'Plot 10',stage:'In Warehouse',price:'850'},
-{id:'SKU002',entry:'23-02-26',prod:'Mahogany Planks',vol:'89.25',unit:'CFT',loc:'Plot 12',stage:'Pending QC',price:'1200'}
-]
-};
+    let state = {
+        authenticated: false,
+        currentView: 'dashboard',
+        currency: 'INR',
+        hub: 'Gandhidham Hub',
+        inventory: [
+            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' },
+            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' },
+            { id: 'SKU003', entry: '22-02-26', prod: 'Pine Wood', vol: '220.00', unit: 'CFT', loc: 'Plot 08', stage: 'Dispatched', price: '650' }
+        ],
+        orders: [
+            { id: 'ORD-2025-001', customer: 'CUST001', amount: '50000', status: 'Pending' },
+            { id: 'ORD-2025-002', customer: 'CUST002', amount: '75000', status: 'In Transit' },
+            { id: 'ORD-2025-003', customer: 'CUST003', amount: '100000', status: 'Delivered' }
+        ]
+    };
 
-function handleLogin(){state.authenticated=true;renderShell();}
-function switchView(view){state.currentView=view;renderShell();}
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('show');
+    }
 
-/* ================= GLOBAL ACTION HANDLERS ================= */
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+    }
 
-function handleAddInventory(){console.log("Add Inventory");}
-function handleEditInventory(id){console.log("Edit Inventory:",id);}
-function handleNewOrder(){console.log("New Order");}
-function handleTrackShipment(){console.log("Track Shipment");}
-function handleGenerateInvoice(){console.log("Generate Invoice");}
-function handleSyncData(){console.log("Sync Data");}
-function handleTrackLocation(){console.log("Track Location");}
-function handleScheduleDelivery(){console.log("Schedule Delivery");}
-function handleGenerateDocuments(){console.log("Generate Documents");}
-function handleReportIssue(){console.log("Report Issue");}
-function handleChangePassword(){console.log("Change Password");}
-function handleViewActivity(){console.log("View Activity Log");}
-function handleLogout(){state.authenticated=false;location.reload();}
+    function updateShipmentDetails() {
+        const select = document.getElementById('shipmentSelect');
+        const value = select.value;
+        
+        if (value === '001') {
+            document.getElementById('shipDetail1').textContent = 'SHP-2025-001';
+            document.getElementById('shipDetail2').textContent = 'Delhi Port';
+            document.getElementById('shipDetail3').textContent = '60% Complete';
+            document.getElementById('shipDetail4').textContent = '2 days';
+        } else {
+            document.getElementById('shipDetail1').textContent = 'SHP-2025-002';
+            document.getElementById('shipDetail2').textContent = 'Mumbai Port';
+            document.getElementById('shipDetail3').textContent = '35% Complete';
+            document.getElementById('shipDetail4').textContent = '4 days';
+        }
+    }
 
-/* ================= RENDER SHELL ================= */
+    function addNewStock() {
+        const sku = document.getElementById('newSKU').value.trim();
+        const product = document.getElementById('newProduct').value.trim();
+        const volume = document.getElementById('newVolume').value.trim();
+        const unit = document.getElementById('newUnit').value;
+        const location = document.getElementById('newLocation').value.trim();
+        const price = document.getElementById('newPrice').value.trim();
 
-function renderShell(){
-if(!state.authenticated)return;
-const symbol=state.currency==='INR'?'₹':'$';
+        if (!sku || !product || !volume || !price) {
+            alert('❌ Please fill all fields!');
+            return;
+        }
 
-document.getElementById('app').innerHTML=`
-<div class="flex h-screen">
-<aside class="w-60 bg-gray-200 p-6">
-${['dashboard','inventory','orders','transit','finance','analytics','settings'].map(v=>`
-<button onclick="switchView('${v}')" class="block w-full text-left mb-3 font-black uppercase">${v}</button>
-`).join('')}
-</aside>
-<div class="flex-1 p-10 overflow-auto">
-${renderMainContent(symbol)}
-</div>
-</div>`;
-}
+        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        state.inventory.push({
+            id: sku,
+            entry: today,
+            prod: product,
+            vol: volume,
+            unit: unit,
+            loc: location || 'Plot 20',
+            stage: 'In Warehouse',
+            price: price
+        });
 
-function renderMainContent(symbol){
+        alert('✅ Stock item added successfully!\n\nSKU: ' + sku + '\nProduct: ' + product);
+        document.getElementById('newSKU').value = '';
+        document.getElementById('newProduct').value = '';
+        document.getElementById('newVolume').value = '';
+        document.getElementById('newLocation').value = '';
+        document.getElementById('newPrice').value = '';
+        closeModal('addStockModal');
+        renderShell();
+    }
 
-if(state.currentView==='inventory'){
-return`
-<div class="flex justify-between mb-6">
-<h3 class="font-black">Inventory</h3>
-<button onclick="handleAddInventory()" class="bg-amber-600 text-white px-3 py-1 text-xs font-black">+ Add Item</button>
-</div>
-<table class="w-full text-xs border">
-<thead><tr>
-<th>SKU</th><th>Product</th><th>Volume</th><th>Action</th>
-</tr></thead>
-<tbody>
-${state.inventory.map(i=>`
-<tr class="border-t">
-<td>${i.id}</td>
-<td>${i.prod}</td>
-<td>${i.vol} ${i.unit}</td>
-<td><button onclick="handleEditInventory('${i.id}')" class="text-amber-600">✎</button></td>
-</tr>`).join('')}
-</tbody>
-</table>
-`;
-}
+    function createNewOrder() {
+        const orderNum = document.getElementById('orderNumber').value.trim();
+        const customerId = document.getElementById('customerId').value.trim();
+        const amount = document.getElementById('orderAmount').value.trim();
+        const status = document.getElementById('orderStatus').value;
 
-if(state.currentView==='orders'){
-return`
-<button onclick="handleNewOrder()" class="bg-amber-600 text-white px-3 py-1 text-xs font-black">+ New Order</button>
-`;
-}
+        if (!orderNum || !customerId || !amount) {
+            alert('❌ Please fill all fields!');
+            return;
+        }
 
-if(state.currentView==='transit'){
-return`
-<button onclick="handleTrackLocation()">Track Location</button>
-<button onclick="handleScheduleDelivery()">Schedule Delivery</button>
-<button onclick="handleGenerateDocuments()">Generate Documents</button>
-<button onclick="handleReportIssue()">Report Issue</button>
-`;
-}
+        state.orders.push({
+            id: orderNum,
+            customer: customerId,
+            amount: amount,
+            status: status
+        });
 
-if(state.currentView==='settings'){
-return`
-<button onclick="handleChangePassword()">Change Password</button>
-<button onclick="handleViewActivity()">View Activity Log</button>
-<button onclick="handleLogout()" class="bg-red-600 text-white px-3 py-1 mt-4">Logout</button>
-`;
-}
+        alert('✅ Order created successfully!\n\nOrder: ' + orderNum + '\nAmount: ₹' + amount);
+        document.getElementById('orderNumber').value = '';
+        document.getElementById('customerId').value = '';
+        document.getElementById('orderAmount').value = '';
+        closeModal('newOrderModal');
+        renderShell();
+    }
 
-return `<h3 class="font-black uppercase">${state.currentView}</h3>`;
-}
+    function handleLogin() { 
+        state.authenticated = true; 
+        renderShell(); 
+    }
+
+    function switchView(view) { 
+        state.currentView = view; 
+        renderShell(); 
+    }
+
+    function renderShell() {
+        if (!state.authenticated) return;
+        const symbol = state.currency === 'INR' ? '₹' : '$';
+        document.getElementById('app').innerHTML = `
+        <div class="flex h-screen overflow-hidden">
+            <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
+                <div class="p-8"><h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
+                <nav class="flex-1 px-4 space-y-1">
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
+                        <button onclick="switchView('${item.toLowerCase()}')" 
+                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                            ${item}
+                        </button>
+                    `).join('')}
+                </nav>
+            </aside>
+
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
+                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
+                    <div class="flex items-center gap-4 text-[10px] font-black">
+                        <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
+                        <div class="w-px h-6 bg-gray-300 mx-2"></div>
+                        <p class="text-gray-400">v2.0.0</p>
+                    </div>
+                </header>
+                <main class="flex-1 overflow-y-auto p-10">${renderMainContent(symbol)}</main>
+            </div>
+        </div>`;
+    }
+
+    function renderMainContent(symbol) {
+        if (state.currentView === 'dashboard') {
+            return `
+            <div class="grid grid-cols-4 gap-6 mb-10">
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Stock Value</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 12.4 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Open Orders</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${state.orders.length}</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Pending Payments</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 1.2 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Risk Alerts</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">04</h4>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Portfolio Performance</h5>
+                    <div class="space-y-4">
+                        <div><div class="flex justify-between mb-2"><span class="text-xs font-bold text-gray-600">Teak Logs</span><span class="text-xs font-black text-gray-800">78%</span></div><div class="w-full bg-gray-200 rounded h-2"><div class="bg-amber-600 h-2 rounded" style="width: 78%"></div></div></div>
+                        <div><div class="flex justify-between mb-2"><span class="text-xs font-bold text-gray-600">Mahogany</span><span class="text-xs font-black text-gray-800">65%</span></div><div class="w-full bg-gray-200 rounded h-2"><div class="bg-amber-600 h-2 rounded" style="width: 65%"></div></div></div>
+                    </div>
+                </div>
+                <div class="deck-panel p-8">
+                    <h5 class="text-sm font-black text-gray-800 uppercase mb-6">Quick Actions</h5>
+                    <div class="space-y-3">
+                        <button onclick="openModal('newOrderModal')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
+                        <button onclick="openModal('trackShipmentModal')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📍 Track Shipment</button>
+                        <button onclick="alert('✅ Invoice generated successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Generate Invoice</button>
+                        <button onclick="alert('✅ Data synced successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">Sync Data</button>
+                    </div>
+                </div>
+            </div>`;
+        } else if (state.currentView === 'inventory') {
+            return `
+            <div class="flex justify-between items-center mb-10">
+                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger (${state.inventory.length} items)</h4>
+                <button onclick="openModal('addStockModal')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ Add Stock</button>
+            </div>
+            <div class="deck-panel overflow-hidden border border-gray-200">
+                <table class="w-full text-left text-[11px]">
+                    <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase"><tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-right">Price</th></tr></thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${state.inventory.map(i => `<tr class="hover:bg-gray-50"><td class="p-4 font-black text-amber-600">${i.id}</td><td class="p-4 text-gray-600">${i.entry}</td><td class="p-4 font-black text-gray-800">${i.prod}</td><td class="p-4">${i.vol} ${i.unit}</td><td class="p-4 text-gray-600">${i.loc}</td><td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black">${i.stage}</span></td><td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        } else if (state.currentView === 'orders') {
+            return `
+            <div class="flex justify-between items-center mb-10">
+                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Orders (${state.orders.length} total)</h4>
+                <button onclick="openModal('newOrderModal')" class="px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">+ New Order</button>
+            </div>
+            <div class="grid grid-cols-3 gap-6 mb-6">
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">Pending</p><p class="text-3xl font-black text-orange-600">${state.orders.filter(o => o.status === 'Pending').length}</p></div>
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">In Transit</p><p class="text-3xl font-black text-blue-600">${state.orders.filter(o => o.status === 'In Transit').length}</p></div>
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-2">Delivered</p><p class="text-3xl font-black text-green-600">${state.orders.filter(o => o.status === 'Delivered').length}</p></div>
+            </div>
+            <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">All Orders</h5><div class="space-y-3">${state.orders.map(o => `<div class="flex justify-between items-center p-3 border-b"><div><p class="text-xs font-black text-gray-800">${o.id}</p><p class="text-[10px] text-gray-500">Customer: ${o.customer}</p></div><div class="text-right"><p class="text-xs font-black text-gray-800">${symbol} ${o.amount}</p><span class="text-[10px] px-2 py-1 bg-${o.status === 'Pending' ? 'orange' : o.status === 'In Transit' ? 'blue' : 'green'}-100 text-${o.status === 'Pending' ? 'orange' : o.status === 'In Transit' ? 'blue' : 'green'}-700 rounded">${o.status}</span></div></div>`).join('')}</div></div>`;
+        } else if (state.currentView === 'transit') {
+            return `
+            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Transit Management</h4>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-6">Active Shipments</h5><div class="space-y-4">
+                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200"><p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-001</p><p class="text-sm font-bold text-gray-800 mt-2">Delhi Port</p><div class="w-full bg-gray-200 rounded h-2 mt-2"><div class="bg-blue-600 h-2 rounded" style="width: 60%"></div></div><p class="text-[10px] text-gray-600 mt-2">60% Complete - ETA: 2 days</p></div>
+                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200"><p class="text-xs font-bold text-gray-600 uppercase">SHP-2025-002</p><p class="text-sm font-bold text-gray-800 mt-2">Mumbai Port</p><div class="w-full bg-gray-200 rounded h-2 mt-2"><div class="bg-blue-600 h-2 rounded" style="width: 35%"></div></div><p class="text-[10px] text-gray-600 mt-2">35% Complete - ETA: 4 days</p></div>
+                </div></div>
+                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-6">Transit Commands</h5><div class="space-y-3">
+                    <button onclick="openModal('trackShipmentModal')" class="w-full px-4 py-2 bg-amber-600 text-white text-xs font-black rounded hover:bg-amber-700">📍 Track Location</button>
+                    <button onclick="alert('✅ Delivery scheduled successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📅 Schedule Delivery</button>
+                    <button onclick="alert('✅ Documents generated successfully!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">📄 Generate Documents</button>
+                    <button onclick="alert('✅ Issue reported to support team!')" class="w-full px-4 py-2 border border-amber-600 text-amber-600 text-xs font-black rounded hover:bg-amber-50">⚠️ Report Issue</button>
+                </div></div>
+            </div>`;
+        } else if (state.currentView === 'finance') {
+            return `
+            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Financial Dashboard</h4>
+            <div class="grid grid-cols-4 gap-6">
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Revenue</p><h4 class="text-2xl font-black text-gray-800">${symbol} 45.8 Cr</h4><p class="text-[11px] text-green-600 mt-2 font-bold">↑ 12% YoY</p></div>
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Total Expenses</p><h4 class="text-2xl font-black text-gray-800">${symbol} 12.3 Cr</h4><p class="text-[11px] text-red-600 mt-2 font-bold">↓ 5% YoY</p></div>
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Net Profit</p><h4 class="text-2xl font-black text-gray-800">${symbol} 33.5 Cr</h4><p class="text-[11px] text-green-600 mt-2 font-bold">↑ 18% YoY</p></div>
+                <div class="deck-panel p-6"><p class="text-[10px] font-black text-gray-500 uppercase mb-3">Pending Invoices</p><h4 class="text-2xl font-black text-gray-800">23</h4><p class="text-[11px] text-orange-600 mt-2 font-bold">Worth ${symbol} 2.1 Cr</p></div>
+            </div>`;
+        } else if (state.currentView === 'analytics') {
+            return `
+            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Analytics & Insights</h4>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">Monthly Sales</h5><div class="flex items-end justify-around h-40"><div class="bg-amber-600 w-8 rounded" style="height: 60%"></div><div class="bg-amber-600 w-8 rounded" style="height: 75%"></div><div class="bg-amber-600 w-8 rounded" style="height: 85%"></div><div class="bg-amber-600 w-8 rounded" style="height: 70%"></div><div class="bg-amber-600 w-8 rounded" style="height: 90%"></div></div></div>
+                <div class="deck-panel p-8"><h5 class="text-sm font-black text-gray-800 uppercase mb-4">Product Mix</h5><div class="space-y-3"><div class="flex justify-between"><span>Teak (45%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-amber-600 h-2 rounded" style="width: 45%"></div></div></div><div class="flex justify-between"><span>Mahogany (35%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-blue-600 h-2 rounded" style="width: 35%"></div></div></div><div class="flex justify-between"><span>Pine (20%)</span><div class="w-24 bg-gray-200 h-2 rounded"><div class="bg-green-600 h-2 rounded" style="width: 20%"></div></div></div></div></div>
+            </div>`;
+        } else if (state.currentView === 'settings') {
+            return `
+            <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest mb-6">Settings</h4>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="deck-panel p-6"><h5 class="text-xs font-black text-gray-800 uppercase mb-4">Account</h5><div class="space-y-3"><div><label class="text-xs font-bold text-gray-600">Email:</label><p class="text-sm text-gray-800">admin@dockside.com</p></div><div><label class="text-xs font-bold text-gray-600">Name:</label><p class="text-sm text-gray-800">Administrator</p></div><div><label class="text-xs font-bold text-gray-600">Hub:</label><p class="text-sm text-gray-800">Gandhidham Hub</p></div></div></div>
+                <div class="deck-panel p-6"><h5 class="text-xs font-black text-gray-800 uppercase mb-4">Preferences</h5><div class="space-y-2"><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm">Email Notifications</span></label><label class="flex items-center"><input type="checkbox" class="mr-2"><span class="text-sm">SMS Alerts</span></label><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm">2FA Enabled</span></label></div></div>
+            </div>
+            <button onclick="alert('✅ Logged out successfully!')" class="w-full px-6 py-3 bg-red-600 text-white font-black rounded hover:bg-red-700 mt-6">🚪 Logout</button>`;
+        }
+        
+        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Link Established</div>`;
+    }
 </script>
 </body>
 </html>
