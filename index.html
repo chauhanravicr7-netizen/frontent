@@ -7,40 +7,68 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
+        /* CHALK WHITE TRANSITION */
         :root { 
             --chalk-white: #F3F4F6; 
             --panel-light: rgba(255, 255, 255, 0.8); 
             --sidebar-light: #E5E7EB; 
             --accent: #D97706; 
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--chalk-white); margin: 0; overflow: hidden; color: #374151; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--chalk-white); 
+            margin: 0; 
+            overflow: hidden; 
+            color: #374151; 
+        }
+        
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
 
+        /* 3D GLASSMORPHISM ON LIGHT THEME */
         .deck-panel {
             background: var(--panel-light);
             backdrop-filter: blur(25px);
             border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.8);
             border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .deck-panel:hover { transform: translateY(-5px) translateZ(20px); border-color: var(--accent); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15); }
+        .deck-panel:hover {
+            transform: translateY(-5px) translateZ(20px);
+            border-color: var(--accent);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
 
-        .corporate-card { background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #94a3b8; max-width: 460px; width: 100%; }
-        .corporate-header { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); color: white; padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; }
+        /* RESTORED CORPORATE GATEWAY */
+        .corporate-card { 
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
+            border-radius: 4px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+            border: 1px solid #94a3b8; 
+            max-width: 460px; 
+            width: 100%; 
+        }
+        .corporate-header { 
+            background: linear-gradient(180deg, #475569 0%, #1e293b 100%); 
+            color: white; padding: 12px 18px; font-weight: 800; 
+            display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; 
+        }
         .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
         .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
         .form-input-login { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; background: white; }
         .action-btn-login { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; }
 
-        /* FIXED MODAL STYLES */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 100; display: none; }
+        /* FIXED SLIDING MODAL STYLES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 100; display: none; }
         .modal-overlay.active { display: block; }
-        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: white; box-shadow: -10px 0 40px rgba(0,0,0,0.2); border-left: 1px solid #ddd; transform: translateX(100%); transition: transform 0.4s; z-index: 101; overflow-y: auto; }
+        .modal-panel { position: fixed; right: 0; top: 0; width: 480px; height: 100vh; background: white; z-index: 101; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.1); overflow-y: auto; }
         .modal-panel.active { transform: translateX(0); }
-        .form-input-reg { width: 100%; border: 1px solid #ddd; padding: 10px; color: #333; font-size: 13px; border-radius: 4px; background: #f9f9f9; outline-color: var(--accent); }
+        .form-input-reg { width: 100%; border: 1px solid #ddd; padding: 12px; border-radius: 6px; font-size: 14px; background: #f9f9f9; outline-color: var(--accent); }
 
-        ::-webkit-scrollbar { width: 4px; }
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
@@ -50,24 +78,24 @@
     <div class="min-h-screen flex flex-col lg:flex-row">
         <div class="hidden lg:flex lg:w-1/2 relative bg-black">
             <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
-            <div class="relative z-10 p-20 flex flex-col justify-center h-screen text-white">
-                <h1 class="text-6xl font-black italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
+                <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
                 <div class="space-y-6">
-                    <p class="text-2xl italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#F3F4F6]">
-            <div class="corporate-card shadow-2xl">
-                <div class="corporate-header uppercase"><span>Establish Link</span><span class="text-amber-500 font-black tracking-widest">Gandhidham Hub</span></div>
-                <div class="py-10 px-4">
-                    <div class="form-row"><label class="form-label">Terminal ID</label><input type="email" class="form-input-login" value="demo@dockside.com"></div>
+            <div class="corporate-card">
+                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
+                <div class="py-10">
+                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" value="demo@dockside.com"></div>
                     <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">Role</label><select class="form-input-login font-bold"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
-                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login font-bold"><option>2025-26</option></select></div>
-                    <div class="flex justify-center mt-8 pt-6 border-t border-slate-300">
-                        <button onclick="handleLogin()" class="action-btn-login uppercase shadow-lg">Login Hub</button>
+                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
+                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
+                        <button onclick="handleLogin()" class="action-btn-login uppercase">Login Terminal</button>
                     </div>
                 </div>
             </div>
@@ -76,145 +104,128 @@
 </div>
 
 <script>
-    // CORE STATE
     let state = {
-        auth: false,
-        view: 'dashboard',
+        authenticated: false,
+        currentView: 'dashboard',
         currency: 'INR',
         hub: 'Gandhidham Hub',
         inventory: [
-            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.5', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: 850 },
-            { id: 'SKU002', entry: '18-02-26', prod: 'Sal Wood', vol: '88', unit: 'CFT', loc: 'Mundra CFS', stage: 'Reserved', price: 720 }
+            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' },
+            { id: 'SKU002', entry: '23-02-26', prod: 'Mahogany Planks', vol: '89.25', unit: 'CFT', loc: 'Plot 12', stage: 'Pending QC', price: '1200' },
+            { id: 'SKU003', entry: '22-02-26', prod: 'Pine Wood', vol: '220.00', unit: 'CFT', loc: 'Plot 08', stage: 'Dispatched', price: '650' }
         ]
     };
 
-    // FUNCTIONAL ACTIONS [FIXED]
-    function handleLogin() { state.auth = true; renderShell(); }
-    function switchView(v) { state.view = v; renderShell(); }
-    
-    // Toggle Modal Panel
+    function handleLogin() { 
+        state.authenticated = true; 
+        renderShell(); 
+    }
+
+    function switchView(view) { 
+        state.currentView = view; 
+        renderShell(); 
+    }
+
+    // FIXED: Correct modal triggering function
     function togglePanel(show) {
         const overlay = document.getElementById('modalOverlay');
-        const panel = document.getElementById('modalPanel');
+        const panel = document.getElementById('addStockPanel');
         if(overlay && panel) {
-            overlay.style.display = show ? 'block' : 'none';
+            overlay.classList.toggle('active', show);
             panel.classList.toggle('active', show);
         }
     }
 
-    // Function to handle "Edit SKU" or "Quick Action" buttons
-    function runAction(type, id = '') {
-        if(type === 'edit') {
-            document.getElementById('modalTitle').innerText = `Editing Stock ${id}`;
-            togglePanel(true);
-        } else if(type === 'order') {
-            switchView('orders');
-        } else {
-            alert(`Initiating ${type} sequence for Gandhidham Hub...`);
-        }
-    }
-
     function renderShell() {
-        if (!state.auth) return;
+        if (!state.authenticated) return;
         const symbol = state.currency === 'INR' ? '₹' : '$';
         document.getElementById('app').innerHTML = `
         <div class="flex h-screen overflow-hidden">
             <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
                 <div class="p-8"><h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
                 <nav class="flex-1 px-4 space-y-1">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(i => `
-                        <button onclick="switchView('${i.toLowerCase()}')" 
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
+                        <button onclick="switchView('${item.toLowerCase()}')" 
                             class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
-                            ${state.view === i.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
-                            ${i}
-                        </button>`).join('')}
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                            ${item}
+                        </button>
+                    `).join('')}
                 </nav>
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
-                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-widest italic">${state.view} Terminal</h3>
-                    <div class="flex items-center gap-6">
-                        <div class="flex bg-black/5 rounded p-1 border border-black/5">
-                            <button onclick="state.currency='INR'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='INR'?'bg-amber-600 text-white shadow-md':'text-gray-500'}">INR</button>
-                            <button onclick="state.currency='USD'; renderShell();" class="px-3 py-1 text-[9px] font-black rounded ${state.currency==='USD'?'bg-amber-600 text-white shadow-md':'text-gray-500'}">USD</button>
-                        </div>
-                        <span class="text-green-600 text-[10px] font-black uppercase tracking-widest animate-pulse">● Live ${state.hub}</span>
+                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
+                    <div class="flex items-center gap-4 text-[10px] font-black">
+                        <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
+                        <div class="w-px h-6 bg-gray-300 mx-2"></div>
+                        <p class="text-gray-400">v2.0.0</p>
                     </div>
                 </header>
-                <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderContent(symbol)}</main>
+                <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderMainContent(symbol)}</main>
             </div>
         </div>
 
         <div id="modalOverlay" class="modal-overlay" onclick="togglePanel(false)"></div>
-        <div id="modalPanel" class="modal-panel shadow-2xl">
+        <div id="addStockPanel" class="modal-panel">
             <div class="p-8 border-b flex justify-between items-center bg-gray-50">
-                <h3 id="modalTitle" class="text-lg font-black text-gray-800 uppercase italic">Stock Ledger Registration</h3>
-                <button onclick="togglePanel(false)" class="text-gray-400 hover:text-red-600 text-2xl font-bold transition-colors">&times;</button>
+                <h3 class="text-lg font-black text-gray-800 uppercase italic tracking-widest">Add New Stock Entry</h3>
+                <button onclick="togglePanel(false)" class="text-gray-400 hover:text-red-600 text-2xl font-bold">&times;</button>
             </div>
             <div class="p-8 space-y-6">
-                <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2 tracking-widest">Product Specification</label><input type="text" placeholder="e.g. Teak Plywood 12mm" class="form-input-reg"></div>
+                <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Product Specification</label><input type="text" placeholder="e.g. Teak Logs" class="form-input-reg"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Buy Price (₹)</label><input type="number" class="form-input-reg"></div>
-                    <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Unit</label><select class="form-input-reg"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
+                    <div><label class="text-[10px] font-black text-gray-500 uppercase block mb-2">Measurement Unit</label><select class="form-input-reg"><option>CFT</option><option>CBM</option><option>COUNTS</option></select></div>
                 </div>
-                <div><label class="text-[10px] font-black text-amber-600 uppercase block mb-2 font-black italic">Warehouse Location</label><select class="form-input-reg"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
-                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-[0.2em] shadow-lg hover:bg-amber-700 active:scale-95 transition-all mt-6">Confirm Command</button>
+                <div><label class="text-[10px] font-black text-amber-600 uppercase block mb-2 font-bold italic">Logistics Warehouse</label><select class="form-input-reg"><option>Plot 10, Gandhidham Hub</option><option>Mundra CFS Warehouse</option><option>Adani Logi-Park A1</option></select></div>
+                <button onclick="togglePanel(false)" class="w-full bg-amber-600 text-white font-black py-4 uppercase tracking-widest shadow-lg hover:bg-amber-700 transition-all mt-6 active:scale-95">Confirm Entry</button>
             </div>
         </div>`;
     }
 
-    function renderContent(symbol) {
-        if (state.view === 'dashboard') {
+    function renderMainContent(symbol) {
+        if (state.currentView === 'dashboard') {
             return `
             <div class="grid grid-cols-4 gap-6 mb-10">
-                ${[{l:'Stock Value', v:symbol+' 12.4 Cr'}, {l:'Open Orders', v:'24'}, {l:'Pending Payments', v:symbol+' 1.2 Cr'}, {l:'Risk Alerts', v:'04'}].map(k => `
-                    <div class="deck-panel p-6 border-b-2 border-transparent hover:border-amber-600 transition-all">
-                        <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest font-black">${k.l}</p>
-                        <h4 class="text-2xl font-black text-gray-800 tracking-tighter italic-brand">${k.v}</h4>
-                    </div>`).join('')}
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Stock Value</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 12.4 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Open Orders</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">24</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Pending Payments</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${symbol} 1.2 Cr</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Risk Alerts</p>
+                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">04</h4>
+                </div>
             </div>
-            <div class="grid grid-cols-3 gap-8">
-                <div class="deck-panel p-10 col-span-2 flex flex-col justify-center items-center text-center opacity-30 italic text-gray-400 font-black tracking-widest uppercase">
-                    Hub Telemetry Processing...
-                </div>
-                <div class="deck-panel p-8">
-                    <h5 class="text-[10px] font-black text-gray-800 uppercase mb-6 tracking-[0.2em] border-b pb-4">Terminal Commands</h5>
-                    <div class="space-y-3">
-                        <button onclick="runAction('order')" class="w-full px-4 py-3 bg-amber-600 text-white text-[10px] font-black rounded hover:bg-amber-700 uppercase tracking-widest shadow-lg">+ New Transaction</button>
-                        <button onclick="runAction('sync')" class="w-full px-4 py-3 border border-amber-600 text-amber-600 text-[10px] font-black rounded hover:bg-amber-50 uppercase tracking-widest transition-colors">Sync Inventory</button>
-                        <button onclick="runAction('audit')" class="w-full px-4 py-3 border border-gray-300 text-gray-500 text-[10px] font-black rounded hover:bg-gray-100 uppercase tracking-widest transition-colors">Internal Audit</button>
-                    </div>
-                </div>
-            </div>`;
-        } else if (state.view === 'inventory') {
+            <div class="deck-panel p-10 h-64 flex items-center justify-center italic text-gray-400 font-black tracking-[0.5em] uppercase">Operational Hub Active</div>`;
+        } else if (state.currentView === 'inventory') {
             return `
-            <div class="flex justify-between items-center mb-8">
-                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-[0.3em]">Stock Ledger Terminal</h4>
-                <button onclick="togglePanel(true)" class="px-8 py-3 bg-amber-600 text-white text-[10px] font-black rounded hover:bg-amber-700 uppercase tracking-[0.2em] shadow-lg transition-all active:translate-y-1">+ Add New Stock</button>
+            <div class="flex justify-between items-center mb-10">
+                <h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger Terminal</h4>
+                <button onclick="togglePanel(true)" class="px-6 py-2 bg-amber-600 text-white text-[10px] font-black rounded hover:bg-amber-700 uppercase tracking-widest shadow-lg">+ Add Item</button>
             </div>
             <div class="deck-panel overflow-hidden border border-gray-200">
-                <table class="w-full text-left text-[11px] font-bold uppercase">
-                    <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase tracking-widest">
-                        <tr><th class="p-6">SKU</th><th>Product</th><th>Volume</th><th>Warehouse</th><th>Stage</th><th class="text-right">Price</th><th class="text-center">Edit</th></tr>
+                <table class="w-full text-left text-[11px]">
+                    <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase">
+                        <tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-right">Price</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-gray-700">
-                        ${state.inventory.map(i => `
-                            <tr class="hover:bg-gray-50 transition-colors cursor-pointer">
-                                <td class="p-6 text-amber-600 font-black">${i.id}</td>
-                                <td class="font-black text-gray-800">${i.prod}</td>
-                                <td>${i.vol} ${i.unit}</td>
-                                <td class="text-gray-400 italic">${i.loc}</td>
-                                <td><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[9px] font-black">${i.stage}</span></td>
-                                <td class="text-right font-black text-gray-800">${symbol} ${i.price}</td>
-                                <td class="text-center"><button onclick="runAction('edit', '${i.id}')" class="text-amber-600 hover:scale-125 transition-transform">✎</button></td>
-                            </tr>`).join('')}
+                        ${state.inventory.map(i => `<tr><td class="p-4 font-black text-amber-600">${i.id}</td><td class="p-4 font-bold text-gray-400 italic">${i.entry}</td><td class="p-4 font-black uppercase text-gray-800">${i.prod}</td><td class="p-4">${i.vol} ${i.unit}</td><td class="p-4 font-bold italic text-gray-500">${i.loc}</td><td class="p-4 text-green-600 font-black uppercase text-[9px]">${i.stage}</td><td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td></tr>`).join('')}
                     </tbody>
                 </table>
             </div>`;
         }
-        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Terminal Link Established • Section [${state.view.toUpperCase()}] Ready</div>`;
+        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Link Established • Hub Telemetry Ready</div>`;
     }
 </script>
 </body>
-</html>        
+</html>
