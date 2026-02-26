@@ -3,100 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | 3D Command Deck v1.0.0</title>
+    <title>DOCKSIDE | Executive Terminal v1.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
-        :root { --amber: #D97706; --obsidian: #030508; --panel: rgba(13, 17, 23, 0.75); }
-        body { font-family: 'Inter', sans-serif; background-color: var(--obsidian); margin: 0; overflow: hidden; color: #94a3b8; }
+        /* CHALK WHITE TRANSITION */
+        :root { 
+            --chalk-white: #F3F4F6; 
+            --panel-light: rgba(255, 255, 255, 0.8); 
+            --sidebar-light: #E5E7EB; 
+            --accent: #D97706; 
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--chalk-white); 
+            margin: 0; 
+            overflow: hidden; 
+            color: #374151; 
+        }
+        
         .italic-brand { font-family: 'Plus Jakarta Sans', sans-serif; font-style: italic; }
 
-        /* 3D ATMOSPHERIC BACKGROUND */
-        .engine-bg {
-            position: fixed; inset: 0;
-            background: radial-gradient(circle at 50% 50%, #111a2e 0%, #030508 100%);
-            z-index: -1;
-        }
-        .mesh-grid {
-            position: absolute; inset: 0;
-            background-image: linear-gradient(rgba(217, 119, 6, 0.05) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(217, 119, 6, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: perspective(500px) rotateX(60deg);
-            transform-origin: top;
-            animation: moveGrid 20s linear infinite;
-        }
-        @keyframes moveGrid { from { background-position: 0 0; } to { background-position: 0 1000px; } }
-
-        /* NEUMORPHIC GLASS LAYERING */
+        /* 3D GLASSMOPRHISM ON LIGHT THEME */
         .deck-panel {
-            background: var(--panel);
+            background: var(--panel-light);
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9),
-                        inset 0 1px 1px rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .deck-panel:hover {
             transform: translateY(-5px) translateZ(20px);
-            border-color: var(--amber);
-            background: rgba(13, 17, 23, 0.85);
+            border-color: var(--accent);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
         }
 
         /* RESTORED CORPORATE GATEWAY */
-        .gate-card {
-            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
-            border: 1px solid #94a3b8;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+        .corporate-card { 
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%); 
+            border-radius: 4px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+            border: 1px solid #94a3b8; 
+            max-width: 460px; 
+            width: 100%; 
         }
-        .gate-header {
-            background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
-            color: white; padding: 15px 25px; font-weight: 900;
-            display: flex; justify-content: space-between; font-size: 11px;
-            border-bottom: 2px solid var(--amber);
+        .corporate-header { 
+            background: linear-gradient(180deg, #475569 0%, #1e293b 100%); 
+            color: white; padding: 12px 18px; font-weight: 800; 
+            display: flex; justify-content: space-between; border-radius: 4px 4px 0 0; 
         }
+        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; padding: 0 30px; }
+        .form-label { width: 120px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; }
+        .form-input-login { flex: 1; padding: 6px 10px; border: 1px solid #94a3b8; font-size: 13px; color: #000; border-radius: 2px; background: white; }
+        .action-btn-login { background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%); border: 1px solid #64748b; padding: 10px 20px; font-weight: 900; font-size: 12px; color: #1e293b; cursor: pointer; }
 
-        /* NAVIGATION ACCENTS */
-        .nav-link { 
-            font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em;
-            transition: all 0.3s; position: relative;
-        }
-        .nav-link-active { color: white; }
-        .nav-link-active::before {
-            content: ''; position: absolute; left: -20px; top: 0; bottom: 0; 
-            width: 4px; background: var(--amber); box-shadow: 0 0 15px var(--amber);
-        }
-
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: var(--amber); }
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
 <body class="antialiased">
 
 <div id="app">
-    <div class="min-h-screen flex flex-col lg:flex-row perspective-1000">
-        <div class="hidden lg:flex lg:w-1/2 relative bg-black overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-30 scale-125">
-            <div class="relative z-10 p-24 flex flex-col justify-center h-screen bg-gradient-to-r from-black via-black/60 to-transparent">
-                <h1 class="text-8xl font-black text-white italic-brand tracking-tighter uppercase leading-none">Dockside</h1>
-                <div class="mt-12 border-l-8 border-amber-600 pl-10 space-y-6">
-                    <p class="text-3xl text-slate-100 italic font-light font-['Plus_Jakarta_Sans']">"Transparency is the grain of our business."</p>
-                    <p class="text-3xl text-slate-100 italic font-light font-['Plus_Jakarta_Sans']">"Precision in every measurement, trust in every deal."</p>
+    <div class="min-h-screen flex flex-col lg:flex-row">
+        <div class="hidden lg:flex lg:w-1/2 relative bg-black">
+            <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
+            <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
+                <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
+                <div class="space-y-6">
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
+                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
                 </div>
             </div>
         </div>
-        <div class="flex-1 flex items-center justify-center p-6 bg-[#030508]">
-            <div class="gate-card w-full max-w-md transform rotate-Y-12 shadow-2xl">
-                <div class="gate-header uppercase"><span>Establish Link</span><span class="text-amber-500">Gandhidham Hub</span></div>
-                <div class="p-12 space-y-5">
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Terminal ID</label><input type="email" class="w-full p-3 border border-slate-300 text-black text-sm font-bold bg-white" value="demo@dockside.com"></div>
-                    <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Security Key</label><input type="password" class="w-full p-3 border border-slate-300 text-black text-sm font-bold bg-white" value="demo123456"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Role</label><select class="w-full p-3 border border-slate-300 text-black text-xs font-black uppercase"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
-                        <div><label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Period</label><select class="w-full p-3 border border-slate-300 text-black text-xs font-black uppercase"><option>2025-26</option></select></div>
+        <div class="flex-1 flex items-center justify-center p-6 bg-[#F3F4F6]">
+            <div class="corporate-card">
+                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
+                <div class="py-10">
+                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" value="demo@dockside.com"></div>
+                    <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" value="demo123456"></div>
+                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
+                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
+                    <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
+                        <button onclick="handleLogin()" class="action-btn-login uppercase">Login Terminal</button>
                     </div>
-                    <button onclick="handleLogin()" class="w-full bg-slate-800 text-white py-4 mt-6 font-black text-xs uppercase tracking-[0.4em] shadow-2xl hover:bg-amber-600 transition-all active:scale-95">Initiate Connection</button>
                 </div>
             </div>
         </div>
@@ -104,88 +97,80 @@
 </div>
 
 <script>
-    const state = {
-        auth: false,
-        view: 'dashboard',
+    let state = {
+        authenticated: false,
+        currentView: 'dashboard',
         currency: 'INR',
-        hub: 'Gandhidham Hub'
+        hub: 'Gandhidham Hub',
+        inventory: [
+            { id: 'SKU001', entry: '24-02-26', prod: 'Teak Logs', vol: '145.50', unit: 'CFT', loc: 'Plot 10', stage: 'In Warehouse', price: '850' }
+        ]
     };
 
-    function handleLogin() { state.auth = true; renderShell(); }
-    function switchView(v) { state.view = v; renderShell(); }
+    function handleLogin() { state.authenticated = true; renderShell(); }
+    function switchView(view) { state.currentView = view; renderShell(); }
 
     function renderShell() {
-        if (!state.auth) return;
+        if (!state.authenticated) return;
         const symbol = state.currency === 'INR' ? '₹' : '$';
-        
         document.getElementById('app').innerHTML = `
-        <div class="engine-bg"><div class="mesh-grid"></div></div>
         <div class="flex h-screen overflow-hidden">
-            <aside class="w-72 bg-[#030508]/90 border-r border-white/5 flex flex-col z-30 shadow-2xl">
-                <div class="p-10"><h2 class="text-3xl font-black text-white italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
-                <nav class="flex-1 px-8 space-y-2">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(i => `
-                        <button onclick="switchView('${i.toLowerCase()}')" 
-                            class="nav-link w-full text-left py-4 ${state.view === i.toLowerCase() ? 'nav-link-active' : 'text-slate-600 hover:text-white'}">
-                            ${i}
+            <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
+                <div class="p-8"><h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE.</h2></div>
+                <nav class="flex-1 px-4 space-y-1">
+                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analytics', 'Settings'].map(item => `
+                        <button onclick="switchView('${item.toLowerCase()}')" 
+                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
+                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                            ${item}
                         </button>
                     `).join('')}
                 </nav>
-                <div class="p-10 border-t border-white/5 text-[10px] font-black text-slate-600 uppercase tracking-widest">v1.0.0 • SYSTEM ACTIVE</div>
             </aside>
 
-            <div class="flex-1 flex flex-col overflow-hidden relative">
-                <header class="h-20 flex items-center justify-between px-12 border-b border-white/5 bg-black/40 backdrop-blur-xl z-20">
-                    <div class="flex items-center gap-4">
-                        <span class="w-3 h-3 bg-amber-600 rounded-full animate-ping"></span>
-                        <h3 class="text-xs font-black text-white uppercase tracking-[0.5em] italic">${state.view} Deck</h3>
-                    </div>
-                    <div class="flex items-center gap-8">
-                        <div class="flex bg-black/60 rounded p-1 border border-white/10">
-                            <button onclick="state.currency='INR'; renderShell();" class="px-4 py-1 text-[10px] font-black rounded ${state.currency === 'INR' ? 'bg-amber-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.5)]' : 'text-slate-500'}">INR</button>
-                            <button onclick="state.currency='USD'; renderShell();" class="px-4 py-1 text-[10px] font-black rounded ${state.currency === 'USD' ? 'bg-amber-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.5)]' : 'text-slate-500'}">USD</button>
-                        </div>
-                        <span class="text-green-500 text-[11px] font-black uppercase tracking-widest">● Gandhidham Active Hub</span>
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
+                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
+                    <div class="flex items-center gap-4 text-[10px] font-black">
+                        <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
+                        <div class="w-px h-6 bg-gray-300 mx-2"></div>
+                        <p class="text-gray-400">v1.0.0</p>
                     </div>
                 </header>
-                <main class="flex-1 overflow-y-auto p-12 custom-scrollbar">${renderContent(symbol)}</main>
+                <main class="flex-1 overflow-y-auto p-10 custom-scrollbar">${renderMainContent(symbol)}</main>
             </div>
         </div>`;
     }
 
-    function renderContent(symbol) {
-        if (state.view === 'dashboard') {
+    function renderMainContent(symbol) {
+        if (state.currentView === 'dashboard') {
             return `
-                <div class="grid grid-cols-4 gap-8 mb-12">
-                    ${['Total Assets', 'Fulfillment', 'Active Hubs', 'Hub Risk'].map((l, i) => `
-                        <div class="deck-panel p-8 relative overflow-hidden group">
-                            <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
-                                <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            </div>
-                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">${l}</p>
-                            <h4 class="text-3xl font-black text-white tracking-tighter italic-brand">${i === 0 ? symbol + ' 12.4 Cr' : i === 1 ? '98.2%' : i === 2 ? '05' : 'LOW'}</h4>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="grid grid-cols-12 gap-10">
-                    <div class="col-span-8 deck-panel p-10 border-l-4 border-amber-600">
-                        <h5 class="text-[11px] font-black text-white uppercase tracking-[0.4em] mb-12">Operational Revenue Stream Analysis</h5>
-                        <div class="flex items-end justify-between h-64 gap-3 opacity-30 group">
-                            ${[40, 70, 55, 95, 80, 45, 90, 60, 100].map(h => `<div style="height:${h}%" class="flex-1 bg-amber-600 rounded-sm shadow-[0_0_25px_rgba(217,119,6,0.2)] group-hover:opacity-100 transition-all duration-500"></div>`).join('')}
-                        </div>
+            <div class="grid grid-cols-4 gap-6 mb-10">
+                ${[{l: 'Stock Value', v: symbol+' 12.4 Cr'}, {l: 'Open Orders', v: '24'}, {l: 'Pending Payments', v: symbol+' 1.2 Cr'}, {l: 'Risk Alerts', v: '04'}].map(k => `
+                    <div class="deck-panel p-6">
+                        <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">${k.l}</p>
+                        <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${k.v}</h4>
                     </div>
-                    <div class="col-span-4 deck-panel p-10 flex flex-col justify-center items-center">
-                        <div class="relative w-48 h-48 mb-8">
-                            <div class="absolute inset-0 rounded-full border-2 border-white/5 animate-spin-slow"></div>
-                            <div class="absolute inset-4 rounded-full border-[10px] border-amber-600/10"></div>
-                            <div class="absolute inset-4 rounded-full border-[10px] border-amber-600 border-t-transparent border-l-transparent rotate-[130deg] shadow-[0_0_30px_rgba(217,119,6,0.2)]"></div>
-                            <div class="absolute inset-0 flex items-center justify-center font-black text-5xl text-white tracking-tighter">72%</div>
-                        </div>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Plot 10 Capacity Load</p>
-                    </div>
-                </div>`;
+                `).join('')}
+            </div>
+            <div class="deck-panel p-10 h-64 flex items-center justify-center italic text-gray-400 font-black tracking-[0.5em] uppercase">
+                Operational Terminal Active
+            </div>`;
+        } else if (state.currentView === 'inventory') {
+            return `
+            <div class="flex justify-between items-center mb-10"><h4 class="text-sm font-black text-gray-800 uppercase italic tracking-widest">Stock Ledger Terminal</h4></div>
+            <div class="deck-panel overflow-hidden border border-gray-200">
+                <table class="w-full text-left text-[11px]">
+                    <thead class="bg-gray-100 font-black text-gray-500 border-b border-gray-200 uppercase">
+                        <tr><th class="p-4">SKU</th><th class="p-4">Entry Date</th><th class="p-4">Product</th><th class="p-4">Volume</th><th class="p-4">Warehouse</th><th class="p-4">Stage</th><th class="p-4 text-right">Price</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-gray-700">
+                        ${state.inventory.map(i => `<tr><td class="p-4 font-black text-amber-600">${i.id}</td><td class="p-4 font-bold text-gray-400 italic">${i.entry}</td><td class="p-4 font-black uppercase text-gray-800">${i.prod}</td><td class="p-4">${i.vol} ${i.unit}</td><td class="p-4 font-bold italic text-gray-500">${i.loc}</td><td class="p-4 text-green-600 font-black">${i.stage}</td><td class="p-4 text-right font-black text-gray-800">${symbol} ${i.price}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
         }
-        return `<div class="p-20 text-center uppercase tracking-[0.8em] text-slate-700 italic font-black">Link Established • Hub Telemetry Initializing...</div>`;
+        return `<div class="p-20 text-center uppercase tracking-[0.5em] text-gray-300 italic font-black">Link Established • Awaiting Data</div>`;
     }
 </script>
 </body>
