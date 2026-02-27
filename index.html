@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal v3.0.0</title>
+    <title>DOCKSIDE | Executive Terminal v4.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -32,6 +33,7 @@
                         inset 0 1px 1px rgba(255, 255, 255, 0.8);
             border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
         }
         .deck-panel:hover {
             transform: translateY(-5px) translateZ(20px);
@@ -82,6 +84,17 @@
             max-width: 900px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .invoice-modal-content {
+            background-color: white;
+            padding: 0;
+            border-radius: 0;
+            width: 100%;
+            max-width: 100%;
+            box-shadow: none;
+            max-height: 100vh;
             overflow-y: auto;
         }
 
@@ -182,23 +195,139 @@
             font-weight: bold;
         }
 
-        .status-warehouse { background-color: #dbeafe; color: #1e40af; }
-        .status-dispatched { background-color: #fee2e2; color: #991b1b; }
-        .status-completed { background-color: #dcfce7; color: #15803d; }
         .status-pending { background-color: #fed7aa; color: #92400e; }
 
-        .invoice-data-box {
-            background-color: #f0f4f8;
-            border: 1px solid #cbd5e1;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 15px 0;
+        .invoice-container {
+            background: white;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .invoice-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .invoice-details {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
             font-size: 12px;
         }
 
-        .invoice-data-box p {
-            margin: 8px 0;
-            color: #374151;
+        .invoice-table th {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #333;
+        }
+
+        .invoice-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .invoice-table tr:last-child td {
+            border-bottom: 2px solid #333;
+        }
+
+        .invoice-summary {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 10px;
+            font-size: 12px;
+            padding: 8px 0;
+        }
+
+        .summary-row.total {
+            font-weight: bold;
+            font-size: 14px;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 10px 0;
+        }
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+            font-size: 12px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            text-align: center;
+            padding-top: 5px;
+            margin-top: 40px;
+        }
+
+        .invoice-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #ddd;
+        }
+
+        .invoice-btn {
+            padding: 10px 20px;
+            background-color: #D97706;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .invoice-btn:hover {
+            background-color: #B45309;
+        }
+
+        .invoice-btn.close-btn-invoice {
+            background-color: #6b7280;
+        }
+
+        .invoice-btn.close-btn-invoice:hover {
+            background-color: #4b5563;
+        }
+
+        .license-info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+            margin-top: 15px;
+            border-left: 3px solid #D97706;
+            text-align: center;
         }
 
         ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -207,281 +336,50 @@
 </head>
 <body class="antialiased">
 
-<!-- INVENTORY ADD MODAL -->
-<div id="inventoryAddModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span>Add New Inventory Entry</span>
-            <button class="close-btn" onclick="closeModal('inventoryAddModal')">&times;</button>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="form-group">
-                <label>Order Number *</label>
-                <input type="text" id="invOrderNum" placeholder="e.g., ORD-001">
-                <small style="color: #666; font-size: 11px;"><button type="button" onclick="generateOrderNumber()" style="background: none; border: none; color: #D97706; cursor: pointer; text-decoration: underline;">Auto-generate</button></small>
-            </div>
-            <div class="form-group">
-                <label>Supplier Name *</label>
-                <input type="text" id="invSupplier" list="suppliers" placeholder="Start typing...">
-                <datalist id="suppliers"></datalist>
-            </div>
-            <div class="form-group">
-                <label>Buyer/Seller Name *</label>
-                <input type="text" id="invBuyer" list="buyers" placeholder="Start typing...">
-                <datalist id="buyers"></datalist>
-            </div>
-            <div class="form-group">
-                <label>Product Name *</label>
-                <input type="text" id="invProduct" placeholder="e.g., Teak Logs">
-            </div>
-            <div class="form-group">
-                <label>Quantity *</label>
-                <input type="number" id="invQuantity" placeholder="e.g., 100" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Unit</label>
-                <select id="invUnit">
-                    <option>CFT</option>
-                    <option>Meter</option>
-                    <option>Ton</option>
-                    <option>Pieces</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Purchase Price per Unit (₹) *</label>
-                <input type="number" id="invUnitPrice" placeholder="e.g., 1000" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Transport Cost (₹)</label>
-                <input type="number" id="invTransport" placeholder="e.g., 5000" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>Miscellaneous Cost (₹)</label>
-                <input type="number" id="invMisc" placeholder="e.g., 1000" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>Warehouse Location</label>
-                <input type="text" id="invWarehouse" placeholder="e.g., Plot 10">
-            </div>
-            <div class="form-group">
-                <label>Purchase Date</label>
-                <input type="date" id="invDate">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Invoice Upload (PDF/Image)</label>
-                <input type="file" id="invInvoiceFile" accept=".pdf,.jpg,.jpeg,.png">
-                <small style="color: #666; font-size: 11px;">Optional - Upload to auto-extract data</small>
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1; background-color: #f0f4f8; padding: 10px; border-radius: 4px;">
-                <p style="margin: 0; font-weight: bold; font-size: 12px;">Auto-Calculated:</p>
-                <p style="margin: 5px 0; font-size: 11px;">Total Landed Cost: <strong>₹<span id="invTotalCost">0</span></strong></p>
-                <p style="margin: 5px 0; font-size: 11px;">Total Stock Value: <strong>₹<span id="invStockValue">0</span></strong></p>
-            </div>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="saveInventoryAddAnother()">✓ Save & Add Another</button>
-            <button class="btn-submit" style="background-color: #0369a1;" onclick="saveInventoryAndClose()">✓ Save & Close</button>
-            <button class="btn-cancel" onclick="closeModal('inventoryAddModal')">Cancel</button>
-        </div>
-    </div>
+<!-- INVOICE VIEW MODAL -->
+<div id="invoiceModal" class="modal">
+    <div class="invoice-modal-content" id="invoiceContainer"></div>
 </div>
 
-<!-- ORDERS ADD MODAL -->
-<div id="ordersAddModal" class="modal">
+<!-- SETTINGS TEMPLATE MODAL -->
+<div id="settingsModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Add New Order</span>
-            <button class="close-btn" onclick="closeModal('ordersAddModal')">&times;</button>
+            <span>Invoice Template Settings</span>
+            <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="form-group">
-                <label>Order Number *</label>
-                <input type="text" id="ordOrderNum" placeholder="e.g., ORD-001">
+                <label>Company Name *</label>
+                <input type="text" id="companyName" placeholder="e.g., Your Company Ltd">
             </div>
             <div class="form-group">
-                <label>Cargo Name *</label>
-                <input type="text" id="ordCargo" placeholder="e.g., Teak Logs">
-            </div>
-            <div class="form-group">
-                <label>Supplier Name *</label>
-                <input type="text" id="ordSupplier" list="suppliers" placeholder="Start typing...">
-            </div>
-            <div class="form-group">
-                <label>Buyer Name *</label>
-                <input type="text" id="ordBuyer" list="buyers" placeholder="Start typing...">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="ordStatus">
-                    <option>Pending</option>
-                    <option>Order Placed</option>
-                    <option>Shipment Complete</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Order Amount (₹) *</label>
-                <input type="number" id="ordAmount" placeholder="e.g., 50000" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Order Date</label>
-                <input type="date" id="ordDate">
+                <label>GST Number</label>
+                <input type="text" id="gstNumber" placeholder="e.g., 18AABCT1234A1Z5">
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Upload Purchase Invoice</label>
-                <input type="file" id="ordPurchaseInvoice" accept=".pdf,.jpg,.jpeg,.png">
+                <label>Company Address</label>
+                <textarea id="companyAddress" placeholder="Full address" style="height: 80px;"></textarea>
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Upload Sales Invoice</label>
-                <input type="file" id="ordSalesInvoice" accept=".pdf,.jpg,.jpeg,.png">
+                <label>Bank Details</label>
+                <textarea id="bankDetails" placeholder="Account no, IFSC, etc." style="height: 80px;"></textarea>
             </div>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="saveOrderAddAnother()">✓ Save & Add Another</button>
-            <button class="btn-submit" style="background-color: #0369a1;" onclick="saveOrderAndClose()">✓ Save & Close</button>
-            <button class="btn-cancel" onclick="closeModal('ordersAddModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- TRANSIT ADD MODAL -->
-<div id="transitAddModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span>Add Transit Entry</span>
-            <button class="close-btn" onclick="closeModal('transitAddModal')">&times;</button>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="form-group">
-                <label>Order Number *</label>
-                <input type="text" id="trOrderNum" placeholder="e.g., ORD-001">
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Terms & Conditions</label>
+                <textarea id="termsConditions" placeholder="Payment terms, etc." style="height: 80px;"></textarea>
             </div>
             <div class="form-group">
-                <label>Cargo Name *</label>
-                <input type="text" id="trCargo" placeholder="e.g., Teak Logs">
-            </div>
-            <div class="form-group">
-                <label>Vehicle Number *</label>
-                <input type="text" id="trVehicle" placeholder="e.g., KA-01-AB-1234">
-            </div>
-            <div class="form-group">
-                <label>Driver Name *</label>
-                <input type="text" id="trDriver" placeholder="e.g., Rajesh Kumar">
-            </div>
-            <div class="form-group">
-                <label>Driver Contact *</label>
-                <input type="tel" id="trContact" placeholder="e.g., 9876543210">
-            </div>
-            <div class="form-group">
-                <label>Transporter Name</label>
-                <input type="text" id="trTransporter" placeholder="e.g., FastShip">
-            </div>
-            <div class="form-group">
-                <label>Dispatch Date</label>
-                <input type="date" id="trDispatch">
-            </div>
-            <div class="form-group">
-                <label>Estimated Arrival</label>
-                <input type="date" id="trArrival">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="trStatus">
-                    <option>In Transit</option>
-                    <option>Delivered</option>
+                <label>Template Style</label>
+                <select id="templateStyle">
+                    <option value="modern">Modern GST Invoice</option>
+                    <option value="classic">Classic Invoice</option>
                 </select>
             </div>
         </div>
         <div class="modal-buttons">
-            <button class="btn-submit" onclick="saveTransitAddAnother()">✓ Save & Add Another</button>
-            <button class="btn-submit" style="background-color: #0369a1;" onclick="saveTransitAndClose()">✓ Save & Close</button>
-            <button class="btn-cancel" onclick="closeModal('transitAddModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- FINANCE ADD MODAL -->
-<div id="financeAddModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span>Add Finance Entry</span>
-            <button class="close-btn" onclick="closeModal('financeAddModal')">&times;</button>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="form-group">
-                <label>Type *</label>
-                <select id="finType">
-                    <option>Receivable</option>
-                    <option>Payable</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Invoice Number *</label>
-                <input type="text" id="finInvoiceNum" placeholder="e.g., INV-001">
-            </div>
-            <div class="form-group">
-                <label>Party Name *</label>
-                <input type="text" id="finParty" list="buyers" placeholder="Start typing...">
-            </div>
-            <div class="form-group">
-                <label>Amount (₹) *</label>
-                <input type="number" id="finAmount" placeholder="e.g., 50000" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>GST Amount (₹)</label>
-                <input type="number" id="finGST" placeholder="e.g., 9000" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>Invoice Date</label>
-                <input type="date" id="finDate">
-            </div>
-            <div class="form-group">
-                <label>Payment Due Date</label>
-                <input type="date" id="finDueDate">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Upload Invoice</label>
-                <input type="file" id="finInvoiceFile" accept=".pdf,.jpg,.jpeg,.png">
-            </div>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="saveFinanceAddAnother()">✓ Save & Add Another</button>
-            <button class="btn-submit" style="background-color: #0369a1;" onclick="saveFinanceAndClose()">✓ Save & Close</button>
-            <button class="btn-cancel" onclick="closeModal('financeAddModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- INVOICE DATA REVIEW MODAL -->
-<div id="invoiceReviewModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span>Invoice Data Detected - Review & Confirm</span>
-            <button class="close-btn" onclick="closeModal('invoiceReviewModal')">&times;</button>
-        </div>
-        <div class="invoice-data-box" id="invoiceDataBox"></div>
-        <p style="color: #666; font-size: 12px; margin: 15px 0;">Edit below if needed before confirming:</p>
-        <div id="reviewFormContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="confirmInvoiceData()">✓ Confirm & Save</button>
-            <button class="btn-cancel" onclick="closeModal('invoiceReviewModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- REMINDER TEMPLATE MODAL -->
-<div id="reminderModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span>Payment Reminder Template</span>
-            <button class="close-btn" onclick="closeModal('reminderModal')">&times;</button>
-        </div>
-        <p style="color: #666; font-size: 12px; margin-bottom: 15px;">Copy this message and send via WhatsApp or SMS:</p>
-        <div style="background-color: #f0f4f8; padding: 15px; border-radius: 4px; border: 1px solid #cbd5e1; margin-bottom: 15px;">
-            <p id="reminderText" style="margin: 0; font-size: 13px; line-height: 1.6; color: #374151;"></p>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-submit" onclick="copyReminder()">📋 Copy to Clipboard</button>
-            <button class="btn-cancel" onclick="closeModal('reminderModal')">Close</button>
+            <button class="btn-submit" onclick="saveTemplateSettings()">✓ Save Settings</button>
+            <button class="btn-cancel" onclick="closeModal('settingsModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -501,14 +399,17 @@
         </div>
         <div class="flex-1 flex items-center justify-center p-6 bg-[#F3F4F6]">
             <div class="corporate-card">
-                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">GANDHIDHAM HUB</span></div>
+                <div class="corporate-header"><span>USER LOGIN</span><span class="text-amber-500 font-black">DOCKSIDE</span></div>
                 <div class="py-10">
-                    <div class="form-row"><label class="form-label">Login ID</label><input type="email" class="form-input-login" id="loginEmail" value="demo@dockside.com"></div>
+                    <div class="form-row"><label class="form-label">Email</label><input type="email" class="form-input-login" id="loginEmail" value="admin@dockside.com"></div>
                     <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" id="loginPassword" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">User Type</label><select class="form-input-login"><option>Admin</option><option>Buyer</option><option>Seller</option></select></div>
-                    <div class="form-row"><label class="form-label">Period</label><select class="form-input-login"><option>2025-2026</option></select></div>
+                    <div class="form-row"><label class="form-label">License No</label><input type="text" class="form-input-login" id="licenseNumber" value="DS-2025-001-ADMIN" placeholder="Enter License Number"></div>
+                    <div class="form-row"><label class="form-label">Role</label><select class="form-input-login" id="loginRole"><option value="admin">Admin</option><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
                     <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
                         <button onclick="handleLogin()" class="action-btn-login uppercase">Login Terminal</button>
+                    </div>
+                    <div class="license-info">
+                        <strong>License Active:</strong> DS-2025-001 | Valid Until: 31-Dec-2025
                     </div>
                 </div>
             </div>
@@ -517,21 +418,21 @@
 </div>
 
 <script>
-    const API_BASE_URL = 'https://dockside-api.onrender.com/api';
-
     let state = {
         authenticated: false,
         currentView: 'dashboard',
-        currency: 'INR',
-        hub: 'Gandhidham Hub',
+        userRole: 'admin',
+        licenseNumber: '',
         inventory: [],
         orders: [],
-        transit: [],
-        finance: [],
-        capital: 0,
-        revenue: 0,
-        currentReviewType: null,
-        currentReviewData: null
+        templateSettings: {
+            companyName: 'DOCKSIDE Enterprises',
+            gstNumber: '18AABCD1234E1Z5',
+            companyAddress: 'Plot No. 10, Industrial Area, Gandhidham, Gujarat 370201, India',
+            bankDetails: 'Bank: HDFC Bank\nAccount: 1234567890\nIFSC: HDFC0001234',
+            termsConditions: 'Payment within 30 days. Goods sold on no return basis unless damaged.',
+            templateStyle: 'modern'
+        }
     };
 
     function loadFromLocalStorage() {
@@ -540,34 +441,18 @@
             const loaded = JSON.parse(saved);
             state.inventory = loaded.inventory || [];
             state.orders = loaded.orders || [];
-            state.transit = loaded.transit || [];
-            state.finance = loaded.finance || [];
-            state.capital = loaded.capital || 0;
-            state.revenue = loaded.revenue || 0;
+            state.templateSettings = loaded.templateSettings || state.templateSettings;
+            state.licenseNumber = loaded.licenseNumber || '';
         }
-        updateSuggestions();
     }
 
     function saveToLocalStorage() {
         localStorage.setItem('dockside_state', JSON.stringify({
             inventory: state.inventory,
             orders: state.orders,
-            transit: state.transit,
-            finance: state.finance,
-            capital: state.capital,
-            revenue: state.revenue
+            templateSettings: state.templateSettings,
+            licenseNumber: state.licenseNumber
         }));
-    }
-
-    function updateSuggestions() {
-        const suppliers = new Set(state.inventory.map(i => i.supplier).filter(Boolean));
-        const buyers = new Set(state.inventory.map(i => i.buyer).filter(Boolean));
-        
-        const suppliersList = document.getElementById('suppliers');
-        const buyersList = document.getElementById('buyers');
-        
-        suppliersList.innerHTML = Array.from(suppliers).map(s => `<option value="${s}">`).join('');
-        buyersList.innerHTML = Array.from(buyers).map(b => `<option value="${b}">`).join('');
     }
 
     function openModal(modalId) {
@@ -578,343 +463,261 @@
         document.getElementById(modalId).classList.remove('show');
     }
 
-    function generateOrderNumber() {
-        const num = Math.floor(Math.random() * 9000) + 1000;
-        document.getElementById('invOrderNum').value = 'ORD-' + num;
+    function validateLicense(licenseNum) {
+        const validLicenses = [
+            'DS-2025-001-ADMIN',
+            'DS-2025-002-BUYER',
+            'DS-2025-003-SELLER',
+            'DS-2025-004-ADMIN',
+            'DEMO-2025-001'
+        ];
+        return validLicenses.includes(licenseNum.trim());
     }
 
-    function calculateInventoryCosts() {
-        const qty = parseFloat(document.getElementById('invQuantity').value) || 0;
-        const unitPrice = parseFloat(document.getElementById('invUnitPrice').value) || 0;
-        const transport = parseFloat(document.getElementById('invTransport').value) || 0;
-        const misc = parseFloat(document.getElementById('invMisc').value) || 0;
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value;
+        const license = document.getElementById('licenseNumber').value;
+        const role = document.getElementById('loginRole').value;
         
-        const total = (qty * unitPrice) + transport + misc;
-        document.getElementById('invTotalCost').textContent = total.toLocaleString('en-IN', {maximumFractionDigits: 0});
-        document.getElementById('invStockValue').textContent = total.toLocaleString('en-IN', {maximumFractionDigits: 0});
-    }
-
-    function simulateOCRExtraction(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                setTimeout(() => {
-                    const extractedData = {
-                        invoiceNumber: 'INV-' + Math.floor(Math.random() * 9000) + 1000,
-                        supplierName: 'Extracted Supplier',
-                        buyerName: 'Extracted Buyer',
-                        date: new Date().toISOString().split('T')[0],
-                        amount: Math.floor(Math.random() * 100000) + 10000,
-                        gst: Math.floor(Math.random() * 20000) + 1000,
-                        items: ['Item 1', 'Item 2']
-                    };
-                    resolve(extractedData);
-                }, 500);
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    async function handleInventoryFileUpload() {
-        const file = document.getElementById('invInvoiceFile').files[0];
-        if (!file) return;
-        
-        const extracted = await simulateOCRExtraction(file);
-        showInvoiceReview(extracted, 'inventory');
-    }
-
-    function showInvoiceReview(data, type) {
-        state.currentReviewType = type;
-        state.currentReviewData = data;
-        
-        const box = document.getElementById('invoiceDataBox');
-        box.innerHTML = `
-            <p><strong>Invoice Number:</strong> ${data.invoiceNumber}</p>
-            <p><strong>Supplier:</strong> ${data.supplierName}</p>
-            <p><strong>Buyer:</strong> ${data.buyerName}</p>
-            <p><strong>Date:</strong> ${data.date}</p>
-            <p><strong>Amount:</strong> ₹${data.amount.toLocaleString()}</p>
-            <p><strong>GST:</strong> ₹${data.gst.toLocaleString()}</p>
-        `;
-        
-        const reviewForm = document.getElementById('reviewFormContainer');
-        reviewForm.innerHTML = `
-            <div class="form-group">
-                <label>Invoice Number</label>
-                <input type="text" id="reviewInvoiceNum" value="${data.invoiceNumber}">
-            </div>
-            <div class="form-group">
-                <label>Supplier Name</label>
-                <input type="text" id="reviewSupplier" value="${data.supplierName}">
-            </div>
-            <div class="form-group">
-                <label>Buyer Name</label>
-                <input type="text" id="reviewBuyer" value="${data.buyerName}">
-            </div>
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="reviewDate" value="${data.date}">
-            </div>
-            <div class="form-group">
-                <label>Amount</label>
-                <input type="number" id="reviewAmount" value="${data.amount}">
-            </div>
-            <div class="form-group">
-                <label>GST</label>
-                <input type="number" id="reviewGST" value="${data.gst}">
-            </div>
-        `;
-        
-        openModal('invoiceReviewModal');
-    }
-
-    function confirmInvoiceData() {
-        const reviewed = {
-            invoiceNumber: document.getElementById('reviewInvoiceNum').value,
-            supplierName: document.getElementById('reviewSupplier').value,
-            buyerName: document.getElementById('reviewBuyer').value,
-            date: document.getElementById('reviewDate').value,
-            amount: parseFloat(document.getElementById('reviewAmount').value),
-            gst: parseFloat(document.getElementById('reviewGST').value)
-        };
-        
-        if (state.currentReviewType === 'inventory') {
-            document.getElementById('invSupplier').value = reviewed.supplierName;
-            document.getElementById('invBuyer').value = reviewed.buyerName;
+        if (!email.trim()) {
+            alert('❌ Please enter email');
+            return;
         }
-        
-        closeModal('invoiceReviewModal');
-    }
 
-    function validateInventoryForm() {
-        const required = ['invOrderNum', 'invSupplier', 'invBuyer', 'invProduct', 'invQuantity', 'invUnitPrice'];
-        for (let id of required) {
-            if (!document.getElementById(id).value.trim()) {
-                alert('❌ Please fill all required fields');
-                return false;
-            }
+        if (!license.trim()) {
+            alert('❌ Please enter License Number');
+            return;
         }
-        return true;
-    }
 
-    function saveInventoryAddAnother() {
-        if (!validateInventoryForm()) return;
-        
-        const qty = parseFloat(document.getElementById('invQuantity').value);
-        const unitPrice = parseFloat(document.getElementById('invUnitPrice').value);
-        const transport = parseFloat(document.getElementById('invTransport').value) || 0;
-        const misc = parseFloat(document.getElementById('invMisc').value) || 0;
-        const totalCost = (qty * unitPrice) + transport + misc;
-        
-        state.inventory.push({
-            orderNum: document.getElementById('invOrderNum').value,
-            supplier: document.getElementById('invSupplier').value,
-            buyer: document.getElementById('invBuyer').value,
-            product: document.getElementById('invProduct').value,
-            quantity: qty,
-            unit: document.getElementById('invUnit').value,
-            unitPrice: unitPrice,
-            transport: transport,
-            misc: misc,
-            totalCost: totalCost,
-            warehouse: document.getElementById('invWarehouse').value,
-            date: document.getElementById('invDate').value,
-            lastMoved: new Date().toISOString().split('T')[0]
-        });
-        
-        state.capital += totalCost;
-        saveToLocalStorage();
-        alert('✅ Inventory entry saved!');
-        
-        document.getElementById('invOrderNum').value = '';
-        document.getElementById('invSupplier').value = '';
-        document.getElementById('invBuyer').value = '';
-        document.getElementById('invProduct').value = '';
-        document.getElementById('invQuantity').value = '';
-        document.getElementById('invUnitPrice').value = '';
-        document.getElementById('invTransport').value = '0';
-        document.getElementById('invMisc').value = '0';
-        document.getElementById('invWarehouse').value = '';
-        document.getElementById('invDate').value = new Date().toISOString().split('T')[0];
-    }
-
-    function saveInventoryAndClose() {
-        saveInventoryAddAnother();
-        closeModal('inventoryAddModal');
-    }
-
-    function saveOrderAddAnother() {
-        const required = ['ordOrderNum', 'ordCargo', 'ordSupplier', 'ordBuyer', 'ordAmount'];
-        for (let id of required) {
-            if (!document.getElementById(id).value.trim()) {
-                alert('❌ Please fill all required fields');
-                return;
-            }
+        if (!validateLicense(license)) {
+            alert('❌ Invalid License Number\n\nValid Licenses:\nDS-2025-001-ADMIN\nDS-2025-002-BUYER\nDS-2025-003-SELLER\nDS-2025-004-ADMIN\nDEMO-2025-001');
+            return;
         }
-        
-        const amount = parseFloat(document.getElementById('ordAmount').value);
-        
-        state.orders.push({
-            orderNum: document.getElementById('ordOrderNum').value,
-            cargo: document.getElementById('ordCargo').value,
-            supplier: document.getElementById('ordSupplier').value,
-            buyer: document.getElementById('ordBuyer').value,
-            status: document.getElementById('ordStatus').value,
-            amount: amount,
-            date: document.getElementById('ordDate').value,
-            purchaseInvoice: '',
-            salesInvoice: ''
-        });
-        
-        saveToLocalStorage();
-        alert('✅ Order entry saved!');
-        
-        document.getElementById('ordOrderNum').value = '';
-        document.getElementById('ordCargo').value = '';
-        document.getElementById('ordSupplier').value = '';
-        document.getElementById('ordBuyer').value = '';
-        document.getElementById('ordAmount').value = '';
-        document.getElementById('ordDate').value = new Date().toISOString().split('T')[0];
-    }
 
-    function saveOrderAndClose() {
-        saveOrderAddAnother();
-        closeModal('ordersAddModal');
-    }
-
-    function saveTransitAddAnother() {
-        const required = ['trOrderNum', 'trCargo', 'trVehicle', 'trDriver', 'trContact'];
-        for (let id of required) {
-            if (!document.getElementById(id).value.trim()) {
-                alert('❌ Please fill all required fields');
-                return;
-            }
-        }
-        
-        state.transit.push({
-            orderNum: document.getElementById('trOrderNum').value,
-            cargo: document.getElementById('trCargo').value,
-            vehicleNum: document.getElementById('trVehicle').value,
-            driver: document.getElementById('trDriver').value,
-            contact: document.getElementById('trContact').value,
-            transporter: document.getElementById('trTransporter').value,
-            dispatchDate: document.getElementById('trDispatch').value,
-            estimatedArrival: document.getElementById('trArrival').value,
-            status: document.getElementById('trStatus').value
-        });
-        
-        saveToLocalStorage();
-        alert('✅ Transit entry saved!');
-        
-        document.getElementById('trOrderNum').value = '';
-        document.getElementById('trCargo').value = '';
-        document.getElementById('trVehicle').value = '';
-        document.getElementById('trDriver').value = '';
-        document.getElementById('trContact').value = '';
-        document.getElementById('trTransporter').value = '';
-        document.getElementById('trDispatch').value = '';
-        document.getElementById('trArrival').value = '';
-    }
-
-    function saveTransitAndClose() {
-        saveTransitAddAnother();
-        closeModal('transitAddModal');
-    }
-
-    function saveFinanceAddAnother() {
-        const required = ['finType', 'finInvoiceNum', 'finParty', 'finAmount'];
-        for (let id of required) {
-            if (!document.getElementById(id).value.trim()) {
-                alert('❌ Please fill all required fields');
-                return;
-            }
-        }
-        
-        const amount = parseFloat(document.getElementById('finAmount').value);
-        const gst = parseFloat(document.getElementById('finGST').value) || 0;
-        const dueDate = document.getElementById('finDueDate').value;
-        const today = new Date();
-        const due = new Date(dueDate);
-        const isOverdue = due < today;
-        
-        state.finance.push({
-            type: document.getElementById('finType').value,
-            invoiceNum: document.getElementById('finInvoiceNum').value,
-            party: document.getElementById('finParty').value,
-            amount: amount,
-            gst: gst,
-            date: document.getElementById('finDate').value,
-            dueDate: dueDate,
-            status: 'Pending',
-            overdue: isOverdue,
-            paid: false
-        });
-        
-        saveToLocalStorage();
-        alert('✅ Finance entry saved!');
-        
-        document.getElementById('finType').value = 'Receivable';
-        document.getElementById('finInvoiceNum').value = '';
-        document.getElementById('finParty').value = '';
-        document.getElementById('finAmount').value = '';
-        document.getElementById('finGST').value = '0';
-        document.getElementById('finDate').value = '';
-        document.getElementById('finDueDate').value = '';
-    }
-
-    function saveFinanceAndClose() {
-        saveFinanceAddAnother();
-        closeModal('financeAddModal');
-    }
-
-    function showReminderTemplate(partyName, invoiceNum, amount, dueDate) {
-        const message = `Dear ${partyName}, Invoice #${invoiceNum} of ₹${amount.toLocaleString()} is due on ${dueDate}. Kindly arrange payment. Thank you.`;
-        document.getElementById('reminderText').textContent = message;
-        openModal('reminderModal');
-    }
-
-    function copyReminder() {
-        const text = document.getElementById('reminderText').textContent;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('✅ Copied to clipboard!');
-        });
-    }
-
-    function handleLogin() { 
         state.authenticated = true;
+        state.userRole = role;
+        state.licenseNumber = license;
         loadFromLocalStorage();
-        renderShell(); 
+        saveToLocalStorage();
+        renderShell();
     }
 
-    function switchView(view) { 
-        state.currentView = view; 
-        renderShell(); 
+    function switchView(view) {
+        state.currentView = view;
+        renderShell();
+    }
+
+    function getRoleBasedSections() {
+        const sections = {
+            admin: ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Settings'],
+            buyer: ['Dashboard', 'Inventory', 'Orders', 'Transit'],
+            seller: ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance']
+        };
+        return sections[state.userRole] || sections.admin;
+    }
+
+    function generateInvoice(type, data) {
+        const isGST = state.templateSettings.templateStyle === 'modern';
+        const invoiceType = state.userRole === 'buyer' ? 'PURCHASE INVOICE' : 'TAX INVOICE (SALES)';
+        
+        const items = data.items || [{
+            description: data.product || data.cargo || 'Service',
+            quantity: data.quantity || 1,
+            rate: data.amount || 0,
+            amount: (data.quantity || 1) * (data.amount || 0)
+        }];
+
+        let itemsHTML = items.map(item => `
+            <tr>
+                <td>${item.description}</td>
+                <td style="text-align: right;">${item.quantity}</td>
+                <td style="text-align: right;">₹${(item.rate || 0).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+                <td style="text-align: right;">₹${(item.amount || 0).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+            </tr>
+        `).join('');
+
+        const subtotal = items.reduce((s, i) => s + (i.amount || 0), 0);
+        const gst = Math.round(subtotal * 0.18);
+        const transport = data.transport || 0;
+        const misc = data.misc || 0;
+        const total = subtotal + gst + transport + misc;
+
+        const html = `
+            <div class="invoice-container">
+                <div class="invoice-buttons">
+                    <button class="invoice-btn" onclick="downloadInvoicePDF()">📥 Download PDF</button>
+                    <button class="invoice-btn" onclick="window.print()">🖨️ Print</button>
+                    <button class="invoice-btn close-btn-invoice" onclick="closeModal('invoiceModal')">✕ Close</button>
+                </div>
+                <div style="padding: 40px;">
+                    <div class="invoice-header">
+                        <div>
+                            <div class="invoice-title">${state.templateSettings.companyName}</div>
+                            <div class="invoice-details">
+                                ${state.templateSettings.companyAddress}
+                                <br><strong>GSTIN:</strong> ${state.templateSettings.gstNumber}
+                                <br><strong>License:</strong> ${state.licenseNumber}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="invoice-title" style="color: #D97706;">${invoiceType}</div>
+                            <div class="invoice-details">
+                                <strong>Invoice #:</strong> ${data.orderNum || 'INV-001'}<br>
+                                <strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}<br>
+                                <strong>Due:</strong> ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('en-IN')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; font-size: 12px;">
+                        <div>
+                            <strong style="display: block; margin-bottom: 5px;">FROM:</strong>
+                            <div style="color: #555;">
+                                ${state.templateSettings.companyName}<br>
+                                ${state.templateSettings.companyAddress}
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="display: block; margin-bottom: 5px;">TO:</strong>
+                            <div style="color: #555;">
+                                ${data.buyer || data.buyerSeller || 'Customer'}<br>
+                                ${data.warehouse || 'Destination TBD'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th style="text-align: right; width: 80px;">Qty</th>
+                                <th style="text-align: right; width: 100px;">Rate</th>
+                                <th style="text-align: right; width: 120px;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="invoice-summary">
+                        <div class="summary-row" style="justify-content: flex-end;">
+                            <div style="text-align: right; width: 150px;">
+                                <strong>Subtotal:</strong> ₹${subtotal.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>
+                                ${transport > 0 ? `<strong>Transport:</strong> ₹${transport.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
+                                ${misc > 0 ? `<strong>Misc:</strong> ₹${misc.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
+                                ${isGST ? `<strong>GST 18%:</strong> ₹${gst.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
+                                <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #333; font-size: 14px;">
+                                    <strong>TOTAL:</strong> ₹${total.toLocaleString('en-IN', {maximumFractionDigits: 2})}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${state.templateSettings.bankDetails ? `
+                        <div style="margin-top: 30px; padding: 15px; background-color: #f5f5f5; font-size: 11px;">
+                            <strong>Bank Details:</strong><br>
+                            ${state.templateSettings.bankDetails.replace(/\n/g, '<br>')}
+                        </div>
+                    ` : ''}
+
+                    <div class="signature-section">
+                        <div style="text-align: left;">
+                            <strong>Terms & Conditions:</strong><br>
+                            <span style="font-size: 10px; color: #666;">
+                                ${state.templateSettings.termsConditions.substring(0, 100)}...
+                            </span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="margin-top: 40px; border-top: 1px solid #333;">
+                                Authorized Signature
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    function openInvoiceView(data) {
+        const invoiceHTML = generateInvoice('invoice', data);
+        document.getElementById('invoiceContainer').innerHTML = invoiceHTML;
+        openModal('invoiceModal');
+    }
+
+    function downloadInvoicePDF() {
+        const element = document.querySelector('.invoice-container');
+        const opt = {
+            margin: 10,
+            filename: 'invoice.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function saveTemplateSettings() {
+        state.templateSettings.companyName = document.getElementById('companyName').value || 'Company Name';
+        state.templateSettings.gstNumber = document.getElementById('gstNumber').value || '';
+        state.templateSettings.companyAddress = document.getElementById('companyAddress').value || '';
+        state.templateSettings.bankDetails = document.getElementById('bankDetails').value || '';
+        state.templateSettings.termsConditions = document.getElementById('termsConditions').value || '';
+        state.templateSettings.templateStyle = document.getElementById('templateStyle').value || 'modern';
+        
+        saveToLocalStorage();
+        alert('✅ Template settings saved!');
+        closeModal('settingsModal');
+        renderShell();
+    }
+
+    function loadTemplateSettings() {
+        document.getElementById('companyName').value = state.templateSettings.companyName || '';
+        document.getElementById('gstNumber').value = state.templateSettings.gstNumber || '';
+        document.getElementById('companyAddress').value = state.templateSettings.companyAddress || '';
+        document.getElementById('bankDetails').value = state.templateSettings.bankDetails || '';
+        document.getElementById('termsConditions').value = state.templateSettings.termsConditions || '';
+        document.getElementById('templateStyle').value = state.templateSettings.templateStyle || 'modern';
     }
 
     function renderShell() {
         if (!state.authenticated) return;
+        const sections = getRoleBasedSections();
+        const navItems = sections.map(item => `
+            <button onclick="switchView('${item.toLowerCase()}')" 
+                class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
+                ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                ${item}
+            </button>
+        `).join('');
+
         document.getElementById('app').innerHTML = `
         <div class="flex h-screen overflow-hidden">
             <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
-                <div class="p-8"><h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE</h2></div>
+                <div class="p-8">
+                    <h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 10px; color: #666; font-weight: bold;">${state.userRole.toUpperCase()}</p>
+                    <p style="margin: 3px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">License: ${state.licenseNumber}</p>
+                </div>
                 <nav class="flex-1 px-4 space-y-1">
-                    ${['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance'].map(item => `
-                        <button onclick="switchView('${item.toLowerCase()}')" 
-                            class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
-                            ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
-                            ${item}
-                        </button>
-                    `).join('')}
+                    ${navItems}
                 </nav>
+                ${state.userRole === 'admin' ? `
+                    <div class="p-4 border-t border-gray-300">
+                        <button onclick="openSettings()" style="width: 100%; padding: 8px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">⚙️ SETTINGS</button>
+                    </div>
+                ` : ''}
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
                     <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
                     <div class="flex items-center gap-4 text-[10px] font-black">
-                        <span class="text-green-600 uppercase tracking-widest">● Live ${state.hub}</span>
+                        <span class="text-green-600 uppercase tracking-widest">● Live</span>
                         <div class="w-px h-6 bg-gray-300 mx-2"></div>
-                        <p class="text-gray-400">v3.0.0</p>
+                        <p class="text-gray-400">v4.0.0</p>
                     </div>
                 </header>
                 <main class="flex-1 overflow-y-auto p-10">${renderMainContent()}</main>
@@ -924,50 +727,25 @@
 
     function renderMainContent() {
         if (state.currentView === 'dashboard') {
-            return `
-            <div class="grid grid-cols-4 gap-6 mb-10">
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Capital Blocked</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">₹${state.capital.toLocaleString('en-IN', {maximumFractionDigits: 0})}</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Total Orders</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">${state.orders.length}</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Receivables</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">₹${state.finance.filter(f => f.type === 'Receivable' && !f.paid).reduce((s, f) => s + f.amount, 0).toLocaleString('en-IN', {maximumFractionDigits: 0})}</h4>
-                </div>
-                <div class="deck-panel p-6">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest">Payables</p>
-                    <h4 class="text-2xl font-black text-gray-800 tracking-tighter">₹${state.finance.filter(f => f.type === 'Payable' && !f.paid).reduce((s, f) => s + f.amount, 0).toLocaleString('en-IN', {maximumFractionDigits: 0})}</h4>
-                </div>
-            </div>`;
+            return `<div class="grid grid-cols-4 gap-6"><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.orders.length}</h4></div><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Items</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div></div>`;
         } else if (state.currentView === 'inventory') {
             return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Inventory (${state.inventory.length} items)</h4>
-                <button onclick="openModal('inventoryAddModal')" style="padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Entry</button>
-            </div>
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Inventory (${state.inventory.length})</h4>
             <div class="deck-panel" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="background-color: #f3f4f6;">
                         <tr style="border-bottom: 2px solid #ddd;">
                             <th style="padding: 10px; text-align: left;">Order</th>
                             <th style="padding: 10px; text-align: left;">Product</th>
-                            <th style="padding: 10px; text-align: right;">Qty</th>
-                            <th style="padding: 10px; text-align: right;">Total Cost</th>
-                            <th style="padding: 10px; text-align: left;">Warehouse</th>
+                            <th style="padding: 10px; text-align: right;">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${state.inventory.map(i => `
-                            <tr style="border-bottom: 1px solid #ddd;">
+                        ${state.inventory.map((i, idx) => `
+                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(i).replace(/\"/g, '&quot;')})">
                                 <td style="padding: 10px;">${i.orderNum}</td>
                                 <td style="padding: 10px;">${i.product}</td>
-                                <td style="padding: 10px; text-align: right;">${i.quantity} ${i.unit}</td>
-                                <td style="padding: 10px; text-align: right;">₹${i.totalCost.toLocaleString('en-IN', {maximumFractionDigits: 0})}</td>
-                                <td style="padding: 10px;">${i.warehouse}</td>
+                                <td style="padding: 10px; text-align: right;">₹${(i.amount || 0).toLocaleString('en-IN')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -975,118 +753,53 @@
             </div>`;
         } else if (state.currentView === 'orders') {
             return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Orders (${state.orders.length})</h4>
-                <button onclick="openModal('ordersAddModal')" style="padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Entry</button>
-            </div>
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Orders (${state.orders.length})</h4>
             <div class="deck-panel" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="background-color: #f3f4f6;">
                         <tr style="border-bottom: 2px solid #ddd;">
                             <th style="padding: 10px; text-align: left;">Order</th>
                             <th style="padding: 10px; text-align: left;">Cargo</th>
-                            <th style="padding: 10px; text-align: left;">Status</th>
                             <th style="padding: 10px; text-align: right;">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${state.orders.map(o => `
-                            <tr style="border-bottom: 1px solid #ddd;">
+                        ${state.orders.map((o, idx) => `
+                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(o).replace(/\"/g, '&quot;')})">
                                 <td style="padding: 10px;">${o.orderNum}</td>
                                 <td style="padding: 10px;">${o.cargo}</td>
-                                <td style="padding: 10px;"><span class="status-badge status-pending">${o.status}</span></td>
                                 <td style="padding: 10px; text-align: right;">₹${o.amount.toLocaleString('en-IN')}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>`;
-        } else if (state.currentView === 'transit') {
-            return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Transit (${state.transit.length})</h4>
-                <button onclick="openModal('transitAddModal')" style="padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Entry</button>
-            </div>
-            <div class="deck-panel" style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                    <thead style="background-color: #f3f4f6;">
-                        <tr style="border-bottom: 2px solid #ddd;">
-                            <th style="padding: 10px; text-align: left;">Order</th>
-                            <th style="padding: 10px; text-align: left;">Vehicle</th>
-                            <th style="padding: 10px; text-align: left;">Driver</th>
-                            <th style="padding: 10px; text-align: left;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${state.transit.map(t => `
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 10px;">${t.orderNum}</td>
-                                <td style="padding: 10px;">${t.vehicleNum}</td>
-                                <td style="padding: 10px;">${t.driver}</td>
-                                <td style="padding: 10px;"><span class="status-badge status-pending">${t.status}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>`;
-        } else if (state.currentView === 'finance') {
-            return `
-            <div class="flex justify-between items-center mb-10">
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Finance (${state.finance.length})</h4>
-                <button onclick="openModal('financeAddModal')" style="padding: 8px 16px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Entry</button>
-            </div>
-            <div class="deck-panel" style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                    <thead style="background-color: #f3f4f6;">
-                        <tr style="border-bottom: 2px solid #ddd;">
-                            <th style="padding: 10px; text-align: left;">Invoice</th>
-                            <th style="padding: 10px; text-align: left;">Party</th>
-                            <th style="padding: 10px; text-align: left;">Type</th>
-                            <th style="padding: 10px; text-align: right;">Amount</th>
-                            <th style="padding: 10px; text-align: left;">Due Date</th>
-                            <th style="padding: 10px; text-align: center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${state.finance.map((f, idx) => `
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 10px;">${f.invoiceNum}</td>
-                                <td style="padding: 10px;">${f.party}</td>
-                                <td style="padding: 10px;"><span class="status-badge status-pending">${f.type}</span></td>
-                                <td style="padding: 10px; text-align: right;">₹${f.amount.toLocaleString('en-IN')}</td>
-                                <td style="padding: 10px;">${f.dueDate} ${f.overdue && !f.paid ? '<span class="status-badge" style="background-color: #fee2e2; color: #991b1b;">OVERDUE</span>' : ''}</td>
-                                <td style="padding: 10px; text-align: center;">
-                                    ${!f.paid ? `<button onclick="showReminderTemplate('${f.party}', '${f.invoiceNum}', ${f.amount}, '${f.dueDate}')" style="background-color: #D97706; color: white; padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 10px;">Remind</button>` : 'Paid'}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>`;
         }
-        return '';
+        return '<p>Section content</p>';
     }
 
-    document.addEventListener('change', function(e) {
-        if (e.target.id === 'invQuantity' || e.target.id === 'invUnitPrice' || e.target.id === 'invTransport' || e.target.id === 'invMisc') {
-            calculateInventoryCosts();
-        }
-        if (e.target.id === 'invInvoiceFile') {
-            handleInventoryFileUpload();
-        }
-    });
+    function openSettings() {
+        loadTemplateSettings();
+        openModal('settingsModal');
+    }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const dateInputs = ['invDate', 'ordDate', 'trDispatch', 'trArrival', 'finDate', 'finDueDate'];
-        dateInputs.forEach(id => {
-            const elem = document.getElementById(id);
-            if (elem) {
-                elem.value = new Date().toISOString().split('T')[0];
-            }
-        });
-    });
+    // Demo data
+    function initializeDemoData() {
+        state.inventory = [
+            { orderNum: 'ORD-001', product: 'Teak Logs', quantity: 100, amount: 50000, warehouse: 'Plot 10' },
+            { orderNum: 'ORD-002', product: 'Pine Planks', quantity: 50, amount: 35000, warehouse: 'Plot 12' }
+        ];
+        state.orders = [
+            { orderNum: 'ORD-001', cargo: 'Teak Logs', buyer: 'ABC Trading', amount: 50000, transport: 2000, misc: 500 },
+            { orderNum: 'ORD-002', cargo: 'Pine Planks', buyer: 'XYZ Corp', amount: 35000, transport: 1500, misc: 300 }
+        ];
+        saveToLocalStorage();
+    }
 
     loadFromLocalStorage();
+    if (state.inventory.length === 0) {
+        initializeDemoData();
+    }
 </script>
 </body>
 </html>
