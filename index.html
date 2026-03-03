@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Timber Trading ERP v9.0.0</title>
+    <title>DOCKSIDE | Timber Trading ERP v10.0.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,6 +41,7 @@
         .badge-transit { background-color: #dbeafe; color: #1e40af; }
         .badge-delayed { background-color: #fee2e2; color: #991b1b; }
         .badge-completed { background-color: #dcfce7; color: #15803d; }
+        .badge-arrived { background-color: #fed7aa; color: #92400e; }
         .row-risk-high { background-color: #fee2e2; }
         .row-risk-medium { background-color: #fed7aa; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; }
@@ -66,10 +67,17 @@
         .alert-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; }
         .alert-item { padding: 10px; background-color: #fee2e2; border-left: 3px solid #dc2626; margin-bottom: 8px; font-size: 11px; border-radius: 2px; }
         .alert-item.good { background-color: #dcfce7; border-left-color: #10b981; color: #15803d; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 20px; text-align: center; }
+        .card-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .card-value { font-size: 22px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px; }
+        .card-chart { height: 35px; background: linear-gradient(to right, #dbeafe, #bfdbfe); border-radius: 3px; }
+        .card-subtitle { font-size: 10px; color: #999; margin-top: 8px; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -86,7 +94,7 @@
 
     <div class="main">
         <div class="header">
-            <div class="header-title" id="pageTitle">Transit Timeline</div>
+            <div class="header-title" id="pageTitle">Dashboard</div>
         </div>
         <div class="content" id="content"></div>
     </div>
@@ -139,7 +147,8 @@
 const db = {
     shipments: [
         { id: 'SHIP-001', vehicle: 'MH-01-XY-1234', driver: 'Rajesh Kumar', contact: '+91 9876543210', cargo: 'Timber Logs', supplier: 'Kerala Timber', origin: 'Port Cochin', destination: 'Plot 10', dispatchDate: '2025-03-01', eta: 5, value: 850000, freight: 25000, clearing: 5000, status: 'In Transit', gpsStatus: 'Active', syncStatus: 'Not Synced', delay: 0, timeline: [{ event: 'Dispatch', date: '2025-03-01', time: '08:00' }, { event: 'En route', date: '2025-03-02', time: '14:30' }] },
-        { id: 'SHIP-002', vehicle: 'MH-02-AB-5678', driver: 'Suresh Singh', contact: '+91 8765432109', cargo: 'Plywood', supplier: 'Tamil Nadu Ply', origin: 'Trichy', destination: 'Plot 12', dispatchDate: '2025-02-28', eta: 4, value: 620000, freight: 18000, clearing: 3000, status: 'Delayed', gpsStatus: 'Inactive', syncStatus: 'Not Synced', delay: 2, timeline: [{ event: 'Dispatch', date: '2025-02-28', time: '10:00' }, { event: 'En route', date: '2025-03-01', time: '16:00' }] }
+        { id: 'SHIP-002', vehicle: 'MH-02-AB-5678', driver: 'Suresh Singh', contact: '+91 8765432109', cargo: 'Plywood', supplier: 'Tamil Nadu Ply', origin: 'Trichy', destination: 'Plot 12', dispatchDate: '2025-02-28', eta: 4, value: 620000, freight: 18000, clearing: 3000, status: 'Delayed', gpsStatus: 'Inactive', syncStatus: 'Not Synced', delay: 2, timeline: [{ event: 'Dispatch', date: '2025-02-28', time: '10:00' }, { event: 'En route', date: '2025-03-01', time: '16:00' }] },
+        { id: 'SHIP-003', vehicle: 'MH-03-CD-9999', driver: 'Mohan Das', contact: '+91 7654321098', cargo: 'Sawn Timber', supplier: 'Assam Woods', origin: 'Guwahati', destination: 'Plot 15', dispatchDate: '2025-02-25', eta: 6, value: 1200000, freight: 35000, clearing: 4000, status: 'Arrived', gpsStatus: 'Active', syncStatus: 'Pending Unloading', delay: 0, timeline: [{ event: 'Dispatch', date: '2025-02-25', time: '06:00' }, { event: 'En route', date: '2025-02-27', time: '10:00' }, { event: 'Arrival', date: '2025-03-02', time: '09:30' }] }
     ],
     inventory: [
         { sku: 'PLY-001', product: 'Plywood 12mm', supplier: 'Tamil Nadu', spec: '12mm Grade A', location: 'Plot 10-A1', batch: 'BATCH-001', qty: 450, purchaseRate: 2000, purchaseValue: 900000, landedCost: 925000, sellingRate: 2200, margin: 100, daysInYard: 15, lastMovement: '2025-02-25', status: 'In Yard' },
@@ -148,19 +157,83 @@ const db = {
     ]
 };
 
-const state = { view: 'transit' };
+const state = { view: 'dashboard' };
 
 function loadNav() {
-    const html = ['Transit Timeline', 'Inventory', 'Dashboard'].map(item => `<div class="nav-item ${state.view === item.toLowerCase().replace(/ /g, '-') ? 'active' : ''}" onclick="switchView('${item.toLowerCase().replace(/ /g, '-')}')">${item}</div>`).join('');
+    const items = ['Dashboard', 'Transit Timeline', 'Inventory', 'Capital at Risk'];
+    const html = items.map(item => `<div class="nav-item ${state.view === item.toLowerCase().replace(/ /g, '-') ? 'active' : ''}" onclick="switchView('${item.toLowerCase().replace(/ /g, '-')}')">${item}</div>`).join('');
     document.getElementById('nav').innerHTML = html;
 }
 
 function switchView(view) {
     state.view = view;
     loadNav();
-    if (view === 'transit') renderTransit();
+    if (view === 'dashboard') renderDashboard();
+    else if (view === 'transit-timeline') renderTransit();
     else if (view === 'inventory') renderInventory();
-    else renderDashboard();
+    else if (view === 'capital-at-risk') renderCapitalRisk();
+}
+
+function renderDashboard() {
+    document.getElementById('pageTitle').textContent = 'Dashboard';
+    const totalInvValue = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const inTransit = db.shipments.filter(s => s.status === 'In Transit').length;
+    const pendingUnload = db.shipments.filter(s => s.status === 'Arrived').length;
+    const activeShipments = db.shipments.filter(s => s.status !== 'Completed').length;
+
+    let html = `
+        <div class="page-title">Dashboard</div>
+        <div class="grid-4">
+            <div class="card">
+                <div class="card-label">Total Inventory Value</div>
+                <div class="card-value">₹${(totalInvValue/100000).toFixed(1)}L</div>
+                <div class="card-chart"></div>
+                <div class="card-subtitle">Current Stock</div>
+            </div>
+            <div class="card">
+                <div class="card-label">In Transit</div>
+                <div class="card-value">${inTransit}</div>
+                <div class="card-chart"></div>
+                <div class="card-subtitle">Active Shipments</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Pending Unload</div>
+                <div class="card-value">${pendingUnload}</div>
+                <div class="card-chart"></div>
+                <div class="card-subtitle">At Yard</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Active Shipments</div>
+                <div class="card-value">${activeShipments}</div>
+                <div class="card-chart"></div>
+                <div class="card-subtitle">Total</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">Recent Activity</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Shipment ID</th>
+                            <th>Vehicle</th>
+                            <th>Driver</th>
+                            <th>Cargo</th>
+                            <th>Value (₹)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+
+    db.shipments.slice(0, 5).forEach(ship => {
+        const statusClass = ship.status === 'In Transit' ? 'badge-transit' : ship.status === 'Delayed' ? 'badge-delayed' : ship.status === 'Arrived' ? 'badge-arrived' : 'badge-completed';
+        html += `<tr><td><strong>${ship.id}</strong></td><td>${ship.vehicle}</td><td>${ship.driver}</td><td>${ship.cargo}</td><td>₹${ship.value.toLocaleString()}</td><td><span class="badge ${statusClass}">${ship.status}</span></td></tr>`;
+    });
+
+    html += `</tbody></table></div></div>`;
+    document.getElementById('content').innerHTML = html;
 }
 
 function renderTransit() {
@@ -175,7 +248,7 @@ function renderTransit() {
 
     db.shipments.forEach(ship => {
         const rowClass = ship.delay > 3 ? 'row-risk-high' : ship.delay > 0 ? 'row-risk-medium' : '';
-        const statusBadge = ship.status === 'In Transit' ? 'badge-transit' : 'badge-delayed';
+        const statusBadge = ship.status === 'In Transit' ? 'badge-transit' : ship.status === 'Delayed' ? 'badge-delayed' : 'badge-arrived';
         html += `<tr class="${rowClass}" onclick="openShipmentDetail('${ship.id}')"><td><strong>${ship.id}</strong></td><td>${ship.vehicle}</td><td>${ship.driver}</td><td>${ship.contact}</td><td>${ship.cargo}</td><td>${ship.supplier}</td><td>${ship.origin}</td><td>${ship.destination}</td><td>${ship.dispatchDate}</td><td>${ship.eta}d</td><td>${ship.delay}d</td><td>₹${ship.value.toLocaleString()}</td><td>₹${ship.freight.toLocaleString()}</td><td><span class="badge ${ship.gpsStatus === 'Active' ? 'badge-completed' : 'badge-delayed'}">${ship.gpsStatus}</span></td><td><span class="badge ${statusBadge}">${ship.status}</span></td><td><span class="badge" style="background: #dbeafe; color: #1e40af;">Not Synced</span></td></tr>`;
     });
 
@@ -188,8 +261,9 @@ function renderInventory() {
     const totalVal = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
     const totalQty = db.inventory.reduce((s, i) => s + i.qty, 0);
     const old90 = db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const noMove30 = db.inventory.filter(i => i.daysInYard > 30).length;
 
-    let html = `<div class="page-title">Inventory Management</div><div class="control-strip"><div class="control-item"><div class="control-label">Total Stock Value</div><div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">Total Quantity</div><div class="control-value">${totalQty}</div></div><div class="control-item"><div class="control-label">In Transit</div><div class="control-value">0</div></div><div class="control-item"><div class="control-label">90+ Days</div><div class="control-value" style="color: #dc2626;">₹${(old90/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">No Move 30d</div><div class="control-value">${db.inventory.filter(i => i.daysInYard > 30).length}</div></div><div class="control-item"><div class="control-label">Today Dispatch</div><div class="control-value">0</div></div></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Yard:</span><select><option>All</option><option>Plot 10</option><option>Plot 12</option><option>Plot 15</option></select></div><div class="filter-group"><span class="filter-label">Age:</span><select><option>All</option><option>0-30</option><option>31-60</option><option>61-90</option><option>90+</option></select></div><div class="filter-group" style="flex: 1;"><input type="text" placeholder="Search SKU / Batch" style="flex: 1;"></div></div><div class="table-wrapper"><table><thead><tr><th>SKU</th><th>Product</th><th>Spec</th><th>Supplier</th><th>Location</th><th>Batch</th><th>Qty</th><th>Purch Rate</th><th>Landed Cost</th><th>Selling Rate</th><th>Margin/Unit</th><th>Total Margin</th><th>Days</th><th>Last Move</th><th>Status</th></tr></thead><tbody>`;
+    let html = `<div class="page-title">Inventory Management</div><div class="control-strip"><div class="control-item"><div class="control-label">Total Stock Value</div><div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">Total Quantity</div><div class="control-value">${totalQty}</div></div><div class="control-item"><div class="control-label">In Transit</div><div class="control-value">0</div></div><div class="control-item"><div class="control-label">90+ Days</div><div class="control-value" style="color: #dc2626;">₹${(old90/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">No Move 30d</div><div class="control-value">${noMove30}</div></div><div class="control-item"><div class="control-label">Today Dispatch</div><div class="control-value">0</div></div></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Yard:</span><select><option>All</option><option>Plot 10</option><option>Plot 12</option><option>Plot 15</option></select></div><div class="filter-group"><span class="filter-label">Age:</span><select><option>All</option><option>0-30</option><option>31-60</option><option>61-90</option><option>90+</option></select></div><div class="filter-group" style="flex: 1;"><input type="text" placeholder="Search SKU / Batch" style="flex: 1;"></div></div><div class="table-wrapper"><table><thead><tr><th>SKU</th><th>Product</th><th>Spec</th><th>Supplier</th><th>Location</th><th>Batch</th><th>Qty</th><th>Purch Rate</th><th>Landed Cost</th><th>Selling Rate</th><th>Margin/Unit</th><th>Total Margin</th><th>Days</th><th>Last Move</th><th>Status</th></tr></thead><tbody>`;
 
     db.inventory.forEach(item => {
         const rowClass = item.daysInYard > 90 ? 'row-risk-high' : item.daysInYard > 60 ? 'row-risk-medium' : '';
@@ -199,16 +273,87 @@ function renderInventory() {
 
     html += `</tbody></table></div><div class="alert-section"><div class="alert-title">⚠️ Action Required</div>`;
     const old120 = db.inventory.filter(i => i.daysInYard > 120);
+    const move45 = db.inventory.filter(i => i.daysInYard > 45);
     if (old120.length > 0) html += `<div class="alert-item">Material 120+ days: ${old120.map(i => i.sku).join(', ')}</div>`;
-    else html += `<div class="alert-item good">✓ All inventory in good status</div>`;
+    if (move45.length > 0) html += `<div class="alert-item">Zero movement 45+ days: ${move45.map(i => i.sku).join(', ')}</div>`;
+    if (old120.length === 0 && move45.length === 0) html += `<div class="alert-item good">✓ All inventory in good status</div>`;
     html += `</div>`;
 
     document.getElementById('content').innerHTML = html;
 }
 
-function renderDashboard() {
-    document.getElementById('pageTitle').textContent = 'Dashboard';
-    document.getElementById('content').innerHTML = `<div class="page-title">Dashboard</div><p>Dashboard content here...</p>`;
+function renderCapitalRisk() {
+    document.getElementById('pageTitle').textContent = 'Capital at Risk';
+    const inventory60Plus = db.inventory.filter(i => i.daysInYard >= 60);
+    const totalRisk = inventory60Plus.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const riskScore = inventory60Plus.length > 0 ? 74 : 10;
+
+    let html = `
+        <div class="page-title">Capital at Risk</div>
+        <div style="font-size: 12px; color: #999; margin-bottom: 30px;">Automatic financial exposure detection based on live operational data</div>
+
+        <div class="three-col">
+            <div class="panel">
+                <div class="panel-title">Overall Capital Risk Score</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 32px; font-weight: 900; color: #d97706; margin: 10px 0;">${riskScore}/100</div>
+                    <div style="font-size: 12px; color: #d97706; font-weight: 600;">Risk Level: ${riskScore > 70 ? 'HIGH' : 'MEDIUM'}</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Capital Blocked (60+ days)</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 28px; font-weight: 900; color: #dc2626; margin: 10px 0;">₹${(totalRisk/100000).toFixed(1)}L</div>
+                    <div style="font-size: 12px; color: #666; font-weight: 600;">${inventory60Plus.length} lots at risk</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Inventory Risk</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 28px; font-weight: 900; margin: 10px 0;">74%</div>
+                    <div style="width: 100%; height: 8px; background: #f0f0f0; border-radius: 4px; margin: 10px 0; overflow: hidden;">
+                        <div style="width: 74%; height: 100%; background: linear-gradient(to right, #fca5a5, #fdba74); border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">Inventory Capital Exposure</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Value (₹)</th>
+                            <th>Days Old</th>
+                            <th>% of Total</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+
+    inventory60Plus.forEach((item, idx) => {
+        const risk = item.daysInYard > 90 ? 'Days > 90' : 'Days > 60';
+        const value = item.qty * item.sellingRate;
+        html += `
+            <tr>
+                <td><strong>${item.sku}</strong></td>
+                <td>${item.product}</td>
+                <td>${item.location}</td>
+                <td>₹${value.toLocaleString()}</td>
+                <td>${item.daysInYard}</td>
+                <td>45,000</td>
+                <td><span class="badge ${item.daysInYard > 90 ? 'badge-delayed' : 'badge-arrived'}">${risk}</span></td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table></div></div>`;
+    document.getElementById('content').innerHTML = html;
 }
 
 function openDispatchModal() {
@@ -250,7 +395,28 @@ function saveDispatch() {
 function openShipmentDetail(id) {
     const ship = db.shipments.find(s => s.id === id);
     if (!ship) return;
-    let html = `<div class="panel"><div class="panel-title">Shipment Details</div><div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">${ship.id}</span></div><div class="detail-row"><span class="detail-label">Vehicle</span><span class="detail-value">${ship.vehicle}</span></div><div class="detail-row"><span class="detail-label">Driver</span><span class="detail-value">${ship.driver}</span></div><div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${ship.supplier}</span></div><div class="detail-row"><span class="detail-label">Value</span><span class="detail-value">₹${ship.value.toLocaleString()}</span></div></div><div class="panel"><div class="panel-title">Route & Cargo</div><div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">${ship.origin}</span></div><div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${ship.destination}</span></div><div class="detail-row"><span class="detail-label">Cargo</span><span class="detail-value">${ship.cargo}</span></div><div class="detail-row"><span class="detail-label">Dispatch</span><span class="detail-value">${ship.dispatchDate}</span></div><div class="detail-row"><span class="detail-label">Freight</span><span class="detail-value">₹${ship.freight.toLocaleString()}</span></div></div>`;
+    let html = `
+        <div class="panel">
+            <div class="panel-title">Shipment Details</div>
+            <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">${ship.id}</span></div>
+            <div class="detail-row"><span class="detail-label">Vehicle</span><span class="detail-value">${ship.vehicle}</span></div>
+            <div class="detail-row"><span class="detail-label">Driver</span><span class="detail-value">${ship.driver}</span></div>
+            <div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${ship.supplier}</span></div>
+            <div class="detail-row"><span class="detail-label">Cargo Type</span><span class="detail-value">${ship.cargo}</span></div>
+            <div class="detail-row"><span class="detail-label">Value</span><span class="detail-value">₹${ship.value.toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Freight Cost</span><span class="detail-value">₹${ship.freight.toLocaleString()}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${ship.status}</span></div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">Route Information</div>
+            <div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">${ship.origin}</span></div>
+            <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${ship.destination}</span></div>
+            <div class="detail-row"><span class="detail-label">Dispatch Date</span><span class="detail-value">${ship.dispatchDate}</span></div>
+            <div class="detail-row"><span class="detail-label">ETA</span><span class="detail-value">${ship.eta} days</span></div>
+            <div class="detail-row"><span class="detail-label">Current Delay</span><span class="detail-value" style="color: ${ship.delay > 0 ? '#dc2626' : '#15803d'}">${ship.delay} days</span></div>
+            <div class="detail-row"><span class="detail-label">GPS Status</span><span class="detail-value">${ship.gpsStatus}</span></div>
+        </div>
+    `;
     document.getElementById('shipmentModalTitle').textContent = ship.id;
     document.getElementById('shipmentContent').innerHTML = html;
     document.getElementById('shipmentModal').classList.add('show');
@@ -261,7 +427,7 @@ function closeShipmentModal() {
 }
 
 loadNav();
-renderTransit();
+renderDashboard();
 </script>
 
 </body>
