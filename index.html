@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal v4.0.0</title>
+    <title>DOCKSIDE | Executive Terminal v5.0.0 ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
@@ -196,6 +196,9 @@
         }
 
         .status-pending { background-color: #fed7aa; color: #92400e; }
+        .status-warehouse { background-color: #dbeafe; color: #1e40af; }
+        .status-dispatched { background-color: #fee2e2; color: #991b1b; }
+        .status-closed { background-color: #dcfce7; color: #15803d; }
 
         .invoice-container {
             background: white;
@@ -341,6 +344,58 @@
     <div class="invoice-modal-content" id="invoiceContainer"></div>
 </div>
 
+<!-- ADD STOCK MODAL -->
+<div id="addStockModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Add New Stock</span>
+            <button class="close-btn" onclick="closeModal('addStockModal')">&times;</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label>Order Number *</label>
+                <input type="text" id="stockOrderNum" placeholder="e.g., ORD-001">
+            </div>
+            <div class="form-group">
+                <label>Product Name *</label>
+                <input type="text" id="stockProduct" placeholder="e.g., Teak Logs">
+            </div>
+            <div class="form-group">
+                <label>Party Name (Supplier/Buyer) *</label>
+                <input type="text" id="stockParty" placeholder="e.g., ABC Trading">
+            </div>
+            <div class="form-group">
+                <label>Warehouse Location</label>
+                <input type="text" id="stockWarehouse" placeholder="e.g., Plot 10">
+            </div>
+            <div class="form-group">
+                <label>Quantity *</label>
+                <input type="number" id="stockQuantity" placeholder="e.g., 100" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Amount (₹) *</label>
+                <input type="number" id="stockAmount" placeholder="e.g., 50000" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="stockStatus">
+                    <option>In Warehouse</option>
+                    <option>Dispatched</option>
+                    <option>Closed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Upload Invoice</label>
+                <input type="file" id="stockInvoiceFile" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-submit" onclick="saveNewStock()">✓ Save Stock</button>
+            <button class="btn-cancel" onclick="closeModal('addStockModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <!-- SETTINGS TEMPLATE MODAL -->
 <div id="settingsModal" class="modal">
     <div class="modal-content">
@@ -418,11 +473,32 @@
 </div>
 
 <script>
+    // ============== ERP DATA STRUCTURE ==============
+    let erpDatabase = {
+        companies: [],
+        users: [],
+        yards: [],
+        items: [],
+        inventoryStock: [],
+        customers: [],
+        suppliers: [],
+        purchases: [],
+        purchaseItems: [],
+        sales: [],
+        saleItems: [],
+        transfers: [],
+        payments: [],
+        invoices: [],
+        ledgers: []
+    };
+
     let state = {
         authenticated: false,
         currentView: 'dashboard',
         userRole: 'admin',
         licenseNumber: '',
+        companyId: 'COMP-001',
+        userId: 'USER-001',
         inventory: [],
         orders: [],
         templateSettings: {
@@ -435,26 +511,188 @@
         }
     };
 
+    // ============== MULTI-TENANT FILTER ==============
+    function filterByCompany(records) {
+        return records.filter(r => r.companyId === state.companyId);
+    }
+
+    // ============== INVENTORY OPERATIONS ==============
+    function getStockByYardAndItem(yardId, itemId) {
+        const stock = erpDatabase.inventoryStock.find(
+            s => s.itemId === itemId && s.yardId === yardId && s.companyId === state.companyId
+        );
+        return stock?.quantity || 0;
+    }
+
+    function updateStock(itemId, yardId, quantityDelta) {
+        let stock = erpDatabase.inventoryStock.find(
+            s => s.itemId === itemId && s.yardId === yardId && s.companyId === state.companyId
+        );
+
+        if (!stock) {
+            stock = {
+                id: generateId('inv'),
+                companyId: state.companyId,
+                itemId,
+                yardId,
+                quantity: Math.max(0, quantityDelta),
+                lastStockInDate: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            erpDatabase.inventoryStock.push(stock);
+        } else {
+            stock.quantity = Math.max(0, stock.quantity + quantityDelta);
+            stock.updatedAt = new Date().toISOString();
+            if (quantityDelta > 0) {
+                stock.lastStockInDate = new Date().toISOString();
+            }
+        }
+    }
+
+    // ============== LEDGER AUTO-CALCULATION ==============
+    function updateCustomerReceivable(customerId, amountDelta) {
+        let ledger = erpDatabase.ledgers.find(
+            l => l.type === 'customer' && l.customerId === customerId && l.companyId === state.companyId
+        );
+
+        if (!ledger) {
+            ledger = {
+                id: generateId('ledger'),
+                companyId: state.companyId,
+                type: 'customer',
+                customerId,
+                totalSales: 0,
+                totalPaymentReceived: 0,
+                outstanding: 0,
+                updatedAt: new Date().toISOString()
+            };
+            erpDatabase.ledgers.push(ledger);
+        }
+
+        ledger.totalSales = (ledger.totalSales || 0) + (amountDelta > 0 ? amountDelta : 0);
+        ledger.totalPaymentReceived = (ledger.totalPaymentReceived || 0) + (amountDelta < 0 ? Math.abs(amountDelta) : 0);
+        ledger.outstanding = (ledger.totalSales || 0) - (ledger.totalPaymentReceived || 0);
+        ledger.updatedAt = new Date().toISOString();
+    }
+
+    function updateSupplierPayable(supplierId, amountDelta) {
+        let ledger = erpDatabase.ledgers.find(
+            l => l.type === 'supplier' && l.supplierId === supplierId && l.companyId === state.companyId
+        );
+
+        if (!ledger) {
+            ledger = {
+                id: generateId('ledger'),
+                companyId: state.companyId,
+                type: 'supplier',
+                supplierId,
+                totalPurchases: 0,
+                totalPaymentPaid: 0,
+                outstanding: 0,
+                updatedAt: new Date().toISOString()
+            };
+            erpDatabase.ledgers.push(ledger);
+        }
+
+        ledger.totalPurchases = (ledger.totalPurchases || 0) + (amountDelta > 0 ? amountDelta : 0);
+        ledger.totalPaymentPaid = (ledger.totalPaymentPaid || 0) + (amountDelta < 0 ? Math.abs(amountDelta) : 0);
+        ledger.outstanding = (ledger.totalPurchases || 0) - (ledger.totalPaymentPaid || 0);
+        ledger.updatedAt = new Date().toISOString();
+    }
+
+    // ============== DEAD STOCK DETECTION ==============
+    function calculateStockAge(createdAt) {
+        const created = new Date(createdAt);
+        const today = new Date();
+        const days = Math.floor((today - created) / (1000 * 60 * 60 * 24));
+        return days;
+    }
+
+    function getDeadStockStatus(days, status) {
+        if (status === 'Closed') return '';
+        if (days >= 90) return 'Capital Blocked';
+        if (days >= 60) return 'Risk';
+        if (days >= 30) return 'Warning';
+        return '';
+    }
+
+    function getDeadStockColor(days, status) {
+        if (status === 'Closed') return '#666';
+        if (days >= 90) return '#991b1b';
+        if (days >= 60) return '#ea580c';
+        if (days >= 30) return '#f59e0b';
+        return '#10b981';
+    }
+
+    // ============== PERSISTENCE ==============
     function loadFromLocalStorage() {
-        const saved = localStorage.getItem('dockside_state');
+        const saved = localStorage.getItem('dockside_erp_state');
         if (saved) {
             const loaded = JSON.parse(saved);
             state.inventory = loaded.inventory || [];
             state.orders = loaded.orders || [];
             state.templateSettings = loaded.templateSettings || state.templateSettings;
             state.licenseNumber = loaded.licenseNumber || '';
+            erpDatabase = loaded.erpDatabase || erpDatabase;
         }
     }
 
     function saveToLocalStorage() {
-        localStorage.setItem('dockside_state', JSON.stringify({
+        localStorage.setItem('dockside_erp_state', JSON.stringify({
             inventory: state.inventory,
             orders: state.orders,
             templateSettings: state.templateSettings,
-            licenseNumber: state.licenseNumber
+            licenseNumber: state.licenseNumber,
+            erpDatabase: erpDatabase
         }));
     }
 
+    // ============== STOCK ENTRY ==============
+    function saveNewStock() {
+        const orderNum = document.getElementById('stockOrderNum').value.trim();
+        const product = document.getElementById('stockProduct').value.trim();
+        const party = document.getElementById('stockParty').value.trim();
+        const warehouse = document.getElementById('stockWarehouse').value.trim();
+        const quantity = parseFloat(document.getElementById('stockQuantity').value);
+        const amount = parseFloat(document.getElementById('stockAmount').value);
+        const status = document.getElementById('stockStatus').value;
+
+        if (!orderNum || !product || !party || !quantity || !amount) {
+            alert('❌ Please fill all required fields');
+            return;
+        }
+
+        const item = {
+            orderNum,
+            product,
+            party,
+            warehouse,
+            quantity,
+            amount,
+            status,
+            createdAt: new Date().toISOString()
+        };
+
+        state.inventory.push(item);
+        updateStock(product, warehouse, quantity);
+        updateCustomerReceivable(party, amount);
+
+        alert('✅ Stock entry saved!');
+        
+        document.getElementById('stockOrderNum').value = '';
+        document.getElementById('stockProduct').value = '';
+        document.getElementById('stockParty').value = '';
+        document.getElementById('stockWarehouse').value = '';
+        document.getElementById('stockQuantity').value = '';
+        document.getElementById('stockAmount').value = '';
+        
+        saveToLocalStorage();
+        closeModal('addStockModal');
+        renderShell();
+    }
+
+    // ============== UI HELPERS ==============
     function openModal(modalId) {
         document.getElementById(modalId).classList.add('show');
     }
@@ -580,7 +818,7 @@
                         <div>
                             <strong style="display: block; margin-bottom: 5px;">TO:</strong>
                             <div style="color: #555;">
-                                ${data.buyer || data.buyerSeller || 'Customer'}<br>
+                                ${data.party || data.buyer || data.buyerSeller || 'Customer'}<br>
                                 ${data.warehouse || 'Destination TBD'}
                             </div>
                         </div>
@@ -706,6 +944,7 @@
                 </nav>
                 ${state.userRole === 'admin' ? `
                     <div class="p-4 border-t border-gray-300">
+                        <button onclick="openModal('addStockModal')" style="width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; margin-bottom: 8px;">+ Add Stock</button>
                         <button onclick="openSettings()" style="width: 100%; padding: 8px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">⚙️ SETTINGS</button>
                     </div>
                 ` : ''}
@@ -717,7 +956,7 @@
                     <div class="flex items-center gap-4 text-[10px] font-black">
                         <span class="text-green-600 uppercase tracking-widest">● Live</span>
                         <div class="w-px h-6 bg-gray-300 mx-2"></div>
-                        <p class="text-gray-400">v4.0.0</p>
+                        <p class="text-gray-400">v5.0.0</p>
                     </div>
                 </header>
                 <main class="flex-1 overflow-y-auto p-10">${renderMainContent()}</main>
@@ -727,27 +966,45 @@
 
     function renderMainContent() {
         if (state.currentView === 'dashboard') {
-            return `<div class="grid grid-cols-4 gap-6"><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.orders.length}</h4></div><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Items</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div></div>`;
+            return `<div class="grid grid-cols-4 gap-6"><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Items</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div></div>`;
         } else if (state.currentView === 'inventory') {
             return `
-            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Inventory (${state.inventory.length})</h4>
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Inventory (${state.inventory.length})</h4>
+                ${state.userRole === 'admin' ? `<button onclick="openModal('addStockModal')" style="padding: 8px 16px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Stock</button>` : ''}
+            </div>
             <div class="deck-panel" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="background-color: #f3f4f6;">
                         <tr style="border-bottom: 2px solid #ddd;">
-                            <th style="padding: 10px; text-align: left;">Order</th>
+                            <th style="padding: 10px; text-align: left;">Order Number</th>
                             <th style="padding: 10px; text-align: left;">Product</th>
+                            <th style="padding: 10px; text-align: left;">Party</th>
+                            <th style="padding: 10px; text-align: right;">Qty</th>
                             <th style="padding: 10px; text-align: right;">Amount</th>
+                            <th style="padding: 10px; text-align: left;">Status</th>
+                            <th style="padding: 10px; text-align: left;">Dead Stock</th>
+                            <th style="padding: 10px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${state.inventory.map((i, idx) => `
-                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(i).replace(/\"/g, '&quot;')})">
-                                <td style="padding: 10px;">${i.orderNum}</td>
-                                <td style="padding: 10px;">${i.product}</td>
-                                <td style="padding: 10px; text-align: right;">₹${(i.amount || 0).toLocaleString('en-IN')}</td>
-                            </tr>
-                        `).join('')}
+                        ${state.inventory.map((i, idx) => {
+                            const age = calculateStockAge(i.createdAt);
+                            const deadStockStatus = getDeadStockStatus(age, i.status);
+                            const color = getDeadStockColor(age, i.status);
+                            return `
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 10px; cursor: pointer; color: #D97706; font-weight: bold;" onclick="openInvoiceView(${JSON.stringify(i).replace(/"/g, '&quot;')})">${i.orderNum}</td>
+                                    <td style="padding: 10px;">${i.product}</td>
+                                    <td style="padding: 10px;">${i.party}</td>
+                                    <td style="padding: 10px; text-align: right;">${i.quantity}</td>
+                                    <td style="padding: 10px; text-align: right;">₹${i.amount.toLocaleString('en-IN')}</td>
+                                    <td style="padding: 10px;"><span class="status-badge status-${i.status.toLowerCase().replace(' ', '_')}">${i.status}</span></td>
+                                    <td style="padding: 10px; color: ${color}; font-weight: bold; font-size: 10px;">${deadStockStatus || '—'}</td>
+                                    <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(i).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>`;
@@ -765,7 +1022,7 @@
                     </thead>
                     <tbody>
                         ${state.orders.map((o, idx) => `
-                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(o).replace(/\"/g, '&quot;')})">
+                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(o).replace(/"/g, '&quot;')})">
                                 <td style="padding: 10px;">${o.orderNum}</td>
                                 <td style="padding: 10px;">${o.cargo}</td>
                                 <td style="padding: 10px; text-align: right;">₹${o.amount.toLocaleString('en-IN')}</td>
@@ -783,16 +1040,27 @@
         openModal('settingsModal');
     }
 
+    function generateId(prefix) {
+        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    }
+
     // Demo data
     function initializeDemoData() {
         state.inventory = [
-            { orderNum: 'ORD-001', product: 'Teak Logs', quantity: 100, amount: 50000, warehouse: 'Plot 10' },
-            { orderNum: 'ORD-002', product: 'Pine Planks', quantity: 50, amount: 35000, warehouse: 'Plot 12' }
+            { orderNum: 'ORD-001', product: 'Teak Logs', party: 'ABC Trading', quantity: 100, amount: 50000, warehouse: 'Plot 10', status: 'In Warehouse', createdAt: new Date(Date.now() - 45*24*60*60*1000).toISOString() },
+            { orderNum: 'ORD-002', product: 'Pine Planks', party: 'XYZ Corp', quantity: 50, amount: 35000, warehouse: 'Plot 12', status: 'Dispatched', createdAt: new Date(Date.now() - 65*24*60*60*1000).toISOString() }
         ];
         state.orders = [
             { orderNum: 'ORD-001', cargo: 'Teak Logs', buyer: 'ABC Trading', amount: 50000, transport: 2000, misc: 500 },
             { orderNum: 'ORD-002', cargo: 'Pine Planks', buyer: 'XYZ Corp', amount: 35000, transport: 1500, misc: 300 }
         ];
+        
+        // Initialize ERP database with demo data
+        erpDatabase.inventoryStock = [
+            { id: 'inv-1', companyId: 'COMP-001', itemId: 'item-001', yardId: 'yard-001', quantity: 100, lastStockInDate: state.inventory[0].createdAt, createdAt: state.inventory[0].createdAt, updatedAt: new Date().toISOString() },
+            { id: 'inv-2', companyId: 'COMP-001', itemId: 'item-002', yardId: 'yard-002', quantity: 50, lastStockInDate: state.inventory[1].createdAt, createdAt: state.inventory[1].createdAt, updatedAt: new Date().toISOString() }
+        ];
+        
         saveToLocalStorage();
     }
 
