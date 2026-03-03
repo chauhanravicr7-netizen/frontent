@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Timber Trading ERP v11.0.0</title>
+    <title>DOCKSIDE | Timber Trading ERP v12.0.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,7 +39,8 @@
         .nav-item:hover { color: white; }
         .nav-item.active { color: white; background-color: #d97706; border-left-color: #d97706; }
         .sidebar-footer { border-top: 1px solid #333; padding-top: 15px; }
-        .btn-primary { width: 100%; padding: 10px; background-color: #0066cc; color: white; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; }
+        .btn-primary { width: 100%; padding: 10px; background-color: #0066cc; color: white; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; margin-bottom: 8px; }
+        .btn-secondary { width: 100%; padding: 10px; background-color: #10b981; color: white; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; }
         
         .main { flex: 1; display: flex; flex-direction: column; }
         .header { background-color: white; border-bottom: 1px solid #e5e5e5; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
@@ -54,7 +55,7 @@
         /* KPI CARDS */
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
-        .card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; }
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
         .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
         .card-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
         .card-value { font-size: 22px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px; }
@@ -116,7 +117,6 @@
         .btn { padding: 8px 16px; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; }
         .btn-cancel { background-color: #e5e5e5; color: #333; }
         .btn-save { background-color: #0066cc; color: white; }
-        .btn-danger { background-color: #dc2626; color: white; }
         
         /* PANEL */
         .panel { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 15px; margin-bottom: 15px; }
@@ -130,17 +130,29 @@
         .alert-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; }
         .alert-item { padding: 10px; background-color: #fee2e2; border-left: 3px solid #dc2626; margin-bottom: 8px; font-size: 11px; border-radius: 2px; }
         .alert-item.good { background-color: #dcfce7; border-left-color: #10b981; color: #15803d; }
-        .alert-item.warning { background-color: #fed7aa; border-left-color: #d97706; color: #92400e; }
         
         /* AURA INDICATOR */
         .aura-green { border-left: 4px solid #10b981; background-color: #f0fdf4; }
         .aura-amber { border-left: 4px solid #d97706; background-color: #fffbeb; }
         .aura-red { border-left: 4px solid #dc2626; background-color: #fef2f2; }
         
-        /* AI ASSIST */
-        .ai-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 4px; margin-top: 30px; }
-        .ai-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
-        .ai-item { padding: 10px; background-color: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 8px; font-size: 11px; }
+        /* AI CHAT SECTION - GPT STYLE (FEATURE: AI Chat Box) */
+        .ai-chat-container { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-top: 30px; display: flex; flex-direction: column; height: 500px; }
+        .ai-chat-header { font-size: 13px; font-weight: 700; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .ai-chat-messages { flex: 1; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .ai-message { padding: 10px 12px; border-radius: 6px; font-size: 11px; line-height: 1.5; max-width: 85%; }
+        .ai-message.bot { background-color: rgba(255,255,255,0.15); align-self: flex-start; }
+        .ai-message.user { background-color: rgba(0,0,0,0.2); align-self: flex-end; text-align: right; }
+        .ai-chat-input { display: flex; gap: 8px; }
+        .ai-chat-input input { flex: 1; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 11px; background-color: rgba(255,255,255,0.1); color: white; font-family: inherit; }
+        .ai-chat-input input::placeholder { color: rgba(255,255,255,0.6); }
+        .ai-chat-input button { padding: 10px 16px; background-color: white; color: #667eea; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .ai-chat-input button:hover { background-color: #f0f0f0; }
+        
+        /* AI SUGGESTIONS */
+        .ai-suggestions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .ai-suggestion { padding: 10px; background-color: rgba(255,255,255,0.1); border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; font-size: 10px; transition: all 0.2s; }
+        .ai-suggestion:hover { background-color: rgba(255,255,255,0.2); }
         
         /* RESPONSIVE */
         @media (max-width: 1024px) {
@@ -148,6 +160,7 @@
             .grid-3 { grid-template-columns: repeat(2, 1fr); }
             .form-grid { grid-template-columns: 1fr; }
             .sidebar { width: 180px; padding: 15px; }
+            .ai-chat-container { height: 400px; }
         }
         @media (max-width: 768px) {
             .layout { flex-direction: column; }
@@ -158,6 +171,7 @@
             .table-wrapper { overflow-x: auto; }
             table { font-size: 10px; }
             .control-strip { grid-template-columns: repeat(3, 1fr); }
+            .ai-chat-container { height: 300px; }
         }
         
         ::-webkit-scrollbar { width: 8px; }
@@ -212,9 +226,12 @@
     <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="sidebar-brand">DOCKSIDE</div>
-        <div class="sidebar-subtitle">v11.0.0 ERP</div>
+        <div class="sidebar-subtitle">v12.0.0 ERP</div>
         <div class="sidebar-nav" id="nav"></div>
         <div class="sidebar-footer">
+            <!-- SEPARATION #1: Inventory "Add New Cargo" Button -->
+            <button class="btn-secondary" onclick="openInventoryModal()">+ Add Cargo</button>
+            <!-- SEPARATION #2: Dispatch "Create Shipment" Button -->
             <button class="btn-primary" onclick="openDispatchModal()">+ New Shipment</button>
         </div>
     </div>
@@ -234,21 +251,51 @@
 
 <!-- MODALS -->
 
-<!-- DISPATCH MODAL -->
+<!-- SEPARATION #3: INVENTORY MODAL - Add New Cargo (Inventory-only fields) -->
+<div id="inventoryModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">📦 Add New Cargo to Inventory</div>
+            <button class="close-btn" onclick="closeInventoryModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">SKU Code *</label><input type="text" id="invSKU" placeholder="e.g., PLY-001"></div>
+                <div class="form-group"><label class="form-label">Product Name *</label><input type="text" id="invProduct" placeholder="e.g., Plywood 12mm"></div>
+                <div class="form-group"><label class="form-label">Batch Number *</label><input type="text" id="invBatch" placeholder="e.g., BATCH-2025-001"></div>
+                <div class="form-group"><label class="form-label">Supplier *</label><input type="text" id="invSupplier" placeholder="e.g., Tamil Nadu Ply"></div>
+                <div class="form-group"><label class="form-label">Yard/Bin Location *</label><select id="invLocation"><option value="Plot10-A1">Plot 10 - Bin A1</option><option value="Plot10-A2">Plot 10 - Bin A2</option><option value="Plot12-C1">Plot 12 - Bin C1</option><option value="Plot15-E1">Plot 15 - Bin E1</option></select></div>
+                <div class="form-group"><label class="form-label">Quantity *</label><input type="number" id="invQty" placeholder="0" oninput="updateMarginCalculation()"></div>
+                <div class="form-group"><label class="form-label">Purchase Rate (₹) *</label><input type="number" id="invPurchaseRate" placeholder="0.00" oninput="updateMarginCalculation()"></div>
+                <div class="form-group"><label class="form-label">Selling Rate (₹) *</label><input type="number" id="invSellingRate" placeholder="0.00" oninput="updateMarginCalculation()"></div>
+                <div class="form-group"><label class="form-label">Landed Cost (₹) *</label><input type="number" id="invLandedCost" placeholder="0.00" oninput="updateMarginCalculation()"></div>
+                <div class="form-group"><label class="form-label">Margin % (Auto)</label><input type="number" id="invMargin" readonly style="background-color: #f0f0f0;"></div>
+                <div class="form-group"><label class="form-label">Days in Yard</label><input type="number" id="invDays" value="0"></div>
+                <div class="form-group"><label class="form-label">Last Movement</label><input type="date" id="invLastMovement"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeInventoryModal()">Cancel</button>
+            <button class="btn btn-save" onclick="saveInventory()">Add to Inventory</button>
+        </div>
+    </div>
+</div>
+
+<!-- SEPARATION #4: DISPATCH MODAL - Create Shipment (Vehicle/Route-only fields) -->
 <div id="dispatchModal" class="modal">
     <div class="modal-box">
         <div class="modal-header">
-            <div class="modal-title">Create New Shipment</div>
+            <div class="modal-title">🚚 Create New Shipment - Vehicle & Route Details</div>
             <button class="close-btn" onclick="closeDispatchModal()">&times;</button>
         </div>
         <div class="modal-body">
             <div class="form-grid">
                 <div class="form-group"><label class="form-label">Vehicle Number *</label><input type="text" id="dispatchVehicle" placeholder="MH-01-XY-1234"></div>
                 <div class="form-group"><label class="form-label">Driver Name *</label><input type="text" id="dispatchDriver"></div>
-                <div class="form-group"><label class="form-label">Driver Contact *</label><input type="text" id="dispatchContact"></div>
+                <div class="form-group"><label class="form-label">Driver Contact *</label><input type="text" id="dispatchContact" placeholder="+91 9876543210"></div>
                 <div class="form-group"><label class="form-label">Supplier *</label><input type="text" id="dispatchSupplier"></div>
                 <div class="form-group"><label class="form-label">Cargo Type *</label><select id="dispatchCargo"><option>Timber Logs</option><option>Plywood</option><option>Sawn Timber</option></select></div>
-                <div class="form-group"><label class="form-label">Origin *</label><input type="text" id="dispatchOrigin" placeholder="Port name"></div>
+                <div class="form-group"><label class="form-label">Origin (Port) *</label><input type="text" id="dispatchOrigin" placeholder="Port Cochin"></div>
                 <div class="form-group"><label class="form-label">Destination Yard *</label><select id="dispatchDest"><option value="Plot10">Plot 10</option><option value="Plot12">Plot 12</option><option value="Plot15">Plot 15</option></select></div>
                 <div class="form-group"><label class="form-label">Dispatch Date *</label><input type="date" id="dispatchDate"></div>
                 <div class="form-group"><label class="form-label">Port Arrival Date *</label><input type="date" id="portArrivalDate"></div>
@@ -273,7 +320,7 @@
             <button class="close-btn" onclick="closeShipmentModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="two-col" id="shipmentContent"></div>
+            <div id="shipmentContent"></div>
         </div>
     </div>
 </div>
@@ -282,7 +329,7 @@
 <div id="bidModal" class="modal">
     <div class="modal-box">
         <div class="modal-header">
-            <div class="modal-title">Bid Calculator - Deal Negotiation</div>
+            <div class="modal-title">💰 Bid Calculator - Deal Negotiation</div>
             <button class="close-btn" onclick="closeBidModal()">&times;</button>
         </div>
         <div class="modal-body">
@@ -305,24 +352,32 @@
 </div>
 
 <script>
-// ============== DATABASE & STATE ==============
-// Multi-warehouse inventory structure
+// ============== DATABASE STRUCTURE ==============
+// SEPARATION #5: Inventory and Dispatch are stored in separate arrays
 const warehouses = {
     Plot10: { name: 'Plot 10 (North)', bins: ['A1', 'A2', 'B1', 'B2'], capacity: 5000, current: 450 },
     Plot12: { name: 'Plot 12 (Central)', bins: ['C1', 'C2', 'D1'], capacity: 6000, current: 650 },
     Plot15: { name: 'Plot 15 (Port)', bins: ['E1', 'E2', 'F1', 'F2', 'F3'], capacity: 7000, current: 1200 }
 };
 
-// Database structure
 const db = {
+    // INVENTORY DATA - Cargo/batch information only
+    inventory: [
+        { sku: 'PLY-001', product: 'Plywood 12mm', supplier: 'Tamil Nadu', location: 'Plot10-A1', batch: 'BATCH-2025-001', qty: 450, purchaseRate: 2000, purchaseValue: 900000, landedCost: 925000, sellingRate: 2200, margin: 10, daysInYard: 15, lastMovement: '2025-02-25', status: 'In Yard', isNewBatch: true },
+        { sku: 'TIM-001', product: 'Teak Logs', supplier: 'Kerala Timber', location: 'Plot12-B2', batch: 'BATCH-2025-002', qty: 320, purchaseRate: 5000, purchaseValue: 1600000, landedCost: 1650000, sellingRate: 5500, margin: 10, daysInYard: 45, lastMovement: '2025-02-10', status: 'In Yard', isNewBatch: false },
+        { sku: 'SAW-001', product: 'Sawn Timber', supplier: 'Assam Woods', location: 'Plot15-C3', batch: 'BATCH-2025-003', qty: 280, purchaseRate: 3500, purchaseValue: 980000, landedCost: 1020000, sellingRate: 3900, margin: 10, daysInYard: 95, lastMovement: '2024-12-05', status: 'In Yard', isNewBatch: false }
+    ],
+    // DISPATCH DATA - Vehicle/shipment information only
     shipments: [
         { id: 'SHIP-001', vehicle: 'MH-01-XY-1234', driver: 'Rajesh Kumar', contact: '+91 9876543210', cargo: 'Timber Logs', supplier: 'Kerala Timber', origin: 'Port Cochin', destination: 'Plot10', dispatchDate: '2025-03-01', portArrivalDate: '2025-03-03', eta: 5, value: 850000, freight: 25000, clearing: 5000, status: 'In Transit', gpsStatus: 'Active', syncStatus: 'Not Synced', delay: 0, isNew: false, timeline: [{ event: 'Dispatch', date: '2025-03-01', time: '08:00' }] },
         { id: 'SHIP-002', vehicle: 'MH-02-AB-5678', driver: 'Suresh Singh', contact: '+91 8765432109', cargo: 'Plywood', supplier: 'Tamil Nadu Ply', origin: 'Trichy', destination: 'Plot12', dispatchDate: '2025-02-28', portArrivalDate: '2025-02-25', eta: 4, value: 620000, freight: 18000, clearing: 3000, status: 'Delayed', gpsStatus: 'Inactive', syncStatus: 'Not Synced', delay: 2, isNew: false, timeline: [{ event: 'Dispatch', date: '2025-02-28', time: '10:00' }] }
-    ],
-    inventory: [
-        { sku: 'PLY-001', product: 'Plywood 12mm', supplier: 'Tamil Nadu', spec: '12mm Grade A', location: 'Plot10-A1', batch: 'BATCH-2025-001', qty: 450, purchaseRate: 2000, purchaseValue: 900000, landedCost: 925000, sellingRate: 2200, margin: 100, daysInYard: 15, lastMovement: '2025-02-25', status: 'In Yard', isNewBatch: true },
-        { sku: 'TIM-001', product: 'Teak Logs', supplier: 'Kerala Timber', spec: 'Grade A', location: 'Plot12-B2', batch: 'BATCH-2025-002', qty: 320, purchaseRate: 5000, purchaseValue: 1600000, landedCost: 1650000, sellingRate: 5500, margin: 500, daysInYard: 45, lastMovement: '2025-02-10', status: 'In Yard', isNewBatch: false },
-        { sku: 'SAW-001', product: 'Sawn Timber', supplier: 'Assam Woods', spec: 'Pine Grade B', location: 'Plot15-C3', batch: 'BATCH-2025-003', qty: 280, purchaseRate: 3500, purchaseValue: 980000, landedCost: 1020000, sellingRate: 3900, margin: 400, daysInYard: 95, lastMovement: '2024-12-05', status: 'In Yard', isNewBatch: false }
+    ]
+};
+
+// AI Chat session storage (FEATURE: AI Chat Session)
+const aiChat = {
+    messages: [
+        { type: 'bot', text: '👋 Welcome to DOCKSIDE AI Assist! I can help you manage inventory, track shipments, and optimize deals. Type a question or select an action below.' }
     ]
 };
 
@@ -333,13 +388,13 @@ const state = {
     currentBidSKU: null
 };
 
-// ============== LOGIN ==============
+// ============== LOGIN HANDLERS ==============
 function handleLogin() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const errorMsg = document.getElementById('errorMsg');
     
-    // Simple validation
+    // Input validation
     if (!email || !password) {
         errorMsg.textContent = '❌ Email and password are required';
         errorMsg.style.display = 'block';
@@ -351,9 +406,13 @@ function handleLogin() {
         state.authenticated = true;
         state.user = { email, role: 'admin' };
         
-        // Save remember me
+        // localStorage remember-me functionality
         if (document.getElementById('rememberMe').checked) {
             localStorage.setItem('dockside_user', email);
+            localStorage.setItem('dockside_remember', 'true');
+        } else {
+            localStorage.removeItem('dockside_user');
+            localStorage.removeItem('dockside_remember');
         }
         
         // Switch to main app
@@ -379,18 +438,24 @@ function handleLogout() {
     document.getElementById('errorMsg').style.display = 'none';
 }
 
-// Check for stored credentials
+// Check for stored credentials on page load
 window.addEventListener('load', () => {
     const stored = localStorage.getItem('dockside_user');
-    if (stored) {
+    const remember = localStorage.getItem('dockside_remember');
+    if (stored && remember === 'true') {
         document.getElementById('loginEmail').value = stored;
+        document.getElementById('rememberMe').checked = true;
     }
 });
 
 // ============== NAVIGATION ==============
 function loadNav() {
     const items = ['Dashboard', 'Inventory', 'Transit Timeline', 'Capital at Risk', 'AI Assist'];
-    const html = items.map(item => `<div class="nav-item ${state.view === item.toLowerCase().replace(/ /g, '-') ? 'active' : ''}" onclick="switchView('${item.toLowerCase().replace(/ /g, '-')}')">${item}</div>`).join('');
+    const html = items.map(item => {
+        const viewName = item.toLowerCase().replace(/ /g, '-');
+        const isActive = state.view === viewName ? 'active' : '';
+        return `<div class="nav-item ${isActive}" onclick="switchView('${viewName}')">${item}</div>`;
+    }).join('');
     document.getElementById('nav').innerHTML = html;
 }
 
@@ -407,7 +472,10 @@ function switchView(view) {
 // ============== DASHBOARD ==============
 function renderDashboard() {
     document.getElementById('pageTitle').textContent = 'Dashboard';
+    
+    // Dynamic aggregation from Inventory + Dispatch
     const totalInvValue = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const totalDispatchValue = db.shipments.reduce((s, i) => s + i.value, 0);
     const totalFreight = db.shipments.reduce((s, i) => s + i.freight, 0);
     const inTransit = db.shipments.filter(s => s.status === 'In Transit').length;
     const capital90days = db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0);
@@ -426,7 +494,7 @@ function renderDashboard() {
             <div class="card tooltip">
                 <div class="tooltiptext">Capital locked in transit shipments</div>
                 <div class="card-label">Total In Transit Value</div>
-                <div class="card-value">₹${(db.shipments.reduce((s, i) => s + i.value, 0)/100000).toFixed(1)}L</div>
+                <div class="card-value">₹${(totalDispatchValue/100000).toFixed(1)}L</div>
                 <div class="card-subtitle">${inTransit} shipments</div>
             </div>
             <div class="card tooltip" style="border: 2px solid #dc2626;">
@@ -456,14 +524,14 @@ function renderDashboard() {
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Total Shipments</td>
-                            <td>${db.shipments.length}</td>
-                            <td><span class="badge badge-transit">${db.shipments.filter(s => s.status === 'In Transit').length} In Transit</span></td>
-                        </tr>
-                        <tr>
-                            <td>Inventory Items</td>
+                            <td>Total Inventory Items</td>
                             <td>${db.inventory.length}</td>
                             <td><span class="badge badge-completed">${db.inventory.filter(i => i.isNewBatch).length} New Batches</span></td>
+                        </tr>
+                        <tr>
+                            <td>Active Shipments</td>
+                            <td>${db.shipments.length}</td>
+                            <td><span class="badge badge-transit">${inTransit} In Transit</span></td>
                         </tr>
                         <tr>
                             <td>Total Freight Costs</td>
@@ -486,33 +554,15 @@ function renderDashboard() {
     document.getElementById('content').innerHTML = html;
 }
 
-// ============== INVENTORY ==============
+// ============== INVENTORY PAGE ==============
 function renderInventory() {
     document.getElementById('pageTitle').textContent = 'Inventory Management';
     const totalVal = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
     const totalQty = db.inventory.reduce((s, i) => s + i.qty, 0);
     const newBatches = db.inventory.filter(i => i.isNewBatch).length;
     
-    // Calculate best yard for new shipment
-    let bestYard = 'Plot10';
-    let maxCapacity = 0;
-    for (const [key, yard] of Object.entries(warehouses)) {
-        const available = yard.capacity - yard.current;
-        if (available > maxCapacity) {
-            maxCapacity = available;
-            bestYard = key;
-        }
-    }
-    
     let html = `
         <div class="page-title">Inventory Management</div>
-        
-        <div class="alert-section" style="background: #f0f9ff; border-left: 4px solid #0066cc;">
-            <div class="alert-title">💡 Auto-Suggested Yard for New Shipment</div>
-            <div style="font-size: 12px; padding: 10px; background: white; border-radius: 3px; margin-top: 10px;">
-                <strong>${warehouses[bestYard].name}</strong> - Available capacity: ${warehouses[bestYard].capacity - warehouses[bestYard].current} units
-            </div>
-        </div>
         
         <div class="control-strip">
             <div class="control-item">
@@ -543,24 +593,8 @@ function renderInventory() {
         
         <div class="filter-bar">
             <div class="filter-group">
-                <span class="filter-label">Yard:</span>
-                <select id="filterYard" onchange="filterInventory()">
-                    <option value="">All Yards</option>
-                    <option value="Plot10">Plot 10</option>
-                    <option value="Plot12">Plot 12</option>
-                    <option value="Plot15">Plot 15</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <span class="filter-label">Batch Type:</span>
-                <select id="filterBatch" onchange="filterInventory()">
-                    <option value="">All</option>
-                    <option value="new">New Batches</option>
-                    <option value="existing">Existing</option>
-                </select>
-            </div>
-            <div class="filter-group" style="flex: 1;">
-                <input type="text" id="inventorySearch" placeholder="Search SKU / Product / Supplier" onkeyup="filterInventory()" style="flex: 1;">
+                <span class="filter-label">Search:</span>
+                <input type="text" id="inventorySearch" placeholder="SKU / Product / Supplier" onkeyup="filterInventory()" style="width: 200px;">
             </div>
         </div>
         
@@ -572,6 +606,7 @@ function renderInventory() {
                         <th>Product</th>
                         <th>Supplier</th>
                         <th>Location</th>
+                        <th>Batch</th>
                         <th>Qty</th>
                         <th>Purchase Rate</th>
                         <th>Landed Cost</th>
@@ -588,7 +623,6 @@ function renderInventory() {
     db.inventory.forEach(item => {
         const marginPct = ((item.sellingRate - item.purchaseRate) / item.purchaseRate) * 100;
         const rowClass = item.daysInYard > 90 ? 'row-risk-high' : item.daysInYard > 60 ? 'row-risk-medium' : item.isNewBatch ? 'row-new' : '';
-        const marginClass = marginPct > 15 ? 'aura-green' : marginPct > 5 ? 'aura-amber' : 'aura-red';
         const marginColor = marginPct > 15 ? '#10b981' : marginPct > 5 ? '#d97706' : '#dc2626';
         
         html += `
@@ -597,11 +631,12 @@ function renderInventory() {
                 <td>${item.product}</td>
                 <td>${item.supplier}</td>
                 <td>${item.location}</td>
+                <td>${item.batch}</td>
                 <td>${item.qty}</td>
                 <td>₹${item.purchaseRate}</td>
                 <td>₹${(item.landedCost/item.qty).toFixed(0)}</td>
                 <td>₹${item.sellingRate}</td>
-                <td><div class="${marginClass}" style="padding: 4px; border-radius: 3px; text-align: center; color: ${marginColor}; font-weight: 600;">${marginPct.toFixed(1)}%</div></td>
+                <td style="color: ${marginColor}; font-weight: 600;">${marginPct.toFixed(1)}%</td>
                 <td>${item.daysInYard}</td>
                 <td><span class="badge ${item.isNewBatch ? 'badge-new' : 'badge-completed'}">${item.isNewBatch ? 'New' : 'Existing'}</span></td>
                 <td><button class="btn btn-primary" style="padding: 4px 8px; font-size: 9px;" onclick="openBidCalculator('${item.sku}', '${item.product}', ${item.landedCost/item.qty}, ${item.sellingRate})">Bid</button></td>
@@ -614,37 +649,18 @@ function renderInventory() {
     document.getElementById('content').innerHTML = html;
 }
 
-// Filter inventory function with real-time search
+// Real-time inventory filtering
 function filterInventory() {
-    const yardFilter = document.getElementById('filterYard').value;
-    const batchFilter = document.getElementById('filterBatch').value;
     const searchTerm = document.getElementById('inventorySearch').value.toLowerCase();
-    
     const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    
     rows.forEach(row => {
-        let show = true;
-        
-        // Filter by yard
-        if (yardFilter) {
-            const location = row.cells[3].textContent;
-            if (!location.includes(yardFilter.replace('Plot', 'Plot'))) show = false;
-        }
-        
-        // Filter by batch type
-        if (batchFilter === 'new' && !row.classList.contains('row-new')) show = false;
-        if (batchFilter === 'existing' && row.classList.contains('row-new')) show = false;
-        
-        // Filter by search term
-        if (searchTerm) {
-            const text = (row.cells[0].textContent + row.cells[1].textContent + row.cells[2].textContent).toLowerCase();
-            if (!text.includes(searchTerm)) show = false;
-        }
-        
-        row.style.display = show ? '' : 'none';
+        const text = (row.cells[0].textContent + row.cells[1].textContent + row.cells[2].textContent).toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
 }
 
-// ============== TRANSIT TIMELINE ==============
+// ============== TRANSIT TIMELINE PAGE ==============
 function renderTransit() {
     document.getElementById('pageTitle').textContent = 'Transit Timeline';
     const active = db.shipments.filter(s => s.status !== 'Completed').length;
@@ -687,22 +703,13 @@ function renderTransit() {
         
         <div class="filter-bar">
             <div class="filter-group">
-                <span class="filter-label">Status:</span>
-                <select onchange="alert('Filter: ' + this.value)">
-                    <option>All</option>
-                    <option>In Transit</option>
-                    <option>Delayed</option>
-                    <option>Demurrage</option>
-                </select>
-            </div>
-            <div class="filter-group" style="flex: 1;">
-                <input type="text" placeholder="Search vehicle / driver / origin" style="flex: 1;">
+                <input type="text" placeholder="Search vehicle / driver / origin" style="width: 250px;">
             </div>
             <button class="btn-primary" onclick="openDispatchModal()">+ Create Dispatch</button>
         </div>
         
         <div class="table-wrapper">
-            <table>
+            <table id="transitTable">
                 <thead>
                     <tr>
                         <th>Shipment ID</th>
@@ -716,7 +723,6 @@ function renderTransit() {
                         <th>Days in Port</th>
                         <th>Value (₹)</th>
                         <th>Status</th>
-                        <th>GPS</th>
                         <th>Demurrage</th>
                     </tr>
                 </thead>
@@ -740,8 +746,7 @@ function renderTransit() {
                 <td>${ship.portArrivalDate}</td>
                 <td>${daysInPort}d</td>
                 <td>₹${ship.value.toLocaleString()}</td>
-                <td><span class="badge ${statusClass}">${ship.status}</span></td>
-                <td><span class="badge ${ship.gpsStatus === 'Active' ? 'badge-completed' : 'badge-delayed'}">${ship.gpsStatus}</span></td>
+                <td><span class="badge ${statusClass}" id="status-${ship.id}">${ship.status}</span></td>
                 <td>${demurrageStatus}</td>
             </tr>
         `;
@@ -752,7 +757,7 @@ function renderTransit() {
     document.getElementById('content').innerHTML = html;
 }
 
-// ============== CAPITAL AT RISK ==============
+// ============== CAPITAL AT RISK PAGE ==============
 function renderCapitalRisk() {
     document.getElementById('pageTitle').textContent = 'Capital at Risk';
     const inventory60Plus = db.inventory.filter(i => i.daysInYard >= 60);
@@ -783,37 +788,6 @@ function renderCapitalRisk() {
                 <div style="text-align: center;">
                     <div style="font-size: 28px; font-weight: 900; color: #d97706; margin: 10px 0;">₹${(portFees/1000).toFixed(0)}K</div>
                     <div style="font-size: 12px; color: #666;">Shipments 7+ days</div>
-                </div>
-            </div>
-        </div>
-        
-        <div style="margin-top: 30px;">
-            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">📊 Margin Protection</h3>
-            <div class="grid-3">
-    `;
-    
-    const greenMargin = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) > 0.15).length;
-    const amberMargin = db.inventory.filter(i => {
-        const m = ((i.sellingRate - i.purchaseRate) / i.purchaseRate);
-        return m <= 0.15 && m >= 0.05;
-    }).length;
-    const redMargin = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) < 0.05).length;
-    
-    html += `
-                <div class="aura-green" style="padding: 15px; border-radius: 4px;">
-                    <div style="font-size: 12px; font-weight: 600; color: #15803d;">✓ Healthy Margin</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #15803d; margin-top: 10px;">${greenMargin}</div>
-                    <div style="font-size: 10px; color: #047857; margin-top: 5px;">15%+ margin</div>
-                </div>
-                <div class="aura-amber" style="padding: 15px; border-radius: 4px;">
-                    <div style="font-size: 12px; font-weight: 600; color: #92400e;">⚠️ Monitor Margin</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #d97706; margin-top: 10px;">${amberMargin}</div>
-                    <div style="font-size: 10px; color: #b45309; margin-top: 5px;">5-15% margin</div>
-                </div>
-                <div class="aura-red" style="padding: 15px; border-radius: 4px;">
-                    <div style="font-size: 12px; font-weight: 600; color: #991b1b;">🔴 Low Margin Alert</div>
-                    <div style="font-size: 20px; font-weight: 900; color: #dc2626; margin-top: 10px;">${redMargin}</div>
-                    <div style="font-size: 10px; color: #b91c1c; margin-top: 5px;">Below 5% margin</div>
                 </div>
             </div>
         </div>
@@ -855,72 +829,320 @@ function renderCapitalRisk() {
     document.getElementById('content').innerHTML = html;
 }
 
-// ============== AI ASSIST ==============
+// ============== AI ASSIST PAGE (FEATURE: AI Chat Box) ==============
 function renderAIAssist() {
-    document.getElementById('pageTitle').textContent = 'AI Assist';
+    document.getElementById('pageTitle').textContent = 'AI Assist - Intelligent Assistant';
     
     let html = `
-        <div class="page-title">AI Assistant - Intelligent Recommendations</div>
+        <div class="page-title">AI Assist - Intelligent Assistant</div>
         
-        ${renderAIAssistWidget()}
+        <div class="ai-chat-container">
+            <div class="ai-chat-header">🤖 DOCKSIDE AI Assistant</div>
+            <div class="ai-chat-messages" id="aiMessages">
+    `;
+    
+    // Render chat history
+    aiChat.messages.forEach(msg => {
+        html += `<div class="ai-message ${msg.type}">${msg.text}</div>`;
+    });
+    
+    html += `
+            </div>
+            <div class="ai-chat-input">
+                <input type="text" id="aiInput" placeholder="Ask me anything... or select an action below" onkeypress="handleAISubmit(event)">
+                <button onclick="sendAIMessage()">Send</button>
+            </div>
+        </div>
+        
+        <div class="ai-suggestions">
+            <div class="ai-suggestion" onclick="suggestAIAction('Add New Cargo')">➕ Add New Cargo</div>
+            <div class="ai-suggestion" onclick="suggestAIAction('Check Delayed Shipments')">⚠️ Check Delays</div>
+            <div class="ai-suggestion" onclick="suggestAIAction('Capital at Risk Analysis')">💰 Capital Risk</div>
+            <div class="ai-suggestion" onclick="suggestAIAction('Update Shipment ETA')">📅 Update ETA</div>
+            <div class="ai-suggestion" onclick="suggestAIAction('Inventory Dead Stock')">🔴 Dead Stock</div>
+            <div class="ai-suggestion" onclick="suggestAIAction('Port Demurrage Alert')">🚢 Demurrage</div>
+        </div>
     `;
     
     document.getElementById('content').innerHTML = html;
+    
+    // Auto-scroll to latest message
+    setTimeout(() => {
+        const messagesDiv = document.getElementById('aiMessages');
+        if (messagesDiv) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }, 100);
 }
 
+function handleAISubmit(event) {
+    if (event.key === 'Enter') {
+        sendAIMessage();
+    }
+}
+
+function sendAIMessage() {
+    const input = document.getElementById('aiInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message
+    aiChat.messages.push({ type: 'user', text: message });
+    input.value = '';
+    
+    // Generate AI response based on keywords
+    let response = '';
+    if (message.toLowerCase().includes('cargo')) {
+        response = '📦 I can help you add new cargo to inventory. Click "Add Cargo" in the sidebar to create a new batch entry.';
+    } else if (message.toLowerCase().includes('delay')) {
+        response = `⚠️ Currently, ${db.shipments.filter(s => s.delay > 0).length} shipment(s) are delayed. Would you like me to show you details?`;
+    } else if (message.toLowerCase().includes('capital')) {
+        const capital90 = db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+        response = `💰 Your capital at risk (90+ days) is ₹${(capital90/100000).toFixed(1)}L. Visit "Capital at Risk" page for details.`;
+    } else if (message.toLowerCase().includes('shipment')) {
+        response = `🚚 You have ${db.shipments.length} active shipments. Use "Create Shipment" to add a new dispatch or check "Transit Timeline" for tracking.`;
+    } else {
+        response = '🤔 I can assist with:\n• Adding cargo to inventory\n• Tracking shipments\n• Analyzing capital at risk\n• Port demurrage alerts\n• Dead stock analysis\n\nWhat would you like to do?';
+    }
+    
+    aiChat.messages.push({ type: 'bot', text: response });
+    renderAIAssist();
+}
+
+function suggestAIAction(action) {
+    document.getElementById('aiInput').value = action;
+    sendAIMessage();
+}
+
+// AI Assist widget for dashboard
 function renderAIAssistWidget() {
-    const deadStockItems = db.inventory.filter(i => i.daysInYard > 90);
-    const lowMarginItems = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) < 0.05);
-    const demurrageShips = db.shipments.filter(s => {
-        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
-        return daysInPort > 7;
-    });
+    return `
+        <div class="ai-chat-container" style="margin-top: 30px; height: 250px;">
+            <div class="ai-chat-header">🤖 Quick AI Recommendations</div>
+            <div class="ai-chat-messages" id="aiWidgetMessages" style="font-size: 10px;">
+                <div class="ai-message bot">💡 I notice ${db.inventory.filter(i => i.daysInYard > 90).length} item(s) are older than 90 days. Consider clearance pricing.</div>
+                <div class="ai-message bot">🚢 ${db.shipments.filter(s => {
+                    const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
+                    return daysInPort > 7;
+                }).length} shipment(s) are stuck at port >7 days. Port fees accumulating!</div>
+                <div class="ai-message bot">📊 Your top slow-moving item is <strong>${db.inventory.reduce((a, b) => a.daysInYard > b.daysInYard ? a : b).sku}</strong> with ${db.inventory.reduce((a, b) => a.daysInYard > b.daysInYard ? a : b).daysInYard} days in yard.</div>
+            </div>
+        </div>
+    `;
+}
+
+// ============== MODAL HANDLERS ==============
+
+// SEPARATION #6: INVENTORY MODAL HANDLERS
+function openInventoryModal() {
+    document.getElementById('inventoryModal').classList.add('show');
+    document.getElementById('invLastMovement').valueAsDate = new Date();
+}
+
+function closeInventoryModal() {
+    document.getElementById('inventoryModal').classList.remove('show');
+    // Reset form
+    document.getElementById('invSKU').value = '';
+    document.getElementById('invProduct').value = '';
+    document.getElementById('invBatch').value = '';
+    document.getElementById('invSupplier').value = '';
+    document.getElementById('invQty').value = '';
+    document.getElementById('invPurchaseRate').value = '';
+    document.getElementById('invSellingRate').value = '';
+    document.getElementById('invLandedCost').value = '';
+    document.getElementById('invMargin').value = '';
+    document.getElementById('invDays').value = '0';
+}
+
+function updateMarginCalculation() {
+    const purchaseRate = parseFloat(document.getElementById('invPurchaseRate').value) || 0;
+    const sellingRate = parseFloat(document.getElementById('invSellingRate').value) || 0;
+    const margin = purchaseRate > 0 ? ((sellingRate - purchaseRate) / purchaseRate) * 100 : 0;
+    document.getElementById('invMargin').value = margin.toFixed(2);
+}
+
+function saveInventory() {
+    const sku = document.getElementById('invSKU').value;
+    const product = document.getElementById('invProduct').value;
+    const batch = document.getElementById('invBatch').value;
+    const supplier = document.getElementById('invSupplier').value;
+    const location = document.getElementById('invLocation').value;
+    const qty = parseFloat(document.getElementById('invQty').value);
+    const purchaseRate = parseFloat(document.getElementById('invPurchaseRate').value);
+    const sellingRate = parseFloat(document.getElementById('invSellingRate').value);
+    const landedCost = parseFloat(document.getElementById('invLandedCost').value);
+    const days = parseFloat(document.getElementById('invDays').value);
+    const lastMovement = document.getElementById('invLastMovement').value;
+    
+    // Validation
+    if (!sku || !product || !batch || !supplier || !qty || !purchaseRate || !sellingRate || !landedCost) {
+        alert('❌ Please fill all required fields');
+        return;
+    }
+    
+    const margin = ((sellingRate - purchaseRate) / purchaseRate) * 100;
+    const newItem = {
+        sku, product, supplier, location, batch, qty, purchaseRate,
+        purchaseValue: qty * purchaseRate,
+        landedCost, sellingRate, margin,
+        daysInYard: days,
+        lastMovement,
+        status: 'In Yard',
+        isNewBatch: true
+    };
+    
+    db.inventory.push(newItem);
+    closeInventoryModal();
+    alert(`✓ Cargo ${sku} added to inventory!`);
+    renderInventory();
+}
+
+// SEPARATION #7: DISPATCH MODAL HANDLERS
+function openDispatchModal() {
+    document.getElementById('dispatchModal').classList.add('show');
+    document.getElementById('dispatchDate').valueAsDate = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('portArrivalDate').valueAsDate = tomorrow;
+}
+
+function closeDispatchModal() {
+    document.getElementById('dispatchModal').classList.remove('show');
+    // Reset form
+    document.getElementById('dispatchVehicle').value = '';
+    document.getElementById('dispatchDriver').value = '';
+    document.getElementById('dispatchContact').value = '';
+    document.getElementById('dispatchSupplier').value = '';
+    document.getElementById('dispatchCargo').value = 'Timber Logs';
+    document.getElementById('dispatchOrigin').value = '';
+    document.getElementById('dispatchDest').value = 'Plot10';
+    document.getElementById('dispatchETA').value = '5';
+    document.getElementById('dispatchValue').value = '';
+    document.getElementById('dispatchFreight').value = '';
+    document.getElementById('dispatchClearing').value = '0';
+}
+
+function saveDispatch() {
+    const vehicle = document.getElementById('dispatchVehicle').value;
+    const driver = document.getElementById('dispatchDriver').value;
+    const contact = document.getElementById('dispatchContact').value;
+    const supplier = document.getElementById('dispatchSupplier').value;
+    const cargo = document.getElementById('dispatchCargo').value;
+    const origin = document.getElementById('dispatchOrigin').value;
+    const destination = document.getElementById('dispatchDest').value;
+    const dispatchDate = document.getElementById('dispatchDate').value;
+    const portArrivalDate = document.getElementById('portArrivalDate').value;
+    const eta = parseFloat(document.getElementById('dispatchETA').value);
+    const value = parseFloat(document.getElementById('dispatchValue').value);
+    const freight = parseFloat(document.getElementById('dispatchFreight').value);
+    const clearing = parseFloat(document.getElementById('dispatchClearing').value);
+    
+    // Validation
+    if (!vehicle || !driver || !contact || !supplier || !origin || !dispatchDate || !portArrivalDate || !value || !freight) {
+        alert('❌ Please fill all required fields');
+        return;
+    }
+    
+    const newShip = {
+        id: `SHIP-${Date.now().toString().slice(-6)}`,
+        vehicle, driver, contact, cargo, supplier, origin, destination,
+        dispatchDate, portArrivalDate, eta, value, freight, clearing,
+        status: 'In Transit',
+        gpsStatus: 'Active',
+        syncStatus: 'Not Synced',
+        delay: 0,
+        isNew: true,
+        timeline: [{ event: 'Dispatch', date: dispatchDate, time: new Date().toLocaleTimeString() }]
+    };
+    
+    db.shipments.push(newShip);
+    closeDispatchModal();
+    alert(`✓ Shipment ${newShip.id} created successfully!`);
+    renderTransit();
+}
+
+// SHIPMENT DETAILS MODAL (FEATURE: Status Dropdown Update)
+function openShipmentDetail(id) {
+    const ship = db.shipments.find(s => s.id === id);
+    if (!ship) return;
+    
+    const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
+    const demurrageStatus = daysInPort > 7 ? `<span class="badge badge-critical pulse">CRITICAL - ${(daysInPort - 7) * 500} ₹ demurrage</span>` : '—';
     
     let html = `
-        <div class="ai-section">
-            <div class="ai-title">🤖 AI Recommendations</div>
+        <div class="panel">
+            <div class="panel-title">Shipment Details</div>
+            <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">${ship.id}</span></div>
+            <div class="detail-row"><span class="detail-label">Vehicle</span><span class="detail-value">${ship.vehicle}</span></div>
+            <div class="detail-row"><span class="detail-label">Driver</span><span class="detail-value">${ship.driver}</span></div>
+            <div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${ship.supplier}</span></div>
+            <div class="detail-row"><span class="detail-label">Freight Cost</span><span class="detail-value">₹${ship.freight.toLocaleString()}</span></div>
+            <!-- FEATURE: Status Dropdown for Real-time Update -->
+            <div class="detail-row" style="padding: 10px 0; border-bottom: 1px solid #e5e5e5;">
+                <span class="detail-label">Status:</span>
+                <select id="statusDropdown-${ship.id}" onchange="updateShipmentStatus('${ship.id}', this.value)" style="padding: 5px; border-radius: 3px; border: 1px solid #ddd;">
+                    <option value="In Transit" ${ship.status === 'In Transit' ? 'selected' : ''}>In Transit</option>
+                    <option value="Delayed" ${ship.status === 'Delayed' ? 'selected' : ''}>Delayed</option>
+                    <option value="Arrived" ${ship.status === 'Arrived' ? 'selected' : ''}>Arrived</option>
+                    <option value="Completed" ${ship.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">Route & Demurrage</div>
+            <div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">${ship.origin}</span></div>
+            <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${ship.destination}</span></div>
+            <div class="detail-row"><span class="detail-label">Dispatch Date</span><span class="detail-value">${ship.dispatchDate}</span></div>
+            <div class="detail-row"><span class="detail-label">Port Arrival Date</span><span class="detail-value">${ship.portArrivalDate}</span></div>
+            <div class="detail-row"><span class="detail-label">Days in Port</span><span class="detail-value">${daysInPort}d</span></div>
+            <div class="detail-row"><span class="detail-label">Demurrage Status</span><span class="detail-value">${demurrageStatus}</span></div>
+        </div>
     `;
     
-    if (deadStockItems.length > 0) {
-        html += `<div class="ai-item">💡 <strong>Dead Stock Alert:</strong> ${deadStockItems.length} items locked for 90+ days worth ₹${deadStockItems.reduce((s, i) => s + (i.qty * i.sellingRate), 0).toLocaleString()}. Consider clearance pricing.</div>`;
-    }
-    
-    if (lowMarginItems.length > 0) {
-        html += `<div class="ai-item">📊 <strong>Low Margin Risk:</strong> ${lowMarginItems.length} items with <5% margin. Use Bid Calculator to negotiate better selling rates.</div>`;
-    }
-    
-    if (demurrageShips.length > 0) {
-        html += `<div class="ai-item">🚢 <strong>Demurrage Risk:</strong> ${demurrageShips.length} shipment(s) stuck >7 days at port. Expedite clearance to avoid ₹${calculatePortFees().toLocaleString()} fees.</div>`;
-    }
-    
-    const totalCapital = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
-    const utilizationRate = (Object.values(warehouses).reduce((s, w) => s + w.current, 0) / Object.values(warehouses).reduce((s, w) => s + w.capacity, 0)) * 100;
-    
-    if (utilizationRate > 80) {
-        html += `<div class="ai-item">🏭 <strong>Yard Utilization High:</strong> Current utilization is ${utilizationRate.toFixed(0)}%. Plan for additional storage or accelerate sales.</div>`;
-    }
-    
-    html += `<div class="ai-item">💰 <strong>Capital Optimization:</strong> ₹${(totalCapital/100000).toFixed(1)}L tied up in inventory. Target: Free up ₹${(deadStockItems.reduce((s, i) => s + (i.qty * i.sellingRate), 0)/100000).toFixed(1)}L from old stock.</div>`;
-    
-    html += `</div>`;
-    
-    return html;
+    document.getElementById('shipmentModalTitle').textContent = ship.id;
+    document.getElementById('shipmentContent').innerHTML = html;
+    document.getElementById('shipmentModal').classList.add('show');
 }
 
-// ============== HELPER FUNCTIONS ==============
-function calculatePortFees() {
-    // ₹500 per day demurrage for shipments >7 days in port
-    const demurrageShips = db.shipments.filter(s => {
-        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
-        return daysInPort > 7;
+// FEATURE: Real-time Status Update Function
+function updateShipmentStatus(shipmentId, newStatus) {
+    const ship = db.shipments.find(s => s.id === shipmentId);
+    if (!ship) return;
+    
+    // Update status
+    ship.status = newStatus;
+    
+    // Add timeline event based on status
+    const eventMap = {
+        'In Transit': 'Started Transit',
+        'Delayed': 'Delay Reported',
+        'Arrived': 'Arrived at Yard',
+        'Completed': 'Unloading Completed'
+    };
+    
+    ship.timeline.push({
+        event: eventMap[newStatus] || newStatus,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString()
     });
-    return demurrageShips.reduce((sum, ship) => {
-        const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
-        return sum + ((daysInPort - 7) * 500);
-    }, 0);
+    
+    // Update badge in table if visible
+    const badgeElement = document.getElementById(`status-${shipmentId}`);
+    if (badgeElement) {
+        const badgeClass = newStatus === 'In Transit' ? 'badge-transit' :
+                          newStatus === 'Delayed' ? 'badge-delayed' :
+                          newStatus === 'Arrived' ? 'badge-arrived' : 'badge-completed';
+        badgeElement.className = `badge ${badgeClass}`;
+        badgeElement.textContent = newStatus;
+    }
+    
+    alert(`✓ Shipment ${shipmentId} status updated to ${newStatus}`);
 }
 
-// ============== BID CALCULATOR ==============
+function closeShipmentModal() {
+    document.getElementById('shipmentModal').classList.remove('show');
+}
+
+// BID CALCULATOR MODAL
 function openBidCalculator(sku, product, landedCost, currentRate) {
     state.currentBidSKU = sku;
     document.getElementById('bidSKU').value = sku;
@@ -967,91 +1189,25 @@ function closeBidModal() {
     document.getElementById('bidModal').classList.remove('show');
 }
 
-// ============== DISPATCH MODAL ==============
-function openDispatchModal() {
-    document.getElementById('dispatchDate').valueAsDate = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('portArrivalDate').valueAsDate = tomorrow;
-    document.getElementById('dispatchModal').classList.add('show');
-}
-
-function closeDispatchModal() {
-    document.getElementById('dispatchModal').classList.remove('show');
-}
-
-function saveDispatch() {
-    const newShip = {
-        id: `SHIP-${Math.floor(Math.random() * 10000)}`,
-        vehicle: document.getElementById('dispatchVehicle').value,
-        driver: document.getElementById('dispatchDriver').value,
-        contact: document.getElementById('dispatchContact').value,
-        cargo: document.getElementById('dispatchCargo').value,
-        supplier: document.getElementById('dispatchSupplier').value,
-        origin: document.getElementById('dispatchOrigin').value,
-        destination: document.getElementById('dispatchDest').value,
-        dispatchDate: document.getElementById('dispatchDate').value,
-        portArrivalDate: document.getElementById('portArrivalDate').value,
-        eta: parseInt(document.getElementById('dispatchETA').value),
-        value: parseFloat(document.getElementById('dispatchValue').value),
-        freight: parseFloat(document.getElementById('dispatchFreight').value),
-        clearing: parseFloat(document.getElementById('dispatchClearing').value),
-        status: 'In Transit',
-        gpsStatus: 'Active',
-        syncStatus: 'Not Synced',
-        delay: 0,
-        isNew: true,
-        timeline: [{ event: 'Dispatch', date: new Date().toISOString().split('T')[0], time: new Date().toLocaleTimeString() }]
-    };
-    
-    db.shipments.push(newShip);
-    closeDispatchModal();
-    alert(`✓ Shipment ${newShip.id} created successfully!`);
-    renderTransit();
-}
-
-function openShipmentDetail(id) {
-    const ship = db.shipments.find(s => s.id === id);
-    if (!ship) return;
-    
-    const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
-    const demurrageStatus = daysInPort > 7 ? `<span class="badge badge-critical pulse">CRITICAL - ${(daysInPort - 7) * 500} ₹ demurrage</span>` : '—';
-    
-    let html = `
-        <div class="panel">
-            <div class="panel-title">Shipment Details</div>
-            <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">${ship.id}</span></div>
-            <div class="detail-row"><span class="detail-label">Vehicle</span><span class="detail-value">${ship.vehicle}</span></div>
-            <div class="detail-row"><span class="detail-label">Driver</span><span class="detail-value">${ship.driver}</span></div>
-            <div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${ship.supplier}</span></div>
-            <div class="detail-row"><span class="detail-label">Value</span><span class="detail-value">₹${ship.value.toLocaleString()}</span></div>
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${ship.status}</span></div>
-        </div>
-        <div class="panel">
-            <div class="panel-title">Route & Demurrage</div>
-            <div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">${ship.origin}</span></div>
-            <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${ship.destination}</span></div>
-            <div class="detail-row"><span class="detail-label">Dispatch Date</span><span class="detail-value">${ship.dispatchDate}</span></div>
-            <div class="detail-row"><span class="detail-label">Port Arrival Date</span><span class="detail-value">${ship.portArrivalDate}</span></div>
-            <div class="detail-row"><span class="detail-label">Days in Port</span><span class="detail-value">${daysInPort}d</span></div>
-            <div class="detail-row"><span class="detail-label">Demurrage Status</span><span class="detail-value">${demurrageStatus}</span></div>
-        </div>
-    `;
-    
-    document.getElementById('shipmentModalTitle').textContent = ship.id;
-    document.getElementById('shipmentContent').innerHTML = html;
-    document.getElementById('shipmentModal').classList.add('show');
-}
-
-function closeShipmentModal() {
-    document.getElementById('shipmentModal').classList.remove('show');
+// ============== HELPER FUNCTIONS ==============
+function calculatePortFees() {
+    const demurrageShips = db.shipments.filter(s => {
+        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
+        return daysInPort > 7;
+    });
+    return demurrageShips.reduce((sum, ship) => {
+        const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
+        return sum + ((daysInPort - 7) * 500);
+    }, 0);
 }
 
 // ============== INITIALIZATION ==============
 window.addEventListener('load', () => {
     const stored = localStorage.getItem('dockside_user');
-    if (stored) {
+    const remember = localStorage.getItem('dockside_remember');
+    if (stored && remember === 'true') {
         document.getElementById('loginEmail').value = stored;
+        document.getElementById('rememberMe').checked = true;
     }
 });
 </script>
