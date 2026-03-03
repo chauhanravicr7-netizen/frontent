@@ -3,50 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Timber Trading ERP v10.0.0</title>
+    <title>DOCKSIDE | Timber Trading ERP v11.0.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: #f5f5f5; color: #333; }
+        
+        /* LOGIN STYLES */
+        .login-container { display: flex; height: 100vh; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); }
+        .login-left { flex: 1; display: flex; align-items: center; justify-content: center; color: white; padding: 40px; }
+        .login-brand { font-size: 48px; font-weight: 900; margin-bottom: 30px; }
+        .login-text { font-size: 16px; line-height: 1.8; color: #ccc; }
+        .login-right { flex: 1; display: flex; align-items: center; justify-content: center; background-color: #f5f5f5; }
+        .login-card { background: white; padding: 50px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .login-title { font-size: 24px; font-weight: 900; margin-bottom: 10px; }
+        .login-subtitle { font-size: 13px; color: #999; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { font-size: 12px; font-weight: 600; margin-bottom: 6px; display: block; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: inherit; }
+        input:focus, select:focus { outline: none; border-color: #0066cc; box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 20px; }
+        .checkbox-group input { width: auto; margin-right: 8px; }
+        .checkbox-group label { font-size: 12px; margin: 0; }
+        .btn-login { width: 100%; padding: 12px; background-color: #0066cc; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn-login:hover { background-color: #0052a3; }
+        .error-message { background-color: #fee2e2; color: #991b1b; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 12px; display: none; }
+        
+        /* MAIN APP STYLES */
         .layout { display: flex; height: 100vh; }
-        .sidebar { width: 240px; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; padding: 20px; }
+        .sidebar { width: 240px; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .sidebar-brand { font-size: 16px; font-weight: 900; margin-bottom: 10px; }
         .sidebar-subtitle { font-size: 11px; color: #999; margin-bottom: 30px; }
         .sidebar-nav { flex: 1; }
-        .nav-item { padding: 12px 15px; margin-bottom: 5px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #999; border-left: 3px solid transparent; }
+        .nav-item { padding: 12px 15px; margin-bottom: 5px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #999; border-left: 3px solid transparent; transition: all 0.2s; }
         .nav-item:hover { color: white; }
         .nav-item.active { color: white; background-color: #d97706; border-left-color: #d97706; }
         .sidebar-footer { border-top: 1px solid #333; padding-top: 15px; }
         .btn-primary { width: 100%; padding: 10px; background-color: #0066cc; color: white; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; }
+        
         .main { flex: 1; display: flex; flex-direction: column; }
-        .header { background-color: white; border-bottom: 1px solid #e5e5e5; padding: 15px 30px; }
+        .header { background-color: white; border-bottom: 1px solid #e5e5e5; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .header-title { font-size: 14px; font-weight: 900; color: #1a1a1a; }
+        .header-right { display: flex; gap: 15px; align-items: center; }
+        .logout-btn { background-color: #dc2626; color: white; padding: 8px 16px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .logout-btn:hover { background-color: #991b1b; }
+        
         .content { flex: 1; overflow-y: auto; padding: 30px; }
         .page-title { font-size: 24px; font-weight: 900; margin-bottom: 25px; color: #1a1a1a; }
+        
+        /* KPI CARDS */
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+        .card-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .card-value { font-size: 22px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px; }
+        .card-subtitle { font-size: 10px; color: #999; }
+        .tooltip { position: relative; display: inline-block; }
+        .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #333; color: #fff; text-align: center; padding: 8px; border-radius: 4px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; font-size: 11px; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        
+        /* CONTROL STRIP */
         .control-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px; background-color: white; padding: 20px; border: 1px solid #e5e5e5; border-radius: 3px; }
         .control-item { text-align: center; }
         .control-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
         .control-value { font-size: 22px; font-weight: 900; color: #1a1a1a; }
+        
+        /* FILTER BAR */
         .filter-bar { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; background-color: white; padding: 15px; border: 1px solid #e5e5e5; border-radius: 3px; }
         .filter-group { display: flex; gap: 6px; align-items: center; }
         .filter-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; }
-        input, select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px; font-family: inherit; background-color: white; }
+        input[type="text"], input[type="number"], input[type="date"], select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px; font-family: inherit; background-color: white; }
         input:focus, select:focus { outline: none; border-color: #0066cc; }
+        
+        /* TABLE */
         .table-wrapper { background-color: white; border: 1px solid #e5e5e5; border-radius: 3px; overflow: hidden; margin-bottom: 30px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th { background-color: #f9f9f9; padding: 10px 12px; text-align: left; font-weight: 700; color: #666; border-bottom: 1px solid #e5e5e5; text-transform: uppercase; }
         td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
         tr:hover { background-color: #fafafa; cursor: pointer; }
+        
+        /* BADGES */
         .badge { display: inline-block; padding: 3px 7px; border-radius: 3px; font-size: 9px; font-weight: 600; }
         .badge-transit { background-color: #dbeafe; color: #1e40af; }
         .badge-delayed { background-color: #fee2e2; color: #991b1b; }
         .badge-completed { background-color: #dcfce7; color: #15803d; }
         .badge-arrived { background-color: #fed7aa; color: #92400e; }
+        .badge-new { background-color: #fce7f3; color: #9d174d; }
+        .badge-critical { background-color: #fee2e2; color: #991b1b; animation: pulse 2s infinite; }
+        
+        /* PULSING ANIMATION */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse { animation: pulse 2s infinite; }
+        
+        /* ROW HIGHLIGHTING */
         .row-risk-high { background-color: #fee2e2; }
         .row-risk-medium { background-color: #fed7aa; }
+        .row-new { background-color: #fce7f3; }
+        
+        /* MODAL */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; }
         .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: white; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 3px; display: flex; flex-direction: column; }
+        .modal-box { background: white; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 4px; display: flex; flex-direction: column; }
         .modal-header { padding: 20px; border-bottom: 1px solid #e5e5e5; background-color: #fafafa; display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 14px; font-weight: 900; }
         .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
@@ -58,47 +116,123 @@
         .btn { padding: 8px 16px; border: none; border-radius: 3px; font-weight: 600; font-size: 11px; cursor: pointer; }
         .btn-cancel { background-color: #e5e5e5; color: #333; }
         .btn-save { background-color: #0066cc; color: white; }
+        .btn-danger { background-color: #dc2626; color: white; }
+        
+        /* PANEL */
         .panel { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 15px; margin-bottom: 15px; }
         .panel-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #e5e5e5; }
         .detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; border-bottom: 1px solid #f0f0f0; }
         .detail-label { color: #999; font-weight: 600; }
         .detail-value { color: #1a1a1a; font-weight: 500; }
-        .alert-section { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 20px; }
+        
+        /* ALERT */
+        .alert-section { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 20px; margin-bottom: 30px; }
         .alert-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; }
         .alert-item { padding: 10px; background-color: #fee2e2; border-left: 3px solid #dc2626; margin-bottom: 8px; font-size: 11px; border-radius: 2px; }
         .alert-item.good { background-color: #dcfce7; border-left-color: #10b981; color: #15803d; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
-        .card { background: white; border: 1px solid #e5e5e5; border-radius: 3px; padding: 20px; text-align: center; }
-        .card-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
-        .card-value { font-size: 22px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px; }
-        .card-chart { height: 35px; background: linear-gradient(to right, #dbeafe, #bfdbfe); border-radius: 3px; }
-        .card-subtitle { font-size: 10px; color: #999; margin-top: 8px; }
+        .alert-item.warning { background-color: #fed7aa; border-left-color: #d97706; color: #92400e; }
+        
+        /* AURA INDICATOR */
+        .aura-green { border-left: 4px solid #10b981; background-color: #f0fdf4; }
+        .aura-amber { border-left: 4px solid #d97706; background-color: #fffbeb; }
+        .aura-red { border-left: 4px solid #dc2626; background-color: #fef2f2; }
+        
+        /* AI ASSIST */
+        .ai-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 4px; margin-top: 30px; }
+        .ai-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+        .ai-item { padding: 10px; background-color: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 8px; font-size: 11px; }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .form-grid { grid-template-columns: 1fr; }
+            .sidebar { width: 180px; padding: 15px; }
+        }
+        @media (max-width: 768px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; }
+            .sidebar-nav { display: flex; gap: 5px; flex-wrap: wrap; }
+            .nav-item { flex: 1; min-width: 80px; }
+            .grid-4, .grid-3 { grid-template-columns: 1fr; }
+            .table-wrapper { overflow-x: auto; }
+            table { font-size: 10px; }
+            .control-strip { grid-template-columns: repeat(3, 1fr); }
+        }
+        
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+        
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="layout">
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-container">
+    <div class="login-left">
+        <div>
+            <div class="login-brand">DOCKSIDE</div>
+            <div class="login-text">
+                Professional Timber Trading ERP<br><br>
+                Manage inventory, shipments, and capital with precision.<br><br>
+                Built for Gandhidham timber yards with enterprise-grade features.
+            </div>
+        </div>
+    </div>
+    <div class="login-right">
+        <div class="login-card">
+            <div class="login-title">Login</div>
+            <div class="login-subtitle">Access your timber operating system</div>
+            <div class="error-message" id="errorMsg"></div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="loginEmail" value="admin@dockside.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="loginPassword" value="demo123456">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" checked>
+                <label for="rememberMe">Remember me</label>
+            </div>
+            <button class="btn-login" onclick="handleLogin()">Login Terminal</button>
+            <div style="font-size: 11px; color: #999; text-align: center;">
+                Demo: admin@dockside.com / demo123456
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="layout hidden">
+    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="sidebar-brand">DOCKSIDE</div>
-        <div class="sidebar-subtitle">Timber Trading ERP</div>
+        <div class="sidebar-subtitle">v11.0.0 ERP</div>
         <div class="sidebar-nav" id="nav"></div>
         <div class="sidebar-footer">
             <button class="btn-primary" onclick="openDispatchModal()">+ New Shipment</button>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div class="main">
         <div class="header">
             <div class="header-title" id="pageTitle">Dashboard</div>
+            <div class="header-right">
+                <span style="font-size: 11px; color: #999;">Logged in as: <strong id="userDisplay">Admin</strong></span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
         </div>
         <div class="content" id="content"></div>
     </div>
 </div>
+
+<!-- MODALS -->
 
 <!-- DISPATCH MODAL -->
 <div id="dispatchModal" class="modal">
@@ -114,9 +248,10 @@
                 <div class="form-group"><label class="form-label">Driver Contact *</label><input type="text" id="dispatchContact"></div>
                 <div class="form-group"><label class="form-label">Supplier *</label><input type="text" id="dispatchSupplier"></div>
                 <div class="form-group"><label class="form-label">Cargo Type *</label><select id="dispatchCargo"><option>Timber Logs</option><option>Plywood</option><option>Sawn Timber</option></select></div>
-                <div class="form-group"><label class="form-label">Origin *</label><input type="text" id="dispatchOrigin"></div>
-                <div class="form-group"><label class="form-label">Destination Yard *</label><select id="dispatchDest"><option>Plot 10</option><option>Plot 12</option><option>Plot 15</option></select></div>
+                <div class="form-group"><label class="form-label">Origin *</label><input type="text" id="dispatchOrigin" placeholder="Port name"></div>
+                <div class="form-group"><label class="form-label">Destination Yard *</label><select id="dispatchDest"><option value="Plot10">Plot 10</option><option value="Plot12">Plot 12</option><option value="Plot15">Plot 15</option></select></div>
                 <div class="form-group"><label class="form-label">Dispatch Date *</label><input type="date" id="dispatchDate"></div>
+                <div class="form-group"><label class="form-label">Port Arrival Date *</label><input type="date" id="portArrivalDate"></div>
                 <div class="form-group"><label class="form-label">ETA (Days) *</label><input type="number" id="dispatchETA" value="5"></div>
                 <div class="form-group"><label class="form-label">Shipment Value (₹) *</label><input type="number" id="dispatchValue"></div>
                 <div class="form-group"><label class="form-label">Freight Cost (₹) *</label><input type="number" id="dispatchFreight"></div>
@@ -143,24 +278,118 @@
     </div>
 </div>
 
+<!-- BID CALCULATOR MODAL -->
+<div id="bidModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">Bid Calculator - Deal Negotiation</div>
+            <button class="close-btn" onclick="closeBidModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">SKU Code</label><input type="text" id="bidSKU" readonly></div>
+                <div class="form-group"><label class="form-label">Product Name</label><input type="text" id="bidProduct" readonly></div>
+                <div class="form-group"><label class="form-label">Landed Cost per Unit (₹)</label><input type="number" id="bidLanded" readonly></div>
+                <div class="form-group"><label class="form-label">Current Selling Rate (₹)</label><input type="number" id="bidCurrent" readonly></div>
+                <div class="form-group"><label class="form-label">Overhead % (5-15%)</label><input type="number" id="bidOverhead" value="10" min="5" max="15"></div>
+                <div class="form-group"><label class="form-label">Bid Price (₹)</label><input type="number" id="bidPrice" oninput="calculateBidMargin()"></div>
+                <div class="form-group"><label class="form-label">Bid Margin %</label><input type="number" id="bidMargin" readonly style="background-color: #f0f0f0;"></div>
+                <div class="form-group"><label class="form-label">Margin Status</label><div id="bidStatus" style="padding: 10px; border-radius: 4px; font-weight: 600;"></div></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeBidModal()">Cancel</button>
+            <button class="btn btn-save" onclick="confirmBid()">Confirm Bid</button>
+        </div>
+    </div>
+</div>
+
 <script>
+// ============== DATABASE & STATE ==============
+// Multi-warehouse inventory structure
+const warehouses = {
+    Plot10: { name: 'Plot 10 (North)', bins: ['A1', 'A2', 'B1', 'B2'], capacity: 5000, current: 450 },
+    Plot12: { name: 'Plot 12 (Central)', bins: ['C1', 'C2', 'D1'], capacity: 6000, current: 650 },
+    Plot15: { name: 'Plot 15 (Port)', bins: ['E1', 'E2', 'F1', 'F2', 'F3'], capacity: 7000, current: 1200 }
+};
+
+// Database structure
 const db = {
     shipments: [
-        { id: 'SHIP-001', vehicle: 'MH-01-XY-1234', driver: 'Rajesh Kumar', contact: '+91 9876543210', cargo: 'Timber Logs', supplier: 'Kerala Timber', origin: 'Port Cochin', destination: 'Plot 10', dispatchDate: '2025-03-01', eta: 5, value: 850000, freight: 25000, clearing: 5000, status: 'In Transit', gpsStatus: 'Active', syncStatus: 'Not Synced', delay: 0, timeline: [{ event: 'Dispatch', date: '2025-03-01', time: '08:00' }, { event: 'En route', date: '2025-03-02', time: '14:30' }] },
-        { id: 'SHIP-002', vehicle: 'MH-02-AB-5678', driver: 'Suresh Singh', contact: '+91 8765432109', cargo: 'Plywood', supplier: 'Tamil Nadu Ply', origin: 'Trichy', destination: 'Plot 12', dispatchDate: '2025-02-28', eta: 4, value: 620000, freight: 18000, clearing: 3000, status: 'Delayed', gpsStatus: 'Inactive', syncStatus: 'Not Synced', delay: 2, timeline: [{ event: 'Dispatch', date: '2025-02-28', time: '10:00' }, { event: 'En route', date: '2025-03-01', time: '16:00' }] },
-        { id: 'SHIP-003', vehicle: 'MH-03-CD-9999', driver: 'Mohan Das', contact: '+91 7654321098', cargo: 'Sawn Timber', supplier: 'Assam Woods', origin: 'Guwahati', destination: 'Plot 15', dispatchDate: '2025-02-25', eta: 6, value: 1200000, freight: 35000, clearing: 4000, status: 'Arrived', gpsStatus: 'Active', syncStatus: 'Pending Unloading', delay: 0, timeline: [{ event: 'Dispatch', date: '2025-02-25', time: '06:00' }, { event: 'En route', date: '2025-02-27', time: '10:00' }, { event: 'Arrival', date: '2025-03-02', time: '09:30' }] }
+        { id: 'SHIP-001', vehicle: 'MH-01-XY-1234', driver: 'Rajesh Kumar', contact: '+91 9876543210', cargo: 'Timber Logs', supplier: 'Kerala Timber', origin: 'Port Cochin', destination: 'Plot10', dispatchDate: '2025-03-01', portArrivalDate: '2025-03-03', eta: 5, value: 850000, freight: 25000, clearing: 5000, status: 'In Transit', gpsStatus: 'Active', syncStatus: 'Not Synced', delay: 0, isNew: false, timeline: [{ event: 'Dispatch', date: '2025-03-01', time: '08:00' }] },
+        { id: 'SHIP-002', vehicle: 'MH-02-AB-5678', driver: 'Suresh Singh', contact: '+91 8765432109', cargo: 'Plywood', supplier: 'Tamil Nadu Ply', origin: 'Trichy', destination: 'Plot12', dispatchDate: '2025-02-28', portArrivalDate: '2025-02-25', eta: 4, value: 620000, freight: 18000, clearing: 3000, status: 'Delayed', gpsStatus: 'Inactive', syncStatus: 'Not Synced', delay: 2, isNew: false, timeline: [{ event: 'Dispatch', date: '2025-02-28', time: '10:00' }] }
     ],
     inventory: [
-        { sku: 'PLY-001', product: 'Plywood 12mm', supplier: 'Tamil Nadu', spec: '12mm Grade A', location: 'Plot 10-A1', batch: 'BATCH-001', qty: 450, purchaseRate: 2000, purchaseValue: 900000, landedCost: 925000, sellingRate: 2200, margin: 100, daysInYard: 15, lastMovement: '2025-02-25', status: 'In Yard' },
-        { sku: 'TIM-001', product: 'Teak Logs', supplier: 'Kerala Timber', spec: 'Grade A', location: 'Plot 12-B2', batch: 'BATCH-002', qty: 320, purchaseRate: 5000, purchaseValue: 1600000, landedCost: 1650000, sellingRate: 5500, margin: 500, daysInYard: 45, lastMovement: '2025-02-10', status: 'In Yard' },
-        { sku: 'SAW-001', product: 'Sawn Timber', supplier: 'Assam Woods', spec: 'Pine Grade B', location: 'Plot 15-C3', batch: 'BATCH-003', qty: 280, purchaseRate: 3500, purchaseValue: 980000, landedCost: 1020000, sellingRate: 3900, margin: 400, daysInYard: 95, lastMovement: '2024-12-05', status: 'In Yard' }
+        { sku: 'PLY-001', product: 'Plywood 12mm', supplier: 'Tamil Nadu', spec: '12mm Grade A', location: 'Plot10-A1', batch: 'BATCH-2025-001', qty: 450, purchaseRate: 2000, purchaseValue: 900000, landedCost: 925000, sellingRate: 2200, margin: 100, daysInYard: 15, lastMovement: '2025-02-25', status: 'In Yard', isNewBatch: true },
+        { sku: 'TIM-001', product: 'Teak Logs', supplier: 'Kerala Timber', spec: 'Grade A', location: 'Plot12-B2', batch: 'BATCH-2025-002', qty: 320, purchaseRate: 5000, purchaseValue: 1600000, landedCost: 1650000, sellingRate: 5500, margin: 500, daysInYard: 45, lastMovement: '2025-02-10', status: 'In Yard', isNewBatch: false },
+        { sku: 'SAW-001', product: 'Sawn Timber', supplier: 'Assam Woods', spec: 'Pine Grade B', location: 'Plot15-C3', batch: 'BATCH-2025-003', qty: 280, purchaseRate: 3500, purchaseValue: 980000, landedCost: 1020000, sellingRate: 3900, margin: 400, daysInYard: 95, lastMovement: '2024-12-05', status: 'In Yard', isNewBatch: false }
     ]
 };
 
-const state = { view: 'dashboard' };
+const state = { 
+    view: 'dashboard',
+    authenticated: false,
+    user: null,
+    currentBidSKU: null
+};
 
+// ============== LOGIN ==============
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorMsg = document.getElementById('errorMsg');
+    
+    // Simple validation
+    if (!email || !password) {
+        errorMsg.textContent = '❌ Email and password are required';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    // Demo credentials
+    if (email === 'admin@dockside.com' && password === 'demo123456') {
+        state.authenticated = true;
+        state.user = { email, role: 'admin' };
+        
+        // Save remember me
+        if (document.getElementById('rememberMe').checked) {
+            localStorage.setItem('dockside_user', email);
+        }
+        
+        // Switch to main app
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('userDisplay').textContent = email.split('@')[0].toUpperCase();
+        
+        loadNav();
+        renderDashboard();
+    } else {
+        errorMsg.textContent = '❌ Invalid credentials. Demo: admin@dockside.com / demo123456';
+        errorMsg.style.display = 'block';
+    }
+}
+
+function handleLogout() {
+    state.authenticated = false;
+    state.user = null;
+    document.getElementById('loginPage').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('errorMsg').style.display = 'none';
+}
+
+// Check for stored credentials
+window.addEventListener('load', () => {
+    const stored = localStorage.getItem('dockside_user');
+    if (stored) {
+        document.getElementById('loginEmail').value = stored;
+    }
+});
+
+// ============== NAVIGATION ==============
 function loadNav() {
-    const items = ['Dashboard', 'Transit Timeline', 'Inventory', 'Capital at Risk'];
+    const items = ['Dashboard', 'Inventory', 'Transit Timeline', 'Capital at Risk', 'AI Assist'];
     const html = items.map(item => `<div class="nav-item ${state.view === item.toLowerCase().replace(/ /g, '-') ? 'active' : ''}" onclick="switchView('${item.toLowerCase().replace(/ /g, '-')}')">${item}</div>`).join('');
     document.getElementById('nav').innerHTML = html;
 }
@@ -169,195 +398,581 @@ function switchView(view) {
     state.view = view;
     loadNav();
     if (view === 'dashboard') renderDashboard();
-    else if (view === 'transit-timeline') renderTransit();
     else if (view === 'inventory') renderInventory();
+    else if (view === 'transit-timeline') renderTransit();
     else if (view === 'capital-at-risk') renderCapitalRisk();
+    else if (view === 'ai-assist') renderAIAssist();
 }
 
+// ============== DASHBOARD ==============
 function renderDashboard() {
     document.getElementById('pageTitle').textContent = 'Dashboard';
     const totalInvValue = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const totalFreight = db.shipments.reduce((s, i) => s + i.freight, 0);
     const inTransit = db.shipments.filter(s => s.status === 'In Transit').length;
-    const pendingUnload = db.shipments.filter(s => s.status === 'Arrived').length;
-    const activeShipments = db.shipments.filter(s => s.status !== 'Completed').length;
-
+    const capital90days = db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const portFees = calculatePortFees();
+    
     let html = `
         <div class="page-title">Dashboard</div>
+        
         <div class="grid-4">
-            <div class="card">
+            <div class="card tooltip">
+                <div class="tooltiptext">Total value of inventory currently in yards</div>
                 <div class="card-label">Total Inventory Value</div>
                 <div class="card-value">₹${(totalInvValue/100000).toFixed(1)}L</div>
-                <div class="card-chart"></div>
                 <div class="card-subtitle">Current Stock</div>
             </div>
-            <div class="card">
-                <div class="card-label">In Transit</div>
-                <div class="card-value">${inTransit}</div>
-                <div class="card-chart"></div>
-                <div class="card-subtitle">Active Shipments</div>
+            <div class="card tooltip">
+                <div class="tooltiptext">Capital locked in transit shipments</div>
+                <div class="card-label">Total In Transit Value</div>
+                <div class="card-value">₹${(db.shipments.reduce((s, i) => s + i.value, 0)/100000).toFixed(1)}L</div>
+                <div class="card-subtitle">${inTransit} shipments</div>
             </div>
-            <div class="card">
-                <div class="card-label">Pending Unload</div>
-                <div class="card-value">${pendingUnload}</div>
-                <div class="card-chart"></div>
-                <div class="card-subtitle">At Yard</div>
+            <div class="card tooltip" style="border: 2px solid #dc2626;">
+                <div class="tooltiptext">Capital at risk from material >90 days old</div>
+                <div class="card-label" style="color: #dc2626;">Capital at Risk</div>
+                <div class="card-value" style="color: #dc2626;">₹${(capital90days/100000).toFixed(1)}L</div>
+                <div class="card-subtitle">90+ days old</div>
             </div>
-            <div class="card">
-                <div class="card-label">Active Shipments</div>
-                <div class="card-value">${activeShipments}</div>
-                <div class="card-chart"></div>
-                <div class="card-subtitle">Total</div>
+            <div class="card tooltip" style="border: 2px solid #d97706;">
+                <div class="tooltiptext">Potential port demurrage fees (7+ days)</div>
+                <div class="card-label" style="color: #d97706;">Port Fee Exposure</div>
+                <div class="card-value" style="color: #d97706;">₹${(portFees/1000).toFixed(0)}K</div>
+                <div class="card-subtitle">Demurrage risk</div>
             </div>
         </div>
-
+        
         <div style="margin-top: 30px;">
-            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">Recent Activity</h3>
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">📊 Key Metrics</h3>
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Shipment ID</th>
-                            <th>Vehicle</th>
-                            <th>Driver</th>
-                            <th>Cargo</th>
-                            <th>Value (₹)</th>
+                            <th>Metric</th>
+                            <th>Value</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <tr>
+                            <td>Total Shipments</td>
+                            <td>${db.shipments.length}</td>
+                            <td><span class="badge badge-transit">${db.shipments.filter(s => s.status === 'In Transit').length} In Transit</span></td>
+                        </tr>
+                        <tr>
+                            <td>Inventory Items</td>
+                            <td>${db.inventory.length}</td>
+                            <td><span class="badge badge-completed">${db.inventory.filter(i => i.isNewBatch).length} New Batches</span></td>
+                        </tr>
+                        <tr>
+                            <td>Total Freight Costs</td>
+                            <td>₹${totalFreight.toLocaleString()}</td>
+                            <td><span class="badge badge-completed">Tracked</span></td>
+                        </tr>
+                        <tr>
+                            <td>Delayed Shipments</td>
+                            <td>${db.shipments.filter(s => s.delay > 0).length}</td>
+                            <td><span class="badge badge-delayed">Monitoring</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        ${renderAIAssistWidget()}
     `;
-
-    db.shipments.slice(0, 5).forEach(ship => {
-        const statusClass = ship.status === 'In Transit' ? 'badge-transit' : ship.status === 'Delayed' ? 'badge-delayed' : ship.status === 'Arrived' ? 'badge-arrived' : 'badge-completed';
-        html += `<tr><td><strong>${ship.id}</strong></td><td>${ship.vehicle}</td><td>${ship.driver}</td><td>${ship.cargo}</td><td>₹${ship.value.toLocaleString()}</td><td><span class="badge ${statusClass}">${ship.status}</span></td></tr>`;
-    });
-
-    html += `</tbody></table></div></div>`;
+    
     document.getElementById('content').innerHTML = html;
 }
 
-function renderTransit() {
-    document.getElementById('pageTitle').textContent = 'Transit Timeline';
-    const active = db.shipments.filter(s => s.status !== 'Completed').length;
-    const totalVal = db.shipments.reduce((s, x) => s + x.value, 0);
-    const totalFrt = db.shipments.reduce((s, x) => s + x.freight, 0);
-    const delayed = db.shipments.filter(s => s.delay > 0).length;
-    const arrived = db.shipments.filter(s => s.status === 'Arrived').length;
-
-    let html = `<div class="page-title">Transit Timeline</div><div class="control-strip"><div class="control-item"><div class="control-label">Active Shipments</div><div class="control-value">${active}</div></div><div class="control-item"><div class="control-label">Total Value</div><div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">Total Freight</div><div class="control-value">₹${(totalFrt/1000).toFixed(0)}K</div></div><div class="control-item"><div class="control-label">Delayed Count</div><div class="control-value" style="color: #dc2626;">${delayed}</div></div><div class="control-item"><div class="control-label">Arriving Today</div><div class="control-value">${arrived}</div></div><div class="control-item"><div class="control-label">Unloading Pending</div><div class="control-value">0</div></div></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Origin:</span><select><option>All</option></select></div><div class="filter-group"><span class="filter-label">Status:</span><select><option>All</option><option>In Transit</option><option>Delayed</option><option>Arrived</option></select></div><div class="filter-group" style="flex: 1;"><input type="text" placeholder="Search vehicle / driver / invoice" style="flex: 1;"></div><button class="btn-primary" onclick="openDispatchModal()">+ Create Dispatch</button></div><div class="table-wrapper"><table><thead><tr><th>Shipment ID</th><th>Vehicle</th><th>Driver</th><th>Contact</th><th>Cargo</th><th>Supplier</th><th>Origin</th><th>Destination</th><th>Dispatch</th><th>ETA</th><th>Delay</th><th>Value (₹)</th><th>Freight (₹)</th><th>GPS</th><th>Status</th><th>Sync</th></tr></thead><tbody>`;
-
-    db.shipments.forEach(ship => {
-        const rowClass = ship.delay > 3 ? 'row-risk-high' : ship.delay > 0 ? 'row-risk-medium' : '';
-        const statusBadge = ship.status === 'In Transit' ? 'badge-transit' : ship.status === 'Delayed' ? 'badge-delayed' : 'badge-arrived';
-        html += `<tr class="${rowClass}" onclick="openShipmentDetail('${ship.id}')"><td><strong>${ship.id}</strong></td><td>${ship.vehicle}</td><td>${ship.driver}</td><td>${ship.contact}</td><td>${ship.cargo}</td><td>${ship.supplier}</td><td>${ship.origin}</td><td>${ship.destination}</td><td>${ship.dispatchDate}</td><td>${ship.eta}d</td><td>${ship.delay}d</td><td>₹${ship.value.toLocaleString()}</td><td>₹${ship.freight.toLocaleString()}</td><td><span class="badge ${ship.gpsStatus === 'Active' ? 'badge-completed' : 'badge-delayed'}">${ship.gpsStatus}</span></td><td><span class="badge ${statusBadge}">${ship.status}</span></td><td><span class="badge" style="background: #dbeafe; color: #1e40af;">Not Synced</span></td></tr>`;
-    });
-
-    html += `</tbody></table></div>`;
-    document.getElementById('content').innerHTML = html;
-}
-
+// ============== INVENTORY ==============
 function renderInventory() {
     document.getElementById('pageTitle').textContent = 'Inventory Management';
     const totalVal = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
     const totalQty = db.inventory.reduce((s, i) => s + i.qty, 0);
-    const old90 = db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0);
-    const noMove30 = db.inventory.filter(i => i.daysInYard > 30).length;
-
-    let html = `<div class="page-title">Inventory Management</div><div class="control-strip"><div class="control-item"><div class="control-label">Total Stock Value</div><div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">Total Quantity</div><div class="control-value">${totalQty}</div></div><div class="control-item"><div class="control-label">In Transit</div><div class="control-value">0</div></div><div class="control-item"><div class="control-label">90+ Days</div><div class="control-value" style="color: #dc2626;">₹${(old90/100000).toFixed(1)}L</div></div><div class="control-item"><div class="control-label">No Move 30d</div><div class="control-value">${noMove30}</div></div><div class="control-item"><div class="control-label">Today Dispatch</div><div class="control-value">0</div></div></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Yard:</span><select><option>All</option><option>Plot 10</option><option>Plot 12</option><option>Plot 15</option></select></div><div class="filter-group"><span class="filter-label">Age:</span><select><option>All</option><option>0-30</option><option>31-60</option><option>61-90</option><option>90+</option></select></div><div class="filter-group" style="flex: 1;"><input type="text" placeholder="Search SKU / Batch" style="flex: 1;"></div></div><div class="table-wrapper"><table><thead><tr><th>SKU</th><th>Product</th><th>Spec</th><th>Supplier</th><th>Location</th><th>Batch</th><th>Qty</th><th>Purch Rate</th><th>Landed Cost</th><th>Selling Rate</th><th>Margin/Unit</th><th>Total Margin</th><th>Days</th><th>Last Move</th><th>Status</th></tr></thead><tbody>`;
-
+    const newBatches = db.inventory.filter(i => i.isNewBatch).length;
+    
+    // Calculate best yard for new shipment
+    let bestYard = 'Plot10';
+    let maxCapacity = 0;
+    for (const [key, yard] of Object.entries(warehouses)) {
+        const available = yard.capacity - yard.current;
+        if (available > maxCapacity) {
+            maxCapacity = available;
+            bestYard = key;
+        }
+    }
+    
+    let html = `
+        <div class="page-title">Inventory Management</div>
+        
+        <div class="alert-section" style="background: #f0f9ff; border-left: 4px solid #0066cc;">
+            <div class="alert-title">💡 Auto-Suggested Yard for New Shipment</div>
+            <div style="font-size: 12px; padding: 10px; background: white; border-radius: 3px; margin-top: 10px;">
+                <strong>${warehouses[bestYard].name}</strong> - Available capacity: ${warehouses[bestYard].capacity - warehouses[bestYard].current} units
+            </div>
+        </div>
+        
+        <div class="control-strip">
+            <div class="control-item">
+                <div class="control-label">Total Stock Value</div>
+                <div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Total Quantity</div>
+                <div class="control-value">${totalQty}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">New Batches</div>
+                <div class="control-value" style="color: #9d174d;">${newBatches}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Warehouse Utilization</div>
+                <div class="control-value">${Math.round((Object.values(warehouses).reduce((s, w) => s + w.current, 0) / Object.values(warehouses).reduce((s, w) => s + w.capacity, 0)) * 100)}%</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Low Margin Items</div>
+                <div class="control-value" style="color: #dc2626;">${db.inventory.filter(i => (i.sellingRate - i.purchaseRate) / i.purchaseRate < 0.05).length}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">90+ Days Material</div>
+                <div class="control-value" style="color: #dc2626;">₹${(db.inventory.filter(i => i.daysInYard > 90).reduce((s, i) => s + (i.qty * i.sellingRate), 0)/100000).toFixed(1)}L</div>
+            </div>
+        </div>
+        
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">Yard:</span>
+                <select id="filterYard" onchange="filterInventory()">
+                    <option value="">All Yards</option>
+                    <option value="Plot10">Plot 10</option>
+                    <option value="Plot12">Plot 12</option>
+                    <option value="Plot15">Plot 15</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Batch Type:</span>
+                <select id="filterBatch" onchange="filterInventory()">
+                    <option value="">All</option>
+                    <option value="new">New Batches</option>
+                    <option value="existing">Existing</option>
+                </select>
+            </div>
+            <div class="filter-group" style="flex: 1;">
+                <input type="text" id="inventorySearch" placeholder="Search SKU / Product / Supplier" onkeyup="filterInventory()" style="flex: 1;">
+            </div>
+        </div>
+        
+        <div class="table-wrapper">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Supplier</th>
+                        <th>Location</th>
+                        <th>Qty</th>
+                        <th>Purchase Rate</th>
+                        <th>Landed Cost</th>
+                        <th>Selling Rate</th>
+                        <th>Margin %</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
     db.inventory.forEach(item => {
-        const rowClass = item.daysInYard > 90 ? 'row-risk-high' : item.daysInYard > 60 ? 'row-risk-medium' : '';
-        const margin = item.sellingRate - item.purchaseRate;
-        html += `<tr class="${rowClass}"><td><strong>${item.sku}</strong></td><td>${item.product}</td><td>${item.spec}</td><td>${item.supplier}</td><td>${item.location}</td><td>${item.batch}</td><td>${item.qty}</td><td>₹${item.purchaseRate}</td><td>₹${(item.landedCost/item.qty).toFixed(0)}</td><td>₹${item.sellingRate}</td><td>₹${margin}</td><td>₹${(margin * item.qty).toLocaleString()}</td><td>${item.daysInYard}</td><td>${item.lastMovement}</td><td><span class="badge badge-completed">${item.status}</span></td></tr>`;
+        const marginPct = ((item.sellingRate - item.purchaseRate) / item.purchaseRate) * 100;
+        const rowClass = item.daysInYard > 90 ? 'row-risk-high' : item.daysInYard > 60 ? 'row-risk-medium' : item.isNewBatch ? 'row-new' : '';
+        const marginClass = marginPct > 15 ? 'aura-green' : marginPct > 5 ? 'aura-amber' : 'aura-red';
+        const marginColor = marginPct > 15 ? '#10b981' : marginPct > 5 ? '#d97706' : '#dc2626';
+        
+        html += `
+            <tr class="${rowClass}">
+                <td><strong>${item.sku}</strong></td>
+                <td>${item.product}</td>
+                <td>${item.supplier}</td>
+                <td>${item.location}</td>
+                <td>${item.qty}</td>
+                <td>₹${item.purchaseRate}</td>
+                <td>₹${(item.landedCost/item.qty).toFixed(0)}</td>
+                <td>₹${item.sellingRate}</td>
+                <td><div class="${marginClass}" style="padding: 4px; border-radius: 3px; text-align: center; color: ${marginColor}; font-weight: 600;">${marginPct.toFixed(1)}%</div></td>
+                <td>${item.daysInYard}</td>
+                <td><span class="badge ${item.isNewBatch ? 'badge-new' : 'badge-completed'}">${item.isNewBatch ? 'New' : 'Existing'}</span></td>
+                <td><button class="btn btn-primary" style="padding: 4px 8px; font-size: 9px;" onclick="openBidCalculator('${item.sku}', '${item.product}', ${item.landedCost/item.qty}, ${item.sellingRate})">Bid</button></td>
+            </tr>
+        `;
     });
-
-    html += `</tbody></table></div><div class="alert-section"><div class="alert-title">⚠️ Action Required</div>`;
-    const old120 = db.inventory.filter(i => i.daysInYard > 120);
-    const move45 = db.inventory.filter(i => i.daysInYard > 45);
-    if (old120.length > 0) html += `<div class="alert-item">Material 120+ days: ${old120.map(i => i.sku).join(', ')}</div>`;
-    if (move45.length > 0) html += `<div class="alert-item">Zero movement 45+ days: ${move45.map(i => i.sku).join(', ')}</div>`;
-    if (old120.length === 0 && move45.length === 0) html += `<div class="alert-item good">✓ All inventory in good status</div>`;
-    html += `</div>`;
-
+    
+    html += `</tbody></table></div>`;
+    
     document.getElementById('content').innerHTML = html;
 }
 
+// Filter inventory function with real-time search
+function filterInventory() {
+    const yardFilter = document.getElementById('filterYard').value;
+    const batchFilter = document.getElementById('filterBatch').value;
+    const searchTerm = document.getElementById('inventorySearch').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    rows.forEach(row => {
+        let show = true;
+        
+        // Filter by yard
+        if (yardFilter) {
+            const location = row.cells[3].textContent;
+            if (!location.includes(yardFilter.replace('Plot', 'Plot'))) show = false;
+        }
+        
+        // Filter by batch type
+        if (batchFilter === 'new' && !row.classList.contains('row-new')) show = false;
+        if (batchFilter === 'existing' && row.classList.contains('row-new')) show = false;
+        
+        // Filter by search term
+        if (searchTerm) {
+            const text = (row.cells[0].textContent + row.cells[1].textContent + row.cells[2].textContent).toLowerCase();
+            if (!text.includes(searchTerm)) show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// ============== TRANSIT TIMELINE ==============
+function renderTransit() {
+    document.getElementById('pageTitle').textContent = 'Transit Timeline';
+    const active = db.shipments.filter(s => s.status !== 'Completed').length;
+    const totalVal = db.shipments.reduce((s, x) => s + x.value, 0);
+    const delayed = db.shipments.filter(s => s.delay > 0).length;
+    const demurrageShips = db.shipments.filter(s => {
+        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
+        return daysInPort > 7;
+    });
+    
+    let html = `
+        <div class="page-title">Transit Timeline</div>
+        
+        <div class="control-strip">
+            <div class="control-item">
+                <div class="control-label">Active Shipments</div>
+                <div class="control-value">${active}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Total Value</div>
+                <div class="control-value">₹${(totalVal/100000).toFixed(1)}L</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Delayed</div>
+                <div class="control-value" style="color: #dc2626;">${delayed}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Demurrage Alert</div>
+                <div class="control-value pulse" style="color: #dc2626;">${demurrageShips.length}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">New Vehicles</div>
+                <div class="control-value">${db.shipments.filter(s => s.isNew).length}</div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">GPS Active</div>
+                <div class="control-value" style="color: #10b981;">${db.shipments.filter(s => s.gpsStatus === 'Active').length}</div>
+            </div>
+        </div>
+        
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">Status:</span>
+                <select onchange="alert('Filter: ' + this.value)">
+                    <option>All</option>
+                    <option>In Transit</option>
+                    <option>Delayed</option>
+                    <option>Demurrage</option>
+                </select>
+            </div>
+            <div class="filter-group" style="flex: 1;">
+                <input type="text" placeholder="Search vehicle / driver / origin" style="flex: 1;">
+            </div>
+            <button class="btn-primary" onclick="openDispatchModal()">+ Create Dispatch</button>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Shipment ID</th>
+                        <th>Vehicle</th>
+                        <th>Driver</th>
+                        <th>Cargo</th>
+                        <th>Origin</th>
+                        <th>Destination</th>
+                        <th>Dispatch Date</th>
+                        <th>Port Arrival</th>
+                        <th>Days in Port</th>
+                        <th>Value (₹)</th>
+                        <th>Status</th>
+                        <th>GPS</th>
+                        <th>Demurrage</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    db.shipments.forEach(ship => {
+        const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
+        const demurrageStatus = daysInPort > 7 ? `<span class="badge badge-critical">CRITICAL ${daysInPort}d</span>` : daysInPort > 3 ? `<span class="badge badge-arrived">${daysInPort}d</span>` : '—';
+        const statusClass = ship.status === 'In Transit' ? 'badge-transit' : ship.status === 'Delayed' ? 'badge-delayed' : 'badge-completed';
+        
+        html += `
+            <tr onclick="openShipmentDetail('${ship.id}')">
+                <td><strong>${ship.id}</strong></td>
+                <td>${ship.vehicle}</td>
+                <td>${ship.driver}</td>
+                <td>${ship.cargo}</td>
+                <td>${ship.origin}</td>
+                <td>${ship.destination}</td>
+                <td>${ship.dispatchDate}</td>
+                <td>${ship.portArrivalDate}</td>
+                <td>${daysInPort}d</td>
+                <td>₹${ship.value.toLocaleString()}</td>
+                <td><span class="badge ${statusClass}">${ship.status}</span></td>
+                <td><span class="badge ${ship.gpsStatus === 'Active' ? 'badge-completed' : 'badge-delayed'}">${ship.gpsStatus}</span></td>
+                <td>${demurrageStatus}</td>
+            </tr>
+        `;
+    });
+    
+    html += `</tbody></table></div>`;
+    
+    document.getElementById('content').innerHTML = html;
+}
+
+// ============== CAPITAL AT RISK ==============
 function renderCapitalRisk() {
     document.getElementById('pageTitle').textContent = 'Capital at Risk';
     const inventory60Plus = db.inventory.filter(i => i.daysInYard >= 60);
     const totalRisk = inventory60Plus.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const portFees = calculatePortFees();
     const riskScore = inventory60Plus.length > 0 ? 74 : 10;
-
+    
     let html = `
         <div class="page-title">Capital at Risk</div>
-        <div style="font-size: 12px; color: #999; margin-bottom: 30px;">Automatic financial exposure detection based on live operational data</div>
-
-        <div class="three-col">
-            <div class="panel">
-                <div class="panel-title">Overall Capital Risk Score</div>
+        
+        <div class="grid-3">
+            <div class="panel" style="border-left: 4px solid #dc2626;">
+                <div class="panel-title">Capital Risk Score</div>
                 <div style="text-align: center;">
-                    <div style="font-size: 32px; font-weight: 900; color: #d97706; margin: 10px 0;">${riskScore}/100</div>
-                    <div style="font-size: 12px; color: #d97706; font-weight: 600;">Risk Level: ${riskScore > 70 ? 'HIGH' : 'MEDIUM'}</div>
+                    <div style="font-size: 32px; font-weight: 900; color: #dc2626; margin: 10px 0;">${riskScore}/100</div>
+                    <div style="font-size: 12px; color: #dc2626; font-weight: 600;">Risk Level: ${riskScore > 70 ? 'HIGH' : 'MEDIUM'}</div>
                 </div>
             </div>
-            <div class="panel">
-                <div class="panel-title">Capital Blocked (60+ days)</div>
+            <div class="panel" style="border-left: 4px solid #d97706;">
+                <div class="panel-title">Inventory Capital Blocked</div>
                 <div style="text-align: center;">
-                    <div style="font-size: 28px; font-weight: 900; color: #dc2626; margin: 10px 0;">₹${(totalRisk/100000).toFixed(1)}L</div>
-                    <div style="font-size: 12px; color: #666; font-weight: 600;">${inventory60Plus.length} lots at risk</div>
+                    <div style="font-size: 28px; font-weight: 900; color: #d97706; margin: 10px 0;">₹${(totalRisk/100000).toFixed(1)}L</div>
+                    <div style="font-size: 12px; color: #666;">60+ days old</div>
                 </div>
             </div>
-            <div class="panel">
-                <div class="panel-title">Inventory Risk</div>
+            <div class="panel" style="border-left: 4px solid #d97706;">
+                <div class="panel-title">Port Demurrage Exposure</div>
                 <div style="text-align: center;">
-                    <div style="font-size: 28px; font-weight: 900; margin: 10px 0;">74%</div>
-                    <div style="width: 100%; height: 8px; background: #f0f0f0; border-radius: 4px; margin: 10px 0; overflow: hidden;">
-                        <div style="width: 74%; height: 100%; background: linear-gradient(to right, #fca5a5, #fdba74); border-radius: 4px;"></div>
-                    </div>
+                    <div style="font-size: 28px; font-weight: 900; color: #d97706; margin: 10px 0;">₹${(portFees/1000).toFixed(0)}K</div>
+                    <div style="font-size: 12px; color: #666;">Shipments 7+ days</div>
                 </div>
             </div>
         </div>
-
+        
         <div style="margin-top: 30px;">
-            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">Inventory Capital Exposure</h3>
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">📊 Margin Protection</h3>
+            <div class="grid-3">
+    `;
+    
+    const greenMargin = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) > 0.15).length;
+    const amberMargin = db.inventory.filter(i => {
+        const m = ((i.sellingRate - i.purchaseRate) / i.purchaseRate);
+        return m <= 0.15 && m >= 0.05;
+    }).length;
+    const redMargin = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) < 0.05).length;
+    
+    html += `
+                <div class="aura-green" style="padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #15803d;">✓ Healthy Margin</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #15803d; margin-top: 10px;">${greenMargin}</div>
+                    <div style="font-size: 10px; color: #047857; margin-top: 5px;">15%+ margin</div>
+                </div>
+                <div class="aura-amber" style="padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #92400e;">⚠️ Monitor Margin</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #d97706; margin-top: 10px;">${amberMargin}</div>
+                    <div style="font-size: 10px; color: #b45309; margin-top: 5px;">5-15% margin</div>
+                </div>
+                <div class="aura-red" style="padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #991b1b;">🔴 Low Margin Alert</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #dc2626; margin-top: 10px;">${redMargin}</div>
+                    <div style="font-size: 10px; color: #b91c1c; margin-top: 5px;">Below 5% margin</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 15px;">📋 Inventory Capital Exposure (60+ Days)</h3>
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
                             <th>SKU</th>
-                            <th>Product Name</th>
+                            <th>Product</th>
                             <th>Warehouse</th>
                             <th>Value (₹)</th>
                             <th>Days Old</th>
-                            <th>% of Total</th>
                             <th>Risk Level</th>
                         </tr>
                     </thead>
                     <tbody>
     `;
-
-    inventory60Plus.forEach((item, idx) => {
-        const risk = item.daysInYard > 90 ? 'Days > 90' : 'Days > 60';
+    
+    inventory60Plus.forEach(item => {
+        const risk = item.daysInYard > 90 ? 'Critical' : 'High';
         const value = item.qty * item.sellingRate;
         html += `
-            <tr>
+            <tr class="row-risk-high">
                 <td><strong>${item.sku}</strong></td>
                 <td>${item.product}</td>
                 <td>${item.location}</td>
                 <td>₹${value.toLocaleString()}</td>
                 <td>${item.daysInYard}</td>
-                <td>45,000</td>
                 <td><span class="badge ${item.daysInYard > 90 ? 'badge-delayed' : 'badge-arrived'}">${risk}</span></td>
             </tr>
         `;
     });
-
+    
     html += `</tbody></table></div></div>`;
+    
     document.getElementById('content').innerHTML = html;
 }
 
+// ============== AI ASSIST ==============
+function renderAIAssist() {
+    document.getElementById('pageTitle').textContent = 'AI Assist';
+    
+    let html = `
+        <div class="page-title">AI Assistant - Intelligent Recommendations</div>
+        
+        ${renderAIAssistWidget()}
+    `;
+    
+    document.getElementById('content').innerHTML = html;
+}
+
+function renderAIAssistWidget() {
+    const deadStockItems = db.inventory.filter(i => i.daysInYard > 90);
+    const lowMarginItems = db.inventory.filter(i => ((i.sellingRate - i.purchaseRate) / i.purchaseRate) < 0.05);
+    const demurrageShips = db.shipments.filter(s => {
+        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
+        return daysInPort > 7;
+    });
+    
+    let html = `
+        <div class="ai-section">
+            <div class="ai-title">🤖 AI Recommendations</div>
+    `;
+    
+    if (deadStockItems.length > 0) {
+        html += `<div class="ai-item">💡 <strong>Dead Stock Alert:</strong> ${deadStockItems.length} items locked for 90+ days worth ₹${deadStockItems.reduce((s, i) => s + (i.qty * i.sellingRate), 0).toLocaleString()}. Consider clearance pricing.</div>`;
+    }
+    
+    if (lowMarginItems.length > 0) {
+        html += `<div class="ai-item">📊 <strong>Low Margin Risk:</strong> ${lowMarginItems.length} items with <5% margin. Use Bid Calculator to negotiate better selling rates.</div>`;
+    }
+    
+    if (demurrageShips.length > 0) {
+        html += `<div class="ai-item">🚢 <strong>Demurrage Risk:</strong> ${demurrageShips.length} shipment(s) stuck >7 days at port. Expedite clearance to avoid ₹${calculatePortFees().toLocaleString()} fees.</div>`;
+    }
+    
+    const totalCapital = db.inventory.reduce((s, i) => s + (i.qty * i.sellingRate), 0);
+    const utilizationRate = (Object.values(warehouses).reduce((s, w) => s + w.current, 0) / Object.values(warehouses).reduce((s, w) => s + w.capacity, 0)) * 100;
+    
+    if (utilizationRate > 80) {
+        html += `<div class="ai-item">🏭 <strong>Yard Utilization High:</strong> Current utilization is ${utilizationRate.toFixed(0)}%. Plan for additional storage or accelerate sales.</div>`;
+    }
+    
+    html += `<div class="ai-item">💰 <strong>Capital Optimization:</strong> ₹${(totalCapital/100000).toFixed(1)}L tied up in inventory. Target: Free up ₹${(deadStockItems.reduce((s, i) => s + (i.qty * i.sellingRate), 0)/100000).toFixed(1)}L from old stock.</div>`;
+    
+    html += `</div>`;
+    
+    return html;
+}
+
+// ============== HELPER FUNCTIONS ==============
+function calculatePortFees() {
+    // ₹500 per day demurrage for shipments >7 days in port
+    const demurrageShips = db.shipments.filter(s => {
+        const daysInPort = Math.floor((new Date() - new Date(s.portArrivalDate)) / (1000*60*60*24));
+        return daysInPort > 7;
+    });
+    return demurrageShips.reduce((sum, ship) => {
+        const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
+        return sum + ((daysInPort - 7) * 500);
+    }, 0);
+}
+
+// ============== BID CALCULATOR ==============
+function openBidCalculator(sku, product, landedCost, currentRate) {
+    state.currentBidSKU = sku;
+    document.getElementById('bidSKU').value = sku;
+    document.getElementById('bidProduct').value = product;
+    document.getElementById('bidLanded').value = landedCost.toFixed(0);
+    document.getElementById('bidCurrent').value = currentRate;
+    document.getElementById('bidPrice').value = currentRate;
+    calculateBidMargin();
+    document.getElementById('bidModal').classList.add('show');
+}
+
+function calculateBidMargin() {
+    const landedCost = parseFloat(document.getElementById('bidLanded').value);
+    const overhead = parseFloat(document.getElementById('bidOverhead').value);
+    const bidPrice = parseFloat(document.getElementById('bidPrice').value);
+    
+    const minPrice = landedCost * (1 + overhead / 100);
+    const margin = ((bidPrice - landedCost) / landedCost) * 100;
+    
+    document.getElementById('bidMargin').value = margin.toFixed(2);
+    
+    const statusDiv = document.getElementById('bidStatus');
+    if (bidPrice >= minPrice && margin >= 5) {
+        statusDiv.textContent = '✓ APPROVED - Good margin';
+        statusDiv.style.background = '#dcfce7';
+        statusDiv.style.color = '#15803d';
+    } else if (margin > 0) {
+        statusDiv.textContent = '⚠️ REQUIRES REVIEW - Admin approval needed';
+        statusDiv.style.background = '#fed7aa';
+        statusDiv.style.color = '#92400e';
+    } else {
+        statusDiv.textContent = '❌ REJECTED - Below cost price';
+        statusDiv.style.background = '#fee2e2';
+        statusDiv.style.color = '#991b1b';
+    }
+}
+
+function confirmBid() {
+    alert('✓ Bid confirmed for ' + document.getElementById('bidSKU').value);
+    closeBidModal();
+}
+
+function closeBidModal() {
+    document.getElementById('bidModal').classList.remove('show');
+}
+
+// ============== DISPATCH MODAL ==============
 function openDispatchModal() {
     document.getElementById('dispatchDate').valueAsDate = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('portArrivalDate').valueAsDate = tomorrow;
     document.getElementById('dispatchModal').classList.add('show');
 }
 
@@ -376,6 +991,7 @@ function saveDispatch() {
         origin: document.getElementById('dispatchOrigin').value,
         destination: document.getElementById('dispatchDest').value,
         dispatchDate: document.getElementById('dispatchDate').value,
+        portArrivalDate: document.getElementById('portArrivalDate').value,
         eta: parseInt(document.getElementById('dispatchETA').value),
         value: parseFloat(document.getElementById('dispatchValue').value),
         freight: parseFloat(document.getElementById('dispatchFreight').value),
@@ -384,17 +1000,23 @@ function saveDispatch() {
         gpsStatus: 'Active',
         syncStatus: 'Not Synced',
         delay: 0,
+        isNew: true,
         timeline: [{ event: 'Dispatch', date: new Date().toISOString().split('T')[0], time: new Date().toLocaleTimeString() }]
     };
+    
     db.shipments.push(newShip);
     closeDispatchModal();
-    alert(`✓ Shipment ${newShip.id} created`);
+    alert(`✓ Shipment ${newShip.id} created successfully!`);
     renderTransit();
 }
 
 function openShipmentDetail(id) {
     const ship = db.shipments.find(s => s.id === id);
     if (!ship) return;
+    
+    const daysInPort = Math.floor((new Date() - new Date(ship.portArrivalDate)) / (1000*60*60*24));
+    const demurrageStatus = daysInPort > 7 ? `<span class="badge badge-critical pulse">CRITICAL - ${(daysInPort - 7) * 500} ₹ demurrage</span>` : '—';
+    
     let html = `
         <div class="panel">
             <div class="panel-title">Shipment Details</div>
@@ -402,21 +1024,20 @@ function openShipmentDetail(id) {
             <div class="detail-row"><span class="detail-label">Vehicle</span><span class="detail-value">${ship.vehicle}</span></div>
             <div class="detail-row"><span class="detail-label">Driver</span><span class="detail-value">${ship.driver}</span></div>
             <div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${ship.supplier}</span></div>
-            <div class="detail-row"><span class="detail-label">Cargo Type</span><span class="detail-value">${ship.cargo}</span></div>
             <div class="detail-row"><span class="detail-label">Value</span><span class="detail-value">₹${ship.value.toLocaleString()}</span></div>
-            <div class="detail-row"><span class="detail-label">Freight Cost</span><span class="detail-value">₹${ship.freight.toLocaleString()}</span></div>
             <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${ship.status}</span></div>
         </div>
         <div class="panel">
-            <div class="panel-title">Route Information</div>
+            <div class="panel-title">Route & Demurrage</div>
             <div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">${ship.origin}</span></div>
             <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${ship.destination}</span></div>
             <div class="detail-row"><span class="detail-label">Dispatch Date</span><span class="detail-value">${ship.dispatchDate}</span></div>
-            <div class="detail-row"><span class="detail-label">ETA</span><span class="detail-value">${ship.eta} days</span></div>
-            <div class="detail-row"><span class="detail-label">Current Delay</span><span class="detail-value" style="color: ${ship.delay > 0 ? '#dc2626' : '#15803d'}">${ship.delay} days</span></div>
-            <div class="detail-row"><span class="detail-label">GPS Status</span><span class="detail-value">${ship.gpsStatus}</span></div>
+            <div class="detail-row"><span class="detail-label">Port Arrival Date</span><span class="detail-value">${ship.portArrivalDate}</span></div>
+            <div class="detail-row"><span class="detail-label">Days in Port</span><span class="detail-value">${daysInPort}d</span></div>
+            <div class="detail-row"><span class="detail-label">Demurrage Status</span><span class="detail-value">${demurrageStatus}</span></div>
         </div>
     `;
+    
     document.getElementById('shipmentModalTitle').textContent = ship.id;
     document.getElementById('shipmentContent').innerHTML = html;
     document.getElementById('shipmentModal').classList.add('show');
@@ -426,8 +1047,13 @@ function closeShipmentModal() {
     document.getElementById('shipmentModal').classList.remove('show');
 }
 
-loadNav();
-renderDashboard();
+// ============== INITIALIZATION ==============
+window.addEventListener('load', () => {
+    const stored = localStorage.getItem('dockside_user');
+    if (stored) {
+        document.getElementById('loginEmail').value = stored;
+    }
+});
 </script>
 
 </body>
