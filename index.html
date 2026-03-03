@@ -1,57 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dockside ERP</title>
-  <style>
-    body { font-family: Arial; background:#f4f6f9; margin:0; }
-    header { background:#1f3a8a; color:white; padding:15px; }
-    h2 { margin:20px; }
-    table { width:95%; margin:20px; border-collapse:collapse; background:white; }
-    th, td { padding:10px; border:1px solid #ddd; text-align:left; }
-    th { background:#f0f2f5; }
-    tr:hover { background:#f9fafb; cursor:pointer; }
-    .badge { padding:4px 8px; border-radius:4px; font-size:12px; color:white; }
-    .Loading { background:#6b7280; }
-    .InTransit { background:#2563eb; }
-    .InPlot { background:#16a34a; }
-    .Delivered { background:#059669; }
-    .Delayed { background:#dc2626; }
-    .card { background:white; padding:15px; margin:20px; border-radius:6px; }
-    .flex { display:flex; gap:20px; }
-    .modal {
-      position:fixed;
-      top:0; left:0;
-      width:100%; height:100%;
-      background:rgba(0,0,0,0.4);
-      display:none;
-      justify-content:center;
-      align-items:center;
-    }
-    .modal-content {
-      background:white;
-      width:80%;
-      padding:20px;
-      border-radius:8px;
-    }
-    .close-btn { float:right; cursor:pointer; font-weight:bold; }
-  </style>
+<title>Dockside ERP</title>
+<style>
+body { margin:0; font-family:Arial; background:#f4f6f9; }
+.sidebar {
+  width:220px;
+  height:100vh;
+  background:#1e293b;
+  color:white;
+  position:fixed;
+  padding-top:20px;
+}
+.sidebar h2 { text-align:center; }
+.sidebar button {
+  width:100%;
+  padding:12px;
+  border:none;
+  background:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar button:hover { background:#334155; }
+.main {
+  margin-left:220px;
+  padding:20px;
+}
+table { width:100%; border-collapse:collapse; background:white; }
+th, td { padding:10px; border:1px solid #ddd; }
+th { background:#f1f5f9; }
+tr:hover { background:#f9fafb; cursor:pointer; }
+.card { background:white; padding:15px; margin-bottom:20px; border-radius:6px; }
+.badge { padding:4px 8px; border-radius:4px; font-size:12px; color:white; }
+.InTransit { background:#2563eb; }
+.Delivered { background:#16a34a; }
+.Delayed { background:#dc2626; }
+.InPlot { background:#059669; }
+.modal {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.4);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+.modal-content {
+  background:white;
+  width:75%;
+  padding:20px;
+  border-radius:8px;
+}
+.close-btn { float:right; cursor:pointer; font-weight:bold; }
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Dockside – Business Operating System</h1>
-</header>
+<div class="sidebar">
+  <h2>Dockside</h2>
+  <button onclick="showPage('dashboard')">Dashboard</button>
+  <button onclick="showPage('inventory')">Inventory</button>
+  <button onclick="showPage('risk')">Capital at Risk</button>
+  <button onclick="showPage('transit')">Transit Timeline</button>
+</div>
 
-<h2>Inventory</h2>
-<div id="inventoryView"></div>
+<div class="main">
 
-<h2>Capital at Risk</h2>
-<div id="riskView"></div>
+<div id="dashboard" class="page"></div>
+<div id="inventory" class="page" style="display:none;"></div>
+<div id="risk" class="page" style="display:none;"></div>
+<div id="transit" class="page" style="display:none;"></div>
 
-<h2>Transit Timeline</h2>
-<div id="transitView"></div>
+</div>
 
-<!-- Transit Detail Modal -->
 <div id="transitModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal()">X</span>
@@ -60,183 +82,105 @@
 </div>
 
 <script>
-/* =========================
-   DATABASE
-========================= */
 const erpDatabase = {
-  inventory: [
-    { id:1, sku:"PLY-19MM", yard:"Mumbai", value:450000, quantity:120, daysInStock:95, stage:"In Plot" },
-    { id:2, sku:"TIM-LOG-A", yard:"Kandla", value:820000, quantity:300, daysInStock:30, stage:"In Plot" },
-    { id:3, sku:"VENEER-B", yard:"Surat", value:275000, quantity:200, daysInStock:140, stage:"In Plot" }
-  ],
-  transits: [
-    {
-      id:101,
-      vehicleNumber:"GJ05AB1234",
-      driverName:"Ramesh Patel",
-      cargoType:"Timber Logs",
-      supplierName:"Assam Timber Co.",
-      origin:"Guwahati",
-      destination:"Kandla Yard",
-      dispatchDate:"2026-03-01",
-      eta:"2026-03-05",
-      status:"InTransit",
-      freightCost:65000,
-      loadValue:820000
-    },
-    {
-      id:102,
-      vehicleNumber:"MH04XY8890",
-      driverName:"Imran Shaikh",
-      cargoType:"Plywood Sheets",
-      supplierName:"Kerala Plywood Ltd.",
-      origin:"Kochi",
-      destination:"Mumbai Yard",
-      dispatchDate:"2026-02-25",
-      eta:"2026-03-02",
-      status:"Delivered",
-      freightCost:48000,
-      loadValue:450000
-    }
-  ]
+ inventory:[
+  {id:1, sku:"PLY-19MM", yard:"Mumbai", value:450000, days:95, stage:"InPlot"},
+  {id:2, sku:"TIM-LOG-A", yard:"Kandla", value:820000, days:30, stage:"InPlot"},
+  {id:3, sku:"VENEER-B", yard:"Surat", value:275000, days:140, stage:"InPlot"}
+ ],
+ transits:[
+  {id:101, vehicle:"GJ05AB1234", driver:"Ramesh Patel", cargo:"Timber Logs", supplier:"Assam Timber", origin:"Guwahati", destination:"Kandla", eta:"2026-03-05", status:"InTransit", freight:65000, value:820000},
+  {id:102, vehicle:"MH04XY8890", driver:"Imran Shaikh", cargo:"Plywood Sheets", supplier:"Kerala Plywood", origin:"Kochi", destination:"Mumbai", eta:"2026-03-02", status:"Delivered", freight:48000, value:450000}
+ ]
 };
 
-/* =========================
-   INVENTORY VIEW
-========================= */
-function renderInventory() {
-  let html = "<table><tr><th>SKU</th><th>Yard</th><th>Value (₹)</th><th>Days In Stock</th><th>Stage</th></tr>";
-  erpDatabase.inventory.forEach(item=>{
-    html += `
-      <tr>
-        <td>${item.sku}</td>
-        <td>${item.yard}</td>
-        <td>₹${item.value.toLocaleString()}</td>
-        <td>${item.daysInStock}</td>
-        <td><span class="badge ${item.stage.replace(" ","")}">${item.stage}</span></td>
-      </tr>
-    `;
-  });
-  html += "</table>";
-  document.getElementById("inventoryView").innerHTML = html;
+function showPage(page){
+ document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+ document.getElementById(page).style.display='block';
 }
 
-/* =========================
-   CAPITAL AT RISK
-========================= */
-function renderRisk() {
-  const totalValue = erpDatabase.inventory.reduce((sum,i)=>sum+i.value,0);
-  const riskyItems = erpDatabase.inventory.filter(i=>i.daysInStock > 90);
-  const totalRiskValue = riskyItems.reduce((sum,i)=>sum+i.value,0);
-
-  const riskScore = Math.min(100, Math.floor((totalRiskValue / totalValue) * 100));
-
-  let html = `
-    <div class="card">
-      <h3>Overall Risk Score: ${riskScore} / 100</h3>
-      <p>Total Inventory Value: ₹${totalValue.toLocaleString()}</p>
-      <p>Capital Locked in 90+ Days Stock: ₹${totalRiskValue.toLocaleString()}</p>
-    </div>
-    <table>
-      <tr>
-        <th>SKU</th>
-        <th>Value (₹)</th>
-        <th>% of Capital</th>
-        <th>Days In Stock</th>
-      </tr>
-  `;
-
-  erpDatabase.inventory.forEach(item=>{
-    const percent = ((item.value / totalValue) * 100).toFixed(2);
-    html += `
-      <tr>
-        <td>${item.sku}</td>
-        <td>₹${item.value.toLocaleString()}</td>
-        <td>${percent}%</td>
-        <td>${item.daysInStock}</td>
-      </tr>
-    `;
-  });
-
-  html += "</table>";
-  document.getElementById("riskView").innerHTML = html;
+function renderDashboard(){
+ const totalInventory = erpDatabase.inventory.reduce((s,i)=>s+i.value,0);
+ const activeTransit = erpDatabase.transits.filter(t=>t.status==="InTransit").length;
+ document.getElementById("dashboard").innerHTML = `
+   <h2>Dashboard</h2>
+   <div class="card">Total Inventory Value: ₹${totalInventory.toLocaleString()}</div>
+   <div class="card">Active Shipments: ${activeTransit}</div>
+ `;
 }
 
-/* =========================
-   TRANSIT TIMELINE
-========================= */
-function renderTransit() {
-  let html = `
-    <table>
-      <tr>
-        <th>Vehicle No</th>
-        <th>Driver</th>
-        <th>Cargo</th>
-        <th>Supplier</th>
-        <th>Origin</th>
-        <th>Destination</th>
-        <th>ETA</th>
-        <th>Status</th>
-      </tr>
-  `;
-
-  erpDatabase.transits.forEach(item=>{
-    html += `
-      <tr onclick="openTransit(${item.id})">
-        <td>${item.vehicleNumber}</td>
-        <td>${item.driverName}</td>
-        <td>${item.cargoType}</td>
-        <td>${item.supplierName}</td>
-        <td>${item.origin}</td>
-        <td>${item.destination}</td>
-        <td>${item.eta}</td>
-        <td><span class="badge ${item.status}">${item.status}</span></td>
-      </tr>
-    `;
-  });
-
-  html += "</table>";
-  document.getElementById("transitView").innerHTML = html;
+function renderInventory(){
+ let html="<h2>Inventory</h2><table><tr><th>SKU</th><th>Yard</th><th>Value (₹)</th><th>Days</th></tr>";
+ erpDatabase.inventory.forEach(i=>{
+  html+=`<tr><td>${i.sku}</td><td>${i.yard}</td><td>₹${i.value.toLocaleString()}</td><td>${i.days}</td></tr>`;
+ });
+ html+="</table>";
+ document.getElementById("inventory").innerHTML=html;
 }
 
-/* =========================
-   TRANSIT DETAIL MODAL
-========================= */
+function renderRisk(){
+ const total=erpDatabase.inventory.reduce((s,i)=>s+i.value,0);
+ const risky=erpDatabase.inventory.filter(i=>i.days>90);
+ const riskValue=risky.reduce((s,i)=>s+i.value,0);
+ const score=Math.min(100,Math.floor((riskValue/total)*100));
+
+ let html=`<h2>Capital at Risk</h2>
+ <div class="card">Risk Score: ${score}/100</div>
+ <div class="card">Capital in 90+ Days Stock: ₹${riskValue.toLocaleString()}</div>
+ <table><tr><th>SKU</th><th>Value</th><th>% of Total</th><th>Days</th></tr>`;
+
+ erpDatabase.inventory.forEach(i=>{
+  const percent=((i.value/total)*100).toFixed(2);
+  html+=`<tr><td>${i.sku}</td><td>₹${i.value.toLocaleString()}</td><td>${percent}%</td><td>${i.days}</td></tr>`;
+ });
+
+ html+="</table>";
+ document.getElementById("risk").innerHTML=html;
+}
+
+function renderTransit(){
+ let html="<h2>Transit Timeline</h2><table><tr><th>Vehicle</th><th>Driver</th><th>Cargo</th><th>Supplier</th><th>Origin</th><th>Destination</th><th>ETA</th><th>Status</th></tr>";
+ erpDatabase.transits.forEach(t=>{
+  html+=`<tr onclick="openTransit(${t.id})">
+  <td>${t.vehicle}</td>
+  <td>${t.driver}</td>
+  <td>${t.cargo}</td>
+  <td>${t.supplier}</td>
+  <td>${t.origin}</td>
+  <td>${t.destination}</td>
+  <td>${t.eta}</td>
+  <td><span class="badge ${t.status}">${t.status}</span></td>
+  </tr>`;
+ });
+ html+="</table>";
+ document.getElementById("transit").innerHTML=html;
+}
+
 function openTransit(id){
-  const item = erpDatabase.transits.find(t=>t.id===id);
-
-  const html = `
-    <h3>Vehicle ${item.vehicleNumber}</h3>
-    <div class="flex">
-      <div style="flex:2;">
-        <div style="background:#e5e7eb;height:250px;display:flex;align-items:center;justify-content:center;">
-          Map Placeholder (${item.origin} → ${item.destination})
-        </div>
-      </div>
-      <div style="flex:1;">
-        <p><strong>Driver:</strong> ${item.driverName}</p>
-        <p><strong>Cargo:</strong> ${item.cargoType}</p>
-        <p><strong>Supplier:</strong> ${item.supplierName}</p>
-        <p><strong>Dispatch Date:</strong> ${item.dispatchDate}</p>
-        <p><strong>ETA:</strong> ${item.eta}</p>
-        <p><strong>Freight Cost:</strong> ₹${item.freightCost.toLocaleString()}</p>
-        <p><strong>Load Value:</strong> ₹${item.loadValue.toLocaleString()}</p>
-        <p><strong>Status:</strong> ${item.status}</p>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("transitDetail").innerHTML = html;
-  document.getElementById("transitModal").style.display="flex";
+ const t=erpDatabase.transits.find(x=>x.id===id);
+ document.getElementById("transitDetail").innerHTML=`
+   <h3>Vehicle ${t.vehicle}</h3>
+   <div style="display:flex; gap:20px;">
+     <div style="flex:2; background:#e5e7eb; height:250px; display:flex; align-items:center; justify-content:center;">
+       Map Placeholder (${t.origin} → ${t.destination})
+     </div>
+     <div style="flex:1;">
+       <p><b>Driver:</b> ${t.driver}</p>
+       <p><b>Cargo:</b> ${t.cargo}</p>
+       <p><b>Freight:</b> ₹${t.freight.toLocaleString()}</p>
+       <p><b>Load Value:</b> ₹${t.value.toLocaleString()}</p>
+       <p><b>Status:</b> ${t.status}</p>
+     </div>
+   </div>
+ `;
+ document.getElementById("transitModal").style.display="flex";
 }
 
 function closeModal(){
-  document.getElementById("transitModal").style.display="none";
+ document.getElementById("transitModal").style.display="none";
 }
 
-/* =========================
-   INITIAL RENDER
-========================= */
+renderDashboard();
 renderInventory();
 renderRisk();
 renderTransit();
