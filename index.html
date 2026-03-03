@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Executive Terminal v5.0.0 ERP</title>
+    <title>DOCKSIDE | Timber & Plywood Operating System v6.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@1,800&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -39,6 +40,46 @@
             transform: translateY(-5px) translateZ(20px);
             border-color: var(--accent);
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .age-indicator {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .age-indicator.risk-90 { background-color: #991b1b; }
+        .age-indicator.risk-60 { background-color: #ea580c; }
+        .age-indicator.risk-30 { background-color: #f59e0b; }
+
+        .transit-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .transit-stage {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            background-color: #e5e7eb;
+            color: #666;
+            position: relative;
+        }
+
+        .transit-stage.active {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .transit-stage.completed {
+            background-color: #6b7280;
+            color: white;
+            text-decoration: line-through;
         }
 
         .corporate-card { 
@@ -84,17 +125,6 @@
             max-width: 900px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .invoice-modal-content {
-            background-color: white;
-            padding: 0;
-            border-radius: 0;
-            width: 100%;
-            max-width: 100%;
-            box-shadow: none;
-            max-height: 100vh;
             overflow-y: auto;
         }
 
@@ -195,11 +225,6 @@
             font-weight: bold;
         }
 
-        .status-pending { background-color: #fed7aa; color: #92400e; }
-        .status-warehouse { background-color: #dbeafe; color: #1e40af; }
-        .status-dispatched { background-color: #fee2e2; color: #991b1b; }
-        .status-closed { background-color: #dcfce7; color: #15803d; }
-
         .invoice-container {
             background: white;
             padding: 40px;
@@ -250,46 +275,6 @@
             border-bottom: 1px solid #ddd;
         }
 
-        .invoice-table tr:last-child td {
-            border-bottom: 2px solid #333;
-        }
-
-        .invoice-summary {
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .summary-row {
-            display: grid;
-            grid-template-columns: 1fr 150px;
-            gap: 10px;
-            font-size: 12px;
-            padding: 8px 0;
-        }
-
-        .summary-row.total {
-            font-weight: bold;
-            font-size: 14px;
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
-            padding: 10px 0;
-        }
-
-        .signature-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-top: 40px;
-            font-size: 12px;
-        }
-
-        .signature-line {
-            border-top: 1px solid #333;
-            text-align: center;
-            padding-top: 5px;
-            margin-top: 40px;
-        }
-
         .invoice-buttons {
             display: flex;
             gap: 10px;
@@ -322,6 +307,33 @@
             background-color: #4b5563;
         }
 
+        .qr-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border: 2px dashed #ddd;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .qr-section h4 {
+            margin: 0 0 15px 0;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        #qrCode {
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .qr-details {
+            font-size: 10px;
+            color: #666;
+            margin-top: 10px;
+            text-align: center;
+        }
+
         .license-info {
             background-color: #f5f5f5;
             padding: 10px;
@@ -333,99 +345,205 @@
             text-align: center;
         }
 
-        .ai-assistant {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .toggle-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .ai-assistant-title {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 8px;
-        }
-
-        .ai-assistant textarea {
-            width: 100%;
+        .toggle-btn {
+            flex: 1;
             padding: 8px;
-            border-radius: 4px;
-            border: none;
-            font-size: 12px;
-            box-sizing: border-box;
-            margin-bottom: 8px;
-        }
-
-        .ai-assistant button {
-            background-color: white;
-            color: #667eea;
-            padding: 8px 16px;
-            border: none;
+            border: 2px solid #ddd;
+            background: white;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
             font-size: 12px;
+            transition: all 0.3s;
         }
 
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+        .toggle-btn.active {
+            background-color: #D97706;
+            color: white;
+            border-color: #D97706;
+        }
+
+        .gst-breakdown {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .gst-row {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .gst-row.total {
+            font-weight: bold;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            margin-top: 5px;
+            padding-top: 10px;
+        }
     </style>
 </head>
 <body class="antialiased">
 
 <!-- INVOICE VIEW MODAL -->
 <div id="invoiceModal" class="modal">
-    <div class="invoice-modal-content" id="invoiceContainer"></div>
+    <div class="modal-content" style="max-width: 100%; width: 100%; background: white;">
+        <div id="invoiceContainer"></div>
+    </div>
 </div>
 
-<!-- ADD STOCK MODAL -->
+<!-- ADD STOCK MODAL (TIMBER TALLY ENGINE) -->
 <div id="addStockModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Add New Stock</span>
+            <span>📦 Add Timber Stock (Tally Engine)</span>
             <button class="close-btn" onclick="closeModal('addStockModal')">&times;</button>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="form-group">
-                <label>Order Number *</label>
-                <input type="text" id="stockOrderNum" placeholder="e.g., ORD-001">
-            </div>
-            <div class="form-group">
-                <label>Product Name *</label>
-                <input type="text" id="stockProduct" placeholder="e.g., Teak Logs">
-            </div>
-            <div class="form-group">
-                <label>Party Name (Supplier/Buyer) *</label>
-                <input type="text" id="stockParty" placeholder="e.g., ABC Trading">
-            </div>
-            <div class="form-group">
-                <label>Warehouse Location</label>
-                <input type="text" id="stockWarehouse" placeholder="e.g., Plot 10">
-            </div>
-            <div class="form-group">
-                <label>Quantity *</label>
-                <input type="number" id="stockQuantity" placeholder="e.g., 100" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Amount (₹) *</label>
-                <input type="number" id="stockAmount" placeholder="e.g., 50000" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="stockStatus">
-                    <option>In Warehouse</option>
-                    <option>Dispatched</option>
-                    <option>Closed</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Upload Invoice</label>
-                <input type="file" id="stockInvoiceFile" accept=".pdf,.jpg,.jpeg,.png">
+
+        <!-- Entry Type Toggle -->
+        <div class="form-group">
+            <label>Product Type *</label>
+            <div class="toggle-group">
+                <button class="toggle-btn active" onclick="setEntryType('log')">🌳 Log</button>
+                <button class="toggle-btn" onclick="setEntryType('sawn')">📏 Sawn Timber</button>
+                <button class="toggle-btn" onclick="setEntryType('plywood')">📋 Plywood</button>
             </div>
         </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label>Product Name *</label>
+                <input type="text" id="stockProduct" placeholder="e.g., Teak Log">
+            </div>
+            <div class="form-group">
+                <label>Warehouse *</label>
+                <select id="stockWarehouse">
+                    <option>Plot 10 (North)</option>
+                    <option>Plot 12 (Central)</option>
+                    <option>Plot 15 (Port)</option>
+                </select>
+            </div>
+
+            <!-- LOG SPECIFIC -->
+            <div id="log-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; grid-column: 1 / -1;">
+                <div class="form-group">
+                    <label>Length (feet) *</label>
+                    <input type="number" id="logLength" placeholder="e.g., 10" step="0.1" oninput="calculateHoppus()">
+                </div>
+                <div class="form-group">
+                    <label>Girth (inches) *</label>
+                    <input type="number" id="logGirth" placeholder="e.g., 30" step="0.1" oninput="calculateHoppus()">
+                </div>
+            </div>
+
+            <!-- PLYWOOD SPECIFIC -->
+            <div id="plywood-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; grid-column: 1 / -1;">
+                <div class="form-group">
+                    <label>Length (feet) *</label>
+                    <input type="number" id="plywoodLength" placeholder="e.g., 8" step="0.1" oninput="calculatePlywoodSqft()">
+                </div>
+                <div class="form-group">
+                    <label>Width (feet) *</label>
+                    <input type="number" id="plywoodWidth" placeholder="e.g., 4" step="0.1" oninput="calculatePlywoodSqft()">
+                </div>
+                <div class="form-group">
+                    <label>Thickness (mm) *</label>
+                    <input type="number" id="plywoodThickness" placeholder="e.g., 12" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Number of Sheets *</label>
+                    <input type="number" id="plywoodSheets" placeholder="e.g., 50" step="1" oninput="calculatePlywoodSqft()">
+                </div>
+            </div>
+
+            <!-- QUANTITY (Auto-calculated) -->
+            <div class="form-group">
+                <label>Quantity <span id="quantityUnit">(CBM)</span> *</label>
+                <input type="number" id="stockQuantity" placeholder="Auto-calculated" step="0.01" readonly style="background-color: #f3f4f6;">
+            </div>
+
+            <!-- HSN & GST -->
+            <div class="form-group">
+                <label>HSN Code *</label>
+                <select id="hsnCode" onchange="updateGSTRate()">
+                    <option value="">-- Select HSN --</option>
+                    <option value="4403">4403 - Logs</option>
+                    <option value="4407">4407 - Sawn Timber</option>
+                    <option value="4412">4412 - Plywood</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>GST Rate (%) *</label>
+                <input type="number" id="gstRate" placeholder="Auto-filled" readonly style="background-color: #f3f4f6;">
+            </div>
+
+            <!-- RATE & VALUE -->
+            <div class="form-group">
+                <label>Rate (₹ per unit) *</label>
+                <input type="number" id="stockRate" placeholder="e.g., 5000" step="0.01" oninput="calculateTotalValue()">
+            </div>
+
+            <div class="form-group">
+                <label>Total Value (₹) *</label>
+                <input type="number" id="totalValue" placeholder="Auto-calculated" readonly style="background-color: #f3f4f6;">
+            </div>
+
+            <!-- LOGISTICS -->
+            <div class="form-group">
+                <label>Container Number</label>
+                <input type="text" id="containerNumber" placeholder="e.g., CONT-2025-001">
+            </div>
+
+            <div class="form-group">
+                <label>BL Number</label>
+                <input type="text" id="blNumber" placeholder="e.g., BL-123456">
+            </div>
+
+            <!-- TRANSIT STATUS -->
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Transit Stage *</label>
+                <select id="transitStage">
+                    <option value="At Port">At Port</option>
+                    <option value="Custom Cleared">Custom Cleared</option>
+                    <option value="In Plot">In Plot</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- GST Breakdown Preview -->
+        <div class="gst-breakdown">
+            <strong style="display: block; margin-bottom: 10px;">📊 GST Breakdown Preview</strong>
+            <div class="gst-row">
+                <span>Taxable Amount:</span>
+                <span style="text-align: right;">₹<span id="previewTaxable">0</span></span>
+            </div>
+            <div class="gst-row">
+                <span id="gstLabel">GST (18%):</span>
+                <span style="text-align: right;">₹<span id="previewGST">0</span></span>
+            </div>
+            <div class="gst-row total">
+                <span>Grand Total:</span>
+                <span style="text-align: right;">₹<span id="previewTotal">0</span></span>
+            </div>
+        </div>
+
         <div class="modal-buttons">
-            <button class="btn-submit" onclick="saveNewStock()">✓ Save Stock</button>
+            <button class="btn-submit" onclick="saveNewStock()">✓ Create Lot</button>
             <button class="btn-cancel" onclick="closeModal('addStockModal')">Cancel</button>
         </div>
     </div>
@@ -435,7 +553,7 @@
 <div id="settingsModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span>Invoice Template Settings</span>
+            <span>⚙️ System Settings</span>
             <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -455,17 +573,6 @@
                 <label>Bank Details</label>
                 <textarea id="bankDetails" placeholder="Account no, IFSC, etc." style="height: 80px;"></textarea>
             </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Terms & Conditions</label>
-                <textarea id="termsConditions" placeholder="Payment terms, etc." style="height: 80px;"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Template Style</label>
-                <select id="templateStyle">
-                    <option value="modern">Modern GST Invoice</option>
-                    <option value="classic">Classic Invoice</option>
-                </select>
-            </div>
         </div>
         <div class="modal-buttons">
             <button class="btn-submit" onclick="saveTemplateSettings()">✓ Save Settings</button>
@@ -481,9 +588,10 @@
             <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40">
             <div class="relative z-10 p-20 flex flex-col justify-center h-screen">
                 <h1 class="text-6xl font-black text-white italic-brand mb-8 uppercase tracking-tighter">DOCKSIDE</h1>
-                <div class="space-y-6">
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Transparency is the grain of our business."</p>
-                    <p class="text-2xl text-slate-200 italic font-light border-l-4 border-amber-600 pl-6">"Precision in every measurement, trust in every deal."</p>
+                <p class="text-xl text-slate-300 mb-4">Timber & Plywood Operating System</p>
+                <div class="space-y-4">
+                    <p class="text-lg text-slate-200 italic border-l-4 border-amber-600 pl-4">"Built for Gandhidham Timber Yards"</p>
+                    <p class="text-lg text-slate-200 italic border-l-4 border-amber-600 pl-4">"Port-to-Plot Intelligence"</p>
                 </div>
             </div>
         </div>
@@ -508,136 +616,117 @@
 </div>
 
 <script>
-    // ============== ERP DATA STRUCTURE ==============
+    // ============== TIMBER OPERATING SYSTEM DATABASE ==============
     let erpDatabase = {
-        companies: [],
-        users: [],
-        yards: [],
-        items: [],
-        inventoryStock: [],
-        customers: [],
-        suppliers: [],
-        purchases: [],
-        purchaseItems: [],
+        hsnMapping: {
+            "4403": { description: "Logs", gst: 12 },
+            "4407": { description: "Sawn Timber", gst: 12 },
+            "4412": { description: "Plywood", gst: 18 }
+        },
+        inventory: [],
         sales: [],
-        saleItems: [],
-        transfers: [],
-        payments: [],
-        invoices: [],
-        ledgers: []
+        warehouses: [
+            { id: 'wh-01', name: 'Plot 10 (North)', location: 'North Yard' },
+            { id: 'wh-02', name: 'Plot 12 (Central)', location: 'Central Yard' },
+            { id: 'wh-03', name: 'Plot 15 (Port)', location: 'Port Terminal' }
+        ],
+        customers: [],
+        suppliers: []
     };
 
     let state = {
         authenticated: false,
         currentView: 'dashboard',
-        userRole: 'admin', // 'admin' or 'employee'
+        userRole: 'admin',
         licenseNumber: '',
-        companyId: 'COMP-001',
+        companyId: 'COMP-GANDHIDHAM-001',
         userId: 'USER-001',
         userName: '',
-        inventory: [],
-        orders: [],
+        currentEntryType: 'log',
         templateSettings: {
-            companyName: 'DOCKSIDE Enterprises',
-            gstNumber: '18AABCD1234E1Z5',
-            companyAddress: 'Plot No. 10, Industrial Area, Gandhidham, Gujarat 370201, India',
-            bankDetails: 'Bank: HDFC Bank\nAccount: 1234567890\nIFSC: HDFC0001234',
-            termsConditions: 'Payment within 30 days. Goods sold on no return basis unless damaged.',
-            templateStyle: 'modern'
+            companyName: 'DOCKSIDE Timber & Plywood',
+            gstNumber: '24AABCT1234E1Z5',
+            companyAddress: 'Gandhidham, Gujarat 370201, India',
+            bankDetails: 'Bank: HDFC Bank\nAccount: 1234567890\nIFSC: HDFC0001234'
         }
     };
 
-    // ============== MULTI-TENANT FILTER ==============
-    function filterByCompany(records) {
-        return records.filter(r => r.companyId === state.companyId);
-    }
+    // ============== HOPPUS FORMULA (Timber Volume Calculator) ==============
+    function calculateHoppus() {
+        const length = parseFloat(document.getElementById('logLength').value) || 0;
+        const girth = parseFloat(document.getElementById('logGirth').value) || 0;
 
-    // ============== INVENTORY OPERATIONS ==============
-    function getStockByYardAndItem(yardId, itemId) {
-        const stock = erpDatabase.inventoryStock.find(
-            s => s.itemId === itemId && s.yardId === yardId && s.companyId === state.companyId
-        );
-        return stock?.quantity || 0;
-    }
-
-    function updateStock(itemId, yardId, quantityDelta) {
-        let stock = erpDatabase.inventoryStock.find(
-            s => s.itemId === itemId && s.yardId === yardId && s.companyId === state.companyId
-        );
-
-        if (!stock) {
-            stock = {
-                id: generateId('inv'),
-                companyId: state.companyId,
-                itemId,
-                yardId,
-                quantity: Math.max(0, quantityDelta),
-                lastStockInDate: new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            erpDatabase.inventoryStock.push(stock);
-        } else {
-            stock.quantity = Math.max(0, stock.quantity + quantityDelta);
-            stock.updatedAt = new Date().toISOString();
-            if (quantityDelta > 0) {
-                stock.lastStockInDate = new Date().toISOString();
-            }
+        if (length > 0 && girth > 0) {
+            // V = (Girth / 4)^2 × Length / 144
+            const volume = Math.pow(girth / 4, 2) * length / 144;
+            document.getElementById('stockQuantity').value = volume.toFixed(3);
+            calculateTotalValue();
         }
     }
 
-    // ============== LEDGER AUTO-CALCULATION ==============
-    function updateCustomerReceivable(customerId, amountDelta) {
-        let ledger = erpDatabase.ledgers.find(
-            l => l.type === 'customer' && l.customerId === customerId && l.companyId === state.companyId
-        );
+    // ============== PLYWOOD CALCULATOR ==============
+    function calculatePlywoodSqft() {
+        const length = parseFloat(document.getElementById('plywoodLength').value) || 0;
+        const width = parseFloat(document.getElementById('plywoodWidth').value) || 0;
+        const sheets = parseFloat(document.getElementById('plywoodSheets').value) || 0;
 
-        if (!ledger) {
-            ledger = {
-                id: generateId('ledger'),
-                companyId: state.companyId,
-                type: 'customer',
-                customerId,
-                totalSales: 0,
-                totalPaymentReceived: 0,
-                outstanding: 0,
-                updatedAt: new Date().toISOString()
-            };
-            erpDatabase.ledgers.push(ledger);
+        if (length > 0 && width > 0 && sheets > 0) {
+            const sqft = length * width * sheets;
+            document.getElementById('stockQuantity').value = sqft.toFixed(2);
+            calculateTotalValue();
         }
-
-        ledger.totalSales = (ledger.totalSales || 0) + (amountDelta > 0 ? amountDelta : 0);
-        ledger.totalPaymentReceived = (ledger.totalPaymentReceived || 0) + (amountDelta < 0 ? Math.abs(amountDelta) : 0);
-        ledger.outstanding = (ledger.totalSales || 0) - (ledger.totalPaymentReceived || 0);
-        ledger.updatedAt = new Date().toISOString();
     }
 
-    function updateSupplierPayable(supplierId, amountDelta) {
-        let ledger = erpDatabase.ledgers.find(
-            l => l.type === 'supplier' && l.supplierId === supplierId && l.companyId === state.companyId
-        );
+    // ============== ENTRY TYPE TOGGLE ==============
+    function setEntryType(type) {
+        state.currentEntryType = type;
+        
+        // Update button states
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
 
-        if (!ledger) {
-            ledger = {
-                id: generateId('ledger'),
-                companyId: state.companyId,
-                type: 'supplier',
-                supplierId,
-                totalPurchases: 0,
-                totalPaymentPaid: 0,
-                outstanding: 0,
-                updatedAt: new Date().toISOString()
-            };
-            erpDatabase.ledgers.push(ledger);
-        }
+        // Show/Hide relevant fields
+        document.getElementById('log-fields').style.display = type === 'log' ? 'grid' : 'none';
+        document.getElementById('plywood-fields').style.display = type === 'plywood' ? 'grid' : 'none';
 
-        ledger.totalPurchases = (ledger.totalPurchases || 0) + (amountDelta > 0 ? amountDelta : 0);
-        ledger.totalPaymentPaid = (ledger.totalPaymentPaid || 0) + (amountDelta < 0 ? Math.abs(amountDelta) : 0);
-        ledger.outstanding = (ledger.totalPurchases || 0) - (ledger.totalPaymentPaid || 0);
-        ledger.updatedAt = new Date().toISOString();
+        // Update quantity unit
+        const unitLabel = {
+            'log': '(CBM)',
+            'sawn': '(CBM)',
+            'plywood': '(SqFt)'
+        };
+        document.getElementById('quantityUnit').textContent = unitLabel[type];
+        document.getElementById('stockQuantity').value = '';
     }
 
-    // ============== DEAD STOCK DETECTION ==============
+    // ============== HSN & GST AUTOMATION ==============
+    function updateGSTRate() {
+        const hsnCode = document.getElementById('hsnCode').value;
+        if (hsnCode && erpDatabase.hsnMapping[hsnCode]) {
+            const gstRate = erpDatabase.hsnMapping[hsnCode].gst;
+            document.getElementById('gstRate').value = gstRate;
+            document.getElementById('gstLabel').textContent = `GST (${gstRate}%):`;
+            calculateTotalValue();
+        }
+    }
+
+    // ============== CALCULATE TOTAL VALUE WITH GST ==============
+    function calculateTotalValue() {
+        const quantity = parseFloat(document.getElementById('stockQuantity').value) || 0;
+        const rate = parseFloat(document.getElementById('stockRate').value) || 0;
+        const gstRate = parseFloat(document.getElementById('gstRate').value) || 0;
+
+        const taxableAmount = quantity * rate;
+        const gstAmount = (taxableAmount * gstRate) / 100;
+        const totalAmount = taxableAmount + gstAmount;
+
+        document.getElementById('totalValue').value = totalAmount.toFixed(2);
+        document.getElementById('previewTaxable').textContent = taxableAmount.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        document.getElementById('previewGST').textContent = gstAmount.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        document.getElementById('previewTotal').textContent = totalAmount.toLocaleString('en-IN', {maximumFractionDigits: 2});
+    }
+
+    // ============== CALCULATE STOCK AGE ==============
     function calculateStockAge(createdAt) {
         const created = new Date(createdAt);
         const today = new Date();
@@ -645,136 +734,281 @@
         return days;
     }
 
-    function getDeadStockStatus(days, status) {
-        if (status === 'Closed') return '';
-        if (days >= 90) return 'Capital Blocked';
-        if (days >= 60) return 'Risk';
-        if (days >= 30) return 'Warning';
+    // ============== GET AGING INDICATOR ==============
+    function getAgeIndicator(days) {
+        if (days >= 90) return 'risk-90';
+        if (days >= 60) return 'risk-60';
+        if (days >= 30) return 'risk-30';
         return '';
     }
 
-    function getDeadStockColor(days, status) {
-        if (status === 'Closed') return '#666';
-        if (days >= 90) return '#991b1b';
-        if (days >= 60) return '#ea580c';
-        if (days >= 30) return '#f59e0b';
-        return '#10b981';
-    }
-
-    // ============== AI FINANCE ADVISOR ==============
-    function getAIFinanceAdvice() {
-        const totalInventoryValue = state.inventory.reduce((sum, i) => sum + i.amount, 0);
-        const averageOrderValue = state.inventory.length > 0 ? totalInventoryValue / state.inventory.length : 0;
-        const deadStockItems = state.inventory.filter(i => calculateStockAge(i.createdAt) >= 60).length;
-
-        let advice = `📊 **Finance Advisory Report**\n\n`;
-        advice += `💰 Total Inventory Value: ₹${totalInventoryValue.toLocaleString('en-IN')}\n`;
-        advice += `📦 Average Order Value: ₹${averageOrderValue.toLocaleString('en-IN', {maximumFractionDigits: 0})}\n`;
-        advice += `⚠️ Dead Stock Items (60+ days): ${deadStockItems}\n\n`;
-
-        if (deadStockItems > 0) {
-            advice += `🎯 ACTION REQUIRED: You have ${deadStockItems} items in dead stock for 60+ days.\n`;
-            advice += `💡 Recommendation: Consider liquidation or special discounts to free up capital.\n\n`;
-        }
-
-        if (totalInventoryValue > 500000) {
-            advice += `⚡ HIGH CAPITAL LOCK: Your inventory is utilizing significant capital.\n`;
-            advice += `💡 Recommendation: Optimize stock levels and accelerate sales.\n\n`;
-        }
-
-        advice += `📈 Next Review: Check daily for inventory optimization.\n`;
-        advice += `✅ System maintains real-time ledger & dead stock alerts.`;
-
-        return advice;
-    }
-
-    function askAIAssistant() {
-        const question = document.getElementById('aiQuestion').value;
-        if (!question.trim()) {
-            alert('Please ask a question');
-            return;
-        }
-
-        let response = '';
-        
-        if (question.toLowerCase().includes('finance') || question.toLowerCase().includes('revenue')) {
-            response = getAIFinanceAdvice();
-        } else if (question.toLowerCase().includes('inventory') || question.toLowerCase().includes('stock')) {
-            response = `📦 **Inventory Analysis**\n\nTotal Items: ${state.inventory.length}\nTotal Value: ₹${state.inventory.reduce((s, i) => s + i.amount, 0)}\n\nRecommendation: Regular stock audits and proper warehouse organization.`;
-        } else if (question.toLowerCase().includes('analysis')) {
-            response = getAIFinanceAdvice();
-        } else {
-            response = `🤖 AI Assistant Response\n\nBased on your query: "${question}"\n\n${getAIFinanceAdvice()}`;
-        }
-
-        document.getElementById('aiResponse').value = response;
+    // ============== GENERATE UNIQUE LOT NUMBER ==============
+    function generateLotNumber() {
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.random().toString(36).substr(2, 3).toUpperCase();
+        return `LOT-${timestamp}-${random}`;
     }
 
     // ============== PERSISTENCE ==============
     function loadFromLocalStorage() {
-        const saved = localStorage.getItem('dockside_erp_state');
+        const saved = localStorage.getItem('dockside_timber_erp');
         if (saved) {
             const loaded = JSON.parse(saved);
-            state.inventory = loaded.inventory || [];
-            state.orders = loaded.orders || [];
+            erpDatabase = loaded.erpDatabase || erpDatabase;
             state.templateSettings = loaded.templateSettings || state.templateSettings;
             state.licenseNumber = loaded.licenseNumber || '';
-            erpDatabase = loaded.erpDatabase || erpDatabase;
         }
     }
 
     function saveToLocalStorage() {
-        localStorage.setItem('dockside_erp_state', JSON.stringify({
-            inventory: state.inventory,
-            orders: state.orders,
+        localStorage.setItem('dockside_timber_erp', JSON.stringify({
+            erpDatabase: erpDatabase,
             templateSettings: state.templateSettings,
-            licenseNumber: state.licenseNumber,
-            erpDatabase: erpDatabase
+            licenseNumber: state.licenseNumber
         }));
     }
 
-    // ============== STOCK ENTRY ==============
+    // ============== SAVE NEW STOCK ==============
     function saveNewStock() {
-        const orderNum = document.getElementById('stockOrderNum').value.trim();
         const product = document.getElementById('stockProduct').value.trim();
-        const party = document.getElementById('stockParty').value.trim();
-        const warehouse = document.getElementById('stockWarehouse').value.trim();
+        const warehouse = document.getElementById('stockWarehouse').value;
         const quantity = parseFloat(document.getElementById('stockQuantity').value);
-        const amount = parseFloat(document.getElementById('stockAmount').value);
-        const status = document.getElementById('stockStatus').value;
+        const rate = parseFloat(document.getElementById('stockRate').value);
+        const totalValue = parseFloat(document.getElementById('totalValue').value);
+        const hsnCode = document.getElementById('hsnCode').value;
+        const gstRate = parseFloat(document.getElementById('gstRate').value);
+        const containerNumber = document.getElementById('containerNumber').value.trim();
+        const blNumber = document.getElementById('blNumber').value.trim();
+        const transitStage = document.getElementById('transitStage').value;
 
-        if (!orderNum || !product || !party || !quantity || !amount) {
+        if (!product || !quantity || !rate || !hsnCode) {
             alert('❌ Please fill all required fields');
             return;
         }
 
-        const item = {
-            orderNum,
-            product,
-            party,
-            warehouse,
-            quantity,
-            amount,
-            status,
+        const newLot = {
+            id: generateLotNumber(),
+            lotNumber: generateLotNumber(),
+            entryType: state.currentEntryType,
+            productName: product,
+            warehouse: warehouse,
+            quantity: quantity,
+            unit: state.currentEntryType === 'plywood' ? 'SqFt' : 'CBM',
+            rate: rate,
+            totalValue: totalValue,
+            hsnCode: hsnCode,
+            gstRate: gstRate,
+            containerNumber: containerNumber,
+            blNumber: blNumber,
+            transitStatus: {
+                stage: transitStage,
+                atPortDate: transitStage === 'At Port' ? new Date().toISOString() : null,
+                clearedDate: transitStage === 'Custom Cleared' ? new Date().toISOString() : null,
+                inPlotDate: transitStage === 'In Plot' ? new Date().toISOString() : null
+            },
             createdAt: new Date().toISOString()
         };
 
-        state.inventory.push(item);
-        updateStock(product, warehouse, quantity);
-        updateCustomerReceivable(party, amount);
-
-        alert('✅ Stock entry saved!');
-        
-        document.getElementById('stockOrderNum').value = '';
-        document.getElementById('stockProduct').value = '';
-        document.getElementById('stockParty').value = '';
-        document.getElementById('stockWarehouse').value = '';
-        document.getElementById('stockQuantity').value = '';
-        document.getElementById('stockAmount').value = '';
-        
+        erpDatabase.inventory.push(newLot);
         saveToLocalStorage();
+        alert(`✅ Lot ${newLot.lotNumber} created successfully!`);
+        
+        // Reset form
+        document.getElementById('stockProduct').value = '';
+        document.getElementById('stockQuantity').value = '';
+        document.getElementById('stockRate').value = '';
+        document.getElementById('totalValue').value = '';
+        document.getElementById('hsnCode').value = '';
+        document.getElementById('gstRate').value = '';
+        document.getElementById('containerNumber').value = '';
+        document.getElementById('blNumber').value = '';
+        
         closeModal('addStockModal');
         renderShell();
+    }
+
+    // ============== OPEN INVOICE & GENERATE QR ==============
+    function openInvoiceView(item) {
+        const invoiceHTML = generateInvoice(item);
+        document.getElementById('invoiceContainer').innerHTML = invoiceHTML;
+        
+        // Generate QR after modal is shown
+        setTimeout(() => {
+            generateQRCode(item);
+        }, 100);
+        
+        openModal('invoiceModal');
+    }
+
+    // ============== GENERATE QR CODE ==============
+    function generateQRCode(item) {
+        const qrContainer = document.getElementById('qrCode');
+        if (qrContainer) {
+            qrContainer.innerHTML = '';
+            
+            const qrData = `Lot: ${item.lotNumber}\nProduct: ${item.productName}\nQty: ${item.quantity} ${item.unit}\nWarehouse: ${item.warehouse}\nContainer: ${item.containerNumber || 'N/A'}\nBL: ${item.blNumber || 'N/A'}`;
+            
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 200,
+                height: 200,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    }
+
+    // ============== GENERATE INVOICE WITH HSN & GST ==============
+    function generateInvoice(item) {
+        const taxableValue = item.quantity * item.rate;
+        const gstAmount = (taxableValue * item.gstRate) / 100;
+        const grandTotal = taxableValue + gstAmount;
+
+        const hsnDesc = erpDatabase.hsnMapping[item.hsnCode] ? erpDatabase.hsnMapping[item.hsnCode].description : 'Product';
+
+        const html = `
+            <div class="invoice-container">
+                <div class="invoice-buttons">
+                    <button class="invoice-btn" onclick="downloadInvoicePDF()">📥 Download PDF</button>
+                    <button class="invoice-btn" onclick="window.print()">🖨️ Print</button>
+                    <button class="invoice-btn close-btn-invoice" onclick="closeModal('invoiceModal')">✕ Close</button>
+                </div>
+                <div style="padding: 40px;">
+                    <div class="invoice-header">
+                        <div>
+                            <div class="invoice-title">${state.templateSettings.companyName}</div>
+                            <div class="invoice-details">
+                                ${state.templateSettings.companyAddress}
+                                <br><strong>GSTIN:</strong> ${state.templateSettings.gstNumber}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="invoice-title" style="color: #D97706;">TAX INVOICE</div>
+                            <div class="invoice-details">
+                                <strong>Lot #:</strong> ${item.lotNumber}<br>
+                                <strong>Date:</strong> ${new Date(item.createdAt).toLocaleDateString('en-IN')}<br>
+                                <strong>HSN Code:</strong> ${item.hsnCode}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; font-size: 12px;">
+                        <div>
+                            <strong>PRODUCT DETAILS:</strong>
+                            <div style="color: #555; line-height: 1.8;">
+                                <strong>Product:</strong> ${item.productName}<br>
+                                <strong>Type:</strong> ${item.entryType.charAt(0).toUpperCase() + item.entryType.slice(1)}<br>
+                                <strong>Quantity:</strong> ${item.quantity} ${item.unit}<br>
+                                <strong>Warehouse:</strong> ${item.warehouse}
+                            </div>
+                        </div>
+                        <div>
+                            <strong>LOGISTICS:</strong>
+                            <div style="color: #555; line-height: 1.8;">
+                                <strong>Container:</strong> ${item.containerNumber || 'N/A'}<br>
+                                <strong>BL Number:</strong> ${item.blNumber || 'N/A'}<br>
+                                <strong>Transit Stage:</strong> ${item.transitStatus.stage}<br>
+                                <strong>Created:</strong> ${new Date(item.createdAt).toLocaleDateString('en-IN')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th style="text-align: right; width: 80px;">HSN</th>
+                                <th style="text-align: right; width: 100px;">Qty</th>
+                                <th style="text-align: right; width: 100px;">Rate</th>
+                                <th style="text-align: right; width: 120px;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${hsnDesc}</td>
+                                <td style="text-align: right;">${item.hsnCode}</td>
+                                <td style="text-align: right;">${item.quantity.toFixed(2)}</td>
+                                <td style="text-align: right;">₹${item.rate.toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+                                <td style="text-align: right;">₹${taxableValue.toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- GST BREAKDOWN -->
+                    <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 8px;">
+                        <strong style="display: block; margin-bottom: 10px;">📊 GST Breakdown (HSN: ${item.hsnCode})</strong>
+                        <table style="width: 100%; font-size: 12px;">
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px 0;"><strong>Taxable Value:</strong></td>
+                                <td style="text-align: right; padding: 8px 0;"><strong>₹${taxableValue.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></td>
+                            </tr>
+                            <tr style="border-bottom: 2px solid #333;">
+                                <td style="padding: 8px 0;"><strong>GST ${item.gstRate}%:</strong></td>
+                                <td style="text-align: right; padding: 8px 0;"><strong>₹${gstAmount.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; font-size: 14px;"><strong>GRAND TOTAL:</strong></td>
+                                <td style="text-align: right; padding: 10px 0; font-size: 14px;"><strong>₹${grandTotal.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- QR CODE SECTION -->
+                    <div class="qr-section">
+                        <h4>📱 Lot Identity QR Code</h4>
+                        <div id="qrCode"></div>
+                        <div class="qr-details">
+                            Lot Number: ${item.lotNumber}<br>
+                            Scan for complete lot details
+                        </div>
+                    </div>
+
+                    ${state.templateSettings.bankDetails ? `
+                        <div style="margin-top: 30px; padding: 15px; background-color: #f5f5f5; font-size: 11px; border-radius: 8px;">
+                            <strong>Bank Details:</strong><br>
+                            ${state.templateSettings.bankDetails.replace(/\n/g, '<br>')}
+                        </div>
+                    ` : ''}
+
+                    <div style="margin-top: 40px; text-align: right; font-size: 12px;">
+                        <p><strong>Authorized Signature</strong></p>
+                        <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 10px;">
+                            ${state.templateSettings.companyName}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // ============== DOWNLOAD PDF ==============
+    function downloadInvoicePDF() {
+        const element = document.querySelector('.invoice-container');
+        const opt = {
+            margin: 10,
+            filename: 'timber-invoice.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // ============== CALCULATE CAPITAL AT RISK ==============
+    function calculateCapitalAtRisk() {
+        let totalRisk = 0;
+        let oldLotCount = 0;
+
+        erpDatabase.inventory.forEach(item => {
+            const age = calculateStockAge(item.createdAt);
+            if (age >= 60) {
+                totalRisk += item.totalValue;
+                oldLotCount++;
+            }
+        });
+
+        return { totalRisk, oldLotCount };
     }
 
     // ============== UI HELPERS ==============
@@ -831,153 +1065,10 @@
 
     function getRoleBasedSections() {
         if (state.userRole === 'admin') {
-            return ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analysis', 'AI Advisor', 'Settings'];
+            return ['Dashboard', 'Inventory', 'Capital at Risk', 'Transit Timeline', 'Settings'];
         } else {
-            return ['Dashboard', 'Inventory', 'Orders', 'Transit', 'My Work'];
+            return ['Dashboard', 'Inventory', 'My Work'];
         }
-    }
-
-    function generateInvoice(type, data) {
-        const isGST = state.templateSettings.templateStyle === 'modern';
-        const invoiceType = state.userRole === 'employee' ? 'WORK ORDER' : 'TAX INVOICE (SALES)';
-        
-        const items = data.items || [{
-            description: data.product || data.cargo || 'Service',
-            quantity: data.quantity || 1,
-            rate: data.amount || 0,
-            amount: (data.quantity || 1) * (data.amount || 0)
-        }];
-
-        let itemsHTML = items.map(item => `
-            <tr>
-                <td>${item.description}</td>
-                <td style="text-align: right;">${item.quantity}</td>
-                <td style="text-align: right;">₹${(item.rate || 0).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
-                <td style="text-align: right;">₹${(item.amount || 0).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
-            </tr>
-        `).join('');
-
-        const subtotal = items.reduce((s, i) => s + (i.amount || 0), 0);
-        const gst = Math.round(subtotal * 0.18);
-        const transport = data.transport || 0;
-        const misc = data.misc || 0;
-        const total = subtotal + gst + transport + misc;
-
-        const html = `
-            <div class="invoice-container">
-                <div class="invoice-buttons">
-                    <button class="invoice-btn" onclick="downloadInvoicePDF()">📥 Download PDF</button>
-                    <button class="invoice-btn" onclick="window.print()">🖨️ Print</button>
-                    <button class="invoice-btn close-btn-invoice" onclick="closeModal('invoiceModal')">✕ Close</button>
-                </div>
-                <div style="padding: 40px;">
-                    <div class="invoice-header">
-                        <div>
-                            <div class="invoice-title">${state.templateSettings.companyName}</div>
-                            <div class="invoice-details">
-                                ${state.templateSettings.companyAddress}
-                                <br><strong>GSTIN:</strong> ${state.templateSettings.gstNumber}
-                                <br><strong>License:</strong> ${state.licenseNumber}
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div class="invoice-title" style="color: #D97706;">${invoiceType}</div>
-                            <div class="invoice-details">
-                                <strong>Invoice #:</strong> ${data.orderNum || 'INV-001'}<br>
-                                <strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}<br>
-                                <strong>Due:</strong> ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('en-IN')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; font-size: 12px;">
-                        <div>
-                            <strong style="display: block; margin-bottom: 5px;">FROM:</strong>
-                            <div style="color: #555;">
-                                ${state.templateSettings.companyName}<br>
-                                ${state.templateSettings.companyAddress}
-                            </div>
-                        </div>
-                        <div>
-                            <strong style="display: block; margin-bottom: 5px;">TO:</strong>
-                            <div style="color: #555;">
-                                ${data.party || data.buyer || data.buyerSeller || 'Customer'}<br>
-                                ${data.warehouse || 'Destination TBD'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <table class="invoice-table">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th style="text-align: right; width: 80px;">Qty</th>
-                                <th style="text-align: right; width: 100px;">Rate</th>
-                                <th style="text-align: right; width: 120px;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHTML}
-                        </tbody>
-                    </table>
-
-                    <div class="invoice-summary">
-                        <div class="summary-row" style="justify-content: flex-end;">
-                            <div style="text-align: right; width: 150px;">
-                                <strong>Subtotal:</strong> ₹${subtotal.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>
-                                ${transport > 0 ? `<strong>Transport:</strong> ₹${transport.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
-                                ${misc > 0 ? `<strong>Misc:</strong> ₹${misc.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
-                                ${isGST ? `<strong>GST 18%:</strong> ₹${gst.toLocaleString('en-IN', {maximumFractionDigits: 2})}<br>` : ''}
-                                <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #333; font-size: 14px;">
-                                    <strong>TOTAL:</strong> ₹${total.toLocaleString('en-IN', {maximumFractionDigits: 2})}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${state.templateSettings.bankDetails ? `
-                        <div style="margin-top: 30px; padding: 15px; background-color: #f5f5f5; font-size: 11px;">
-                            <strong>Bank Details:</strong><br>
-                            ${state.templateSettings.bankDetails.replace(/\n/g, '<br>')}
-                        </div>
-                    ` : ''}
-
-                    <div class="signature-section">
-                        <div style="text-align: left;">
-                            <strong>Terms & Conditions:</strong><br>
-                            <span style="font-size: 10px; color: #666;">
-                                ${state.templateSettings.termsConditions.substring(0, 100)}...
-                            </span>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="margin-top: 40px; border-top: 1px solid #333;">
-                                Authorized Signature
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        return html;
-    }
-
-    function openInvoiceView(data) {
-        const invoiceHTML = generateInvoice('invoice', data);
-        document.getElementById('invoiceContainer').innerHTML = invoiceHTML;
-        openModal('invoiceModal');
-    }
-
-    function downloadInvoicePDF() {
-        const element = document.querySelector('.invoice-container');
-        const opt = {
-            margin: 10,
-            filename: 'invoice.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-        };
-        html2pdf().set(opt).from(element).save();
     }
 
     function saveTemplateSettings() {
@@ -985,11 +1076,9 @@
         state.templateSettings.gstNumber = document.getElementById('gstNumber').value || '';
         state.templateSettings.companyAddress = document.getElementById('companyAddress').value || '';
         state.templateSettings.bankDetails = document.getElementById('bankDetails').value || '';
-        state.templateSettings.termsConditions = document.getElementById('termsConditions').value || '';
-        state.templateSettings.templateStyle = document.getElementById('templateStyle').value || 'modern';
         
         saveToLocalStorage();
-        alert('✅ Template settings saved!');
+        alert('✅ Settings saved!');
         closeModal('settingsModal');
         renderShell();
     }
@@ -999,10 +1088,9 @@
         document.getElementById('gstNumber').value = state.templateSettings.gstNumber || '';
         document.getElementById('companyAddress').value = state.templateSettings.companyAddress || '';
         document.getElementById('bankDetails').value = state.templateSettings.bankDetails || '';
-        document.getElementById('termsConditions').value = state.templateSettings.termsConditions || '';
-        document.getElementById('templateStyle').value = state.templateSettings.templateStyle || 'modern';
     }
 
+    // ============== RENDER SHELL ==============
     function renderShell() {
         if (!state.authenticated) return;
         const sections = getRoleBasedSections();
@@ -1019,8 +1107,7 @@
             <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
                 <div class="p-8">
                     <h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 10px; color: #666; font-weight: bold;">${state.userRole === 'admin' ? '👑 ADMIN' : '👤 EMPLOYEE'}</p>
-                    <p style="margin: 3px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">User: ${state.userName}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">Timber & Plywood OS</p>
                     <p style="margin: 3px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">License: ${state.licenseNumber}</p>
                 </div>
                 <nav class="flex-1 px-4 space-y-1">
@@ -1028,23 +1115,18 @@
                 </nav>
                 ${state.userRole === 'admin' ? `
                     <div class="p-4 border-t border-gray-300">
-                        <button onclick="openModal('addStockModal')" style="width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; margin-bottom: 8px;">+ Add Stock</button>
+                        <button onclick="openModal('addStockModal')" style="width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; margin-bottom: 8px;">+ Add Lot</button>
                         <button onclick="openSettings()" style="width: 100%; padding: 8px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">⚙️ SETTINGS</button>
                     </div>
-                ` : `
-                    <div class="p-4 border-t border-gray-300">
-                        <button onclick="alert('✅ Work logged for ${state.userName}')" style="width: 100%; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">✓ Log Work</button>
-                    </div>
-                `}
+                ` : ''}
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
-                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView.replace(/_/g, ' ')}</h3>
+                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em]">${state.currentView.replace(/_/g, ' ')}</h3>
                     <div class="flex items-center gap-4 text-[10px] font-black">
                         <span class="text-green-600 uppercase tracking-widest">● Live</span>
-                        <div class="w-px h-6 bg-gray-300 mx-2"></div>
-                        <p class="text-gray-400">v5.0.0</p>
+                        <p class="text-gray-400">v6.0.0</p>
                     </div>
                 </header>
                 <main class="flex-1 overflow-y-auto p-10">${renderMainContent()}</main>
@@ -1052,115 +1134,152 @@
         </div>`;
     }
 
+    // ============== RENDER MAIN CONTENT ==============
     function renderMainContent() {
         if (state.currentView === 'dashboard') {
-            const totalValue = state.inventory.reduce((sum, i) => sum + i.amount, 0);
+            const { totalRisk, oldLotCount } = calculateCapitalAtRisk();
+            const totalValue = erpDatabase.inventory.reduce((sum, i) => sum + i.totalValue, 0);
+            const totalLots = erpDatabase.inventory.length;
+
             return `
             <div class="grid grid-cols-4 gap-6">
-                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div>
-                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Value</p><h4 class="text-2xl font-black text-gray-800">₹${(totalValue/100000).toFixed(1)}L</h4></div>
-                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Dead Stock</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.filter(i => calculateStockAge(i.createdAt) >= 60).length}</h4></div>
-                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">In Transit</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.filter(i => i.status === 'Dispatched').length}</h4></div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Lots</p>
+                    <h4 class="text-2xl font-black text-gray-800">${totalLots}</h4>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Value</p>
+                    <h4 class="text-2xl font-black text-gray-800">₹${(totalValue/100000).toFixed(1)}L</h4>
+                </div>
+                <div class="deck-panel p-6" style="border-left: 4px solid #991b1b;">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3">⚠️ Capital at Risk (60+ Days)</p>
+                    <h4 class="text-2xl font-black text-red-600">₹${(totalRisk/100000).toFixed(1)}L</h4>
+                    <p style="font-size: 11px; color: #666; margin-top: 5px;">${oldLotCount} lots blocked</p>
+                </div>
+                <div class="deck-panel p-6">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-3">In Transit</p>
+                    <h4 class="text-2xl font-black text-gray-800">${erpDatabase.inventory.filter(i => i.transitStatus.stage !== 'In Plot').length}</h4>
+                </div>
             </div>`;
         } else if (state.currentView === 'inventory') {
             return `
             <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Inventory (${state.inventory.length})</h4>
-                ${state.userRole === 'admin' ? `<button onclick="openModal('addStockModal')" style="padding: 8px 16px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add New Stock</button>` : ''}
+                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">📦 Timber Lot Inventory (${erpDatabase.inventory.length})</h4>
+                ${state.userRole === 'admin' ? `<button onclick="openModal('addStockModal')" style="padding: 8px 16px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">+ Add Lot</button>` : ''}
             </div>
             <div class="deck-panel" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="background-color: #f3f4f6;">
                         <tr style="border-bottom: 2px solid #ddd;">
-                            <th style="padding: 10px; text-align: left;">Order Number</th>
+                            <th style="padding: 10px; text-align: left;">Lot #</th>
                             <th style="padding: 10px; text-align: left;">Product</th>
-                            <th style="padding: 10px; text-align: left;">Party</th>
+                            <th style="padding: 10px; text-align: left;">HSN</th>
                             <th style="padding: 10px; text-align: right;">Qty</th>
-                            <th style="padding: 10px; text-align: right;">Amount</th>
-                            <th style="padding: 10px; text-align: left;">Status</th>
-                            <th style="padding: 10px; text-align: left;">Dead Stock</th>
-                            <th style="padding: 10px; text-align: center;">View</th>
+                            <th style="padding: 10px; text-align: right;">Value</th>
+                            <th style="padding: 10px; text-align: left;">Transit</th>
+                            <th style="padding: 10px; text-align: left;">Container</th>
+                            <th style="padding: 10px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${state.inventory.map((i, idx) => {
-                            const age = calculateStockAge(i.createdAt);
-                            const deadStockStatus = getDeadStockStatus(age, i.status);
-                            const color = getDeadStockColor(age, i.status);
+                        ${erpDatabase.inventory.map((item, idx) => {
+                            const age = calculateStockAge(item.createdAt);
+                            const ageClass = getAgeIndicator(age);
                             return `
-                                <tr style="border-bottom: 1px solid #ddd;">
-                                    <td style="padding: 10px; cursor: pointer; color: #D97706; font-weight: bold;">${i.orderNum}</td>
-                                    <td style="padding: 10px;">${i.product}</td>
-                                    <td style="padding: 10px;">${i.party}</td>
-                                    <td style="padding: 10px; text-align: right;">${i.quantity}</td>
-                                    <td style="padding: 10px; text-align: right;">₹${i.amount.toLocaleString('en-IN')}</td>
-                                    <td style="padding: 10px;"><span class="status-badge status-${i.status.toLowerCase().replace(/ /g, '_')}">${i.status}</span></td>
-                                    <td style="padding: 10px; color: ${color}; font-weight: bold; font-size: 10px;">${deadStockStatus || '—'}</td>
-                                    <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(i).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
+                                <tr style="border-bottom: 1px solid #ddd; position: relative;">
+                                    <div class="age-indicator ${ageClass}" style=""></div>
+                                    <td style="padding: 10px; color: #D97706; font-weight: bold;">${item.lotNumber}</td>
+                                    <td style="padding: 10px;">${item.productName}</td>
+                                    <td style="padding: 10px; font-weight: bold;">${item.hsnCode}</td>
+                                    <td style="padding: 10px; text-align: right;">${item.quantity.toFixed(2)} ${item.unit}</td>
+                                    <td style="padding: 10px; text-align: right;">₹${item.totalValue.toLocaleString('en-IN', {maximumFractionDigits: 0})}</td>
+                                    <td style="padding: 10px;"><span style="background: ${item.transitStatus.stage === 'In Plot' ? '#dcfce7' : item.transitStatus.stage === 'Custom Cleared' ? '#dbeafe' : '#fee2e2'}; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">${item.transitStatus.stage}</span></td>
+                                    <td style="padding: 10px; font-size: 10px;">${item.containerNumber || '—'}</td>
+                                    <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(item).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
                                 </tr>
                             `;
                         }).join('')}
                     </tbody>
                 </table>
             </div>`;
-        } else if (state.currentView === 'orders') {
+        } else if (state.currentView === 'capital_at_risk') {
+            const { totalRisk, oldLotCount } = calculateCapitalAtRisk();
+            const riskItems = erpDatabase.inventory.filter(i => calculateStockAge(i.createdAt) >= 60);
+
             return `
-            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">Orders (${state.orders.length})</h4>
+            <div class="deck-panel p-6" style="border-left: 4px solid #991b1b; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">🚨 Capital at Risk Analysis (60+ Days)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <p style="margin: 0; font-size: 12px; color: #666;">Total Blocked Value</p>
+                        <h4 style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #991b1b;">₹${(totalRisk/100000).toFixed(1)}L</h4>
+                    </div>
+                    <div>
+                        <p style="margin: 0; font-size: 12px; color: #666;">Old Lots Count</p>
+                        <h4 style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #D97706;">${oldLotCount}</h4>
+                    </div>
+                    <div>
+                        <p style="margin: 0; font-size: 12px; color: #666;">Avg Age</p>
+                        <h4 style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold;">${riskItems.length > 0 ? Math.round(riskItems.reduce((s, i) => s + calculateStockAge(i.createdAt), 0) / riskItems.length) : 0} days</h4>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="margin: 20px 0 10px 0; font-size: 14px; font-weight: bold;">At-Risk Lots Detail</h4>
             <div class="deck-panel" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="background-color: #f3f4f6;">
                         <tr style="border-bottom: 2px solid #ddd;">
-                            <th style="padding: 10px; text-align: left;">Order</th>
-                            <th style="padding: 10px; text-align: left;">Cargo</th>
-                            <th style="padding: 10px; text-align: right;">Amount</th>
-                            <th style="padding: 10px; text-align: center;">Action</th>
+                            <th style="padding: 10px; text-align: left;">Lot #</th>
+                            <th style="padding: 10px; text-align: left;">Product</th>
+                            <th style="padding: 10px; text-align: right;">Days Old</th>
+                            <th style="padding: 10px; text-align: right;">Value (₹)</th>
+                            <th style="padding: 10px; text-align: left;">Risk Level</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${state.orders.map((o, idx) => `
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 10px;">${o.orderNum}</td>
-                                <td style="padding: 10px;">${o.cargo}</td>
-                                <td style="padding: 10px; text-align: right;">₹${o.amount.toLocaleString('en-IN')}</td>
-                                <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(o).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
-                            </tr>
-                        `).join('')}
+                        ${riskItems.map(item => {
+                            const age = calculateStockAge(item.createdAt);
+                            const riskLevel = age >= 90 ? '🔴 Critical' : '🟠 High';
+                            return `
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 10px; color: #D97706; font-weight: bold;">${item.lotNumber}</td>
+                                    <td style="padding: 10px;">${item.productName}</td>
+                                    <td style="padding: 10px; text-align: right; font-weight: bold;">${age}</td>
+                                    <td style="padding: 10px; text-align: right;">₹${item.totalValue.toLocaleString('en-IN', {maximumFractionDigits: 0})}</td>
+                                    <td style="padding: 10px;">${riskLevel}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>`;
-        } else if (state.currentView === 'transit') {
-            return `<div class="deck-panel p-6"><p style="margin: 0; font-size: 12px; color: #666;">🚚 Transit tracking and logistics monitoring coming soon...</p></div>`;
-        } else if (state.currentView === 'finance') {
-            return `<div class="deck-panel p-6"><p style="margin: 0; font-size: 12px; color: #666;">💰 Financial reports and statements coming soon...</p></div>`;
-        } else if (state.currentView === 'analysis') {
-            if (state.userRole !== 'admin') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Admin only</p></div>';
+        } else if (state.currentView === 'transit_timeline') {
             return `
-            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">📊 Inventory & Financial Analysis</h4>
-            <div class="deck-panel p-6">
-                <pre style="font-size: 11px; white-space: pre-wrap; word-wrap: break-word;">${getAIFinanceAdvice()}</pre>
-            </div>`;
-        } else if (state.currentView === 'ai_advisor') {
-            if (state.userRole !== 'admin') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Admin only</p></div>';
-            return `
-            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">🤖 AI Financial Advisor</h4>
-            <div class="ai-assistant">
-                <div class="ai-assistant-title">Ask AI Assistant</div>
-                <textarea id="aiQuestion" placeholder="Ask about finance, inventory, analysis, etc..." style="height: 60px; resize: none;"></textarea>
-                <button onclick="askAIAssistant()" style="width: 100%; padding: 8px; margin-bottom: 8px;">Get AI Advice</button>
-            </div>
-            <div class="deck-panel p-6" style="margin-top: 15px;">
-                <textarea id="aiResponse" placeholder="AI Response will appear here..." style="width: 100%; height: 300px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; font-size: 11px; resize: none;" readonly></textarea>
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">🚚 Transit Pipeline</h4>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                ${erpDatabase.inventory.map(item => `
+                    <div class="deck-panel p-6">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="margin: 0; font-size: 13px; font-weight: bold;">${item.lotNumber} - ${item.productName}</h4>
+                            <span style="font-size: 11px; color: #666;">Container: ${item.containerNumber || '—'}</span>
+                        </div>
+                        <div class="transit-progress">
+                            <div class="transit-stage ${item.transitStatus.stage === 'At Port' ? 'active' : item.transitStatus.atPortDate ? 'completed' : ''}">📍 At Port</div>
+                            <div style="flex: 1; height: 1px; background: #ddd; margin: 0 10px;"></div>
+                            <div class="transit-stage ${item.transitStatus.stage === 'Custom Cleared' ? 'active' : item.transitStatus.clearedDate ? 'completed' : ''}">📋 Custom Cleared</div>
+                            <div style="flex: 1; height: 1px; background: #ddd; margin: 0 10px;"></div>
+                            <div class="transit-stage ${item.transitStatus.stage === 'In Plot' ? 'active' : item.transitStatus.inPlotDate ? 'completed' : ''}">🏭 In Plot</div>
+                        </div>
+                    </div>
+                `).join('')}
             </div>`;
         } else if (state.currentView === 'my_work') {
             if (state.userRole !== 'employee') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Employee only</p></div>';
             return `
-            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">👤 My Work Log</h4>
             <div class="deck-panel p-6">
                 <p style="margin: 0; font-size: 12px;">Employee: <strong>${state.userName}</strong></p>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">Role: <strong>Employee</strong></p>
                 <p style="margin: 5px 0 0 0; font-size: 12px;">License: <strong>${state.licenseNumber}</strong></p>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">Status: <strong>Active</strong></p>
-                <button onclick="alert('✅ Work logged successfully for today')" style="margin-top: 15px; padding: 8px 16px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">Log Daily Work</button>
             </div>`;
         }
         return '<p>Section content</p>';
@@ -1171,33 +1290,8 @@
         openModal('settingsModal');
     }
 
-    function generateId(prefix) {
-        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    }
-
-    // Demo data
-    function initializeDemoData() {
-        state.inventory = [
-            { orderNum: 'ORD-001', product: 'Teak Logs', party: 'ABC Trading', quantity: 100, amount: 50000, warehouse: 'Plot 10', status: 'In Warehouse', createdAt: new Date(Date.now() - 45*24*60*60*1000).toISOString() },
-            { orderNum: 'ORD-002', product: 'Pine Planks', party: 'XYZ Corp', quantity: 50, amount: 35000, warehouse: 'Plot 12', status: 'Dispatched', createdAt: new Date(Date.now() - 65*24*60*60*1000).toISOString() }
-        ];
-        state.orders = [
-            { orderNum: 'ORD-001', cargo: 'Teak Logs', buyer: 'ABC Trading', amount: 50000, transport: 2000, misc: 500 },
-            { orderNum: 'ORD-002', cargo: 'Pine Planks', buyer: 'XYZ Corp', amount: 35000, transport: 1500, misc: 300 }
-        ];
-        
-        erpDatabase.inventoryStock = [
-            { id: 'inv-1', companyId: 'COMP-001', itemId: 'item-001', yardId: 'yard-001', quantity: 100, lastStockInDate: state.inventory[0].createdAt, createdAt: state.inventory[0].createdAt, updatedAt: new Date().toISOString() },
-            { id: 'inv-2', companyId: 'COMP-001', itemId: 'item-002', yardId: 'yard-002', quantity: 50, lastStockInDate: state.inventory[1].createdAt, createdAt: state.inventory[1].createdAt, updatedAt: new Date().toISOString() }
-        ];
-        
-        saveToLocalStorage();
-    }
-
+    // Initialize
     loadFromLocalStorage();
-    if (state.inventory.length === 0) {
-        initializeDemoData();
-    }
 </script>
 </body>
 </html>
