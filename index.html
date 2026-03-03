@@ -3,1199 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCKSIDE | Timber & Plywood Operating System v7.0.0</title>
+    <title>DOCKSIDE | Timber & Plywood OS v7.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-
-        .sidebar {
-            width: 240px;
-            background-color: #1a1a1a;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #333;
-        }
-
-        .sidebar-brand {
-            font-size: 18px;
-            font-weight: 900;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-subtitle {
-            font-size: 11px;
-            color: #999;
-            font-weight: 600;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            padding: 20px 0;
-        }
-
-        .nav-item {
-            padding: 12px 20px;
-            color: #999;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-        }
-
-        .nav-item:hover {
-            color: white;
-            background-color: #252525;
-        }
-
-        .nav-item.active {
-            color: white;
-            background-color: #d97706;
-            border-left-color: #d97706;
-        }
-
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid #333;
-        }
-
-        .btn-add {
-            width: 100%;
-            padding: 12px;
-            background-color: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-        }
-
-        .btn-add:hover {
-            background-color: #059669;
-        }
-
-        .main-container {
-            margin-left: 240px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .top-bar {
-            background-color: white;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .top-bar-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex: 1;
-        }
-
-        .search-box {
-            background-color: #f0f0f0;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            width: 300px;
-            font-size: 13px;
-        }
-
-        .top-bar-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .user-badge {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: #d97706;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px;
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 900;
-            margin-bottom: 30px;
-            color: #1a1a1a;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s;
-        }
-
-        .card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-
-        .card-title {
-            font-size: 12px;
-            color: #999;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-
-        .card-value {
-            font-size: 28px;
-            font-weight: 900;
-            color: #1a1a1a;
-            margin-bottom: 10px;
-        }
-
-        .card-chart {
-            height: 40px;
-            background: linear-gradient(to right, #dbeafe, #bfdbfe, #93c5fd);
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-
-        .card-subtitle {
-            font-size: 11px;
-            color: #999;
-            margin-top: 10px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 900;
-            color: #1a1a1a;
-        }
-
-        .btn-primary {
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary:hover {
-            background-color: #0052a3;
-        }
-
-        .btn-secondary {
-            background-color: #f0f0f0;
-            color: #333;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-secondary:hover {
-            background-color: #e0e0e0;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .table-header {
-            background-color: #f9f9f9;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e5e5e5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table th {
-            background-color: #f9f9f9;
-            padding: 12px 20px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 700;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        table td {
-            padding: 15px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 13px;
-        }
-
-        table tr:hover {
-            background-color: #fafafa;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .status-in-transit {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-in-plot {
-            background-color: #dcfce7;
-            color: #15803d;
-        }
-
-        .status-cleared {
-            background-color: #fef08a;
-            color: #713f12;
-        }
-
-        .risk-high {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        .risk-medium {
-            background-color: #fed7aa;
-            color: #92400e;
-        }
-
-        .risk-bar {
-            height: 8px;
-            background: linear-gradient(to right, #fca5a5, #fdba74, #fbbf24);
-            border-radius: 4px;
-            width: 100%;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            padding: 20px 30px;
-            border-bottom: 1px solid #e5e5e5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 900;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e5e5e5;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .risk-score {
-            font-size: 32px;
-            font-weight: 900;
-            color: #d97706;
-            margin-bottom: 10px;
-        }
-
-        .risk-summary {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .risk-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .risk-label {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .risk-percentage {
-            font-size: 24px;
-            font-weight: 900;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-        }
-
-        .risk-bar-container {
-            width: 100%;
-            height: 8px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .risk-bar-fill {
-            height: 100%;
-            background: linear-gradient(to right, #fca5a5, #fdba74, #fbbf24);
-        }
-
-        .transit-timeline {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-top: 15px;
-        }
-
-        .transit-stage {
-            padding: 8px 12px;
-            border-radius: 4px;
-            background-color: #f0f0f0;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .transit-stage.active {
-            background-color: #10b981;
-            color: white;
-        }
-
-        .transit-stage.completed {
-            background-color: #d1d5db;
-            color: #666;
-        }
-
-        .transit-separator {
-            flex: 1;
-            height: 1px;
-            background-color: #e5e5e5;
-        }
-
-        .modal-footer {
-            padding: 20px 30px;
-            border-top: 1px solid #e5e5e5;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .btn-cancel {
-            padding: 10px 20px;
-            background-color: #f0f0f0;
-            color: #333;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-save {
-            padding: 10px 20px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .login-container {
-            display: flex;
-            height: 100vh;
-        }
-
-        .login-left {
-            flex: 1;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            padding: 40px;
-        }
-
-        .login-right {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f5f5f5;
-        }
-
-        .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .login-title {
-            font-size: 24px;
-            font-weight: 900;
-            margin-bottom: 10px;
-        }
-
-        .login-subtitle {
-            font-size: 14px;
-            color: #999;
-            margin-bottom: 30px;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #ddd;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ccc;
-        }
+        :root { --accent: #d97706; }
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f5; }
+        .sidebar { width: 240px; background-color: #1a1a1a; height: 100vh; position: fixed; left: 0; top: 0; color: white; display: flex; flex-direction: column; z-index: 50; }
+        .nav-item { padding: 12px 20px; color: #999; cursor: pointer; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; border-left: 4px solid transparent; }
+        .nav-item:hover, .nav-item.active { color: white; background: #252525; border-left-color: var(--accent); }
+        .nav-item.active { background: var(--accent); }
+        .main-container { margin-left: 240px; min-height: 100vh; display: flex; flex-direction: column; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+        .modal.show { display: flex; }
+        .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .status-in-transit { background: #dbeafe; color: #1e40af; }
+        .status-in-plot { background: #dcfce7; color: #15803d; }
     </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen">
-    <div class="login-container">
-        <div class="login-left">
-            <div>
-                <div style="font-size: 48px; font-weight: 900; margin-bottom: 20px;">DOCKSIDE</div>
-                <p style="font-size: 18px; line-height: 1.6; color: #ccc;">Timber & Plywood Operating System</p>
-                <p style="font-size: 14px; color: #999; margin-top: 30px; line-height: 1.8;">Built for Gandhidham timber yards. Professional inventory management, capital risk tracking, and logistics automation in one platform.</p>
-            </div>
+<div id="loginScreen" class="fixed inset-0 flex z-[200]">
+    <div class="flex-1 bg-neutral-900 text-white flex items-center justify-center p-12">
+        <div class="max-w-md">
+            <h1 class="text-6xl font-black mb-4 italic">DOCKSIDE</h1>
+            <p class="text-neutral-400">Gandhidham Timber Hub | v7.1.0 Executive</p>
         </div>
-        <div class="login-right">
-            <div class="login-card">
-                <div class="login-title">Login</div>
-                <div class="login-subtitle">Access your timber operating system</div>
-                
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="loginEmail" value="admin@dockside.com">
-                </div>
-
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="loginPassword" value="demo123456">
-                </div>
-
-                <div class="form-group">
-                    <label>License Number</label>
-                    <input type="text" id="licenseNumber" value="DS-2025-ADMIN-001" placeholder="DS-2025-ADMIN-001">
-                </div>
-
-                <button onclick="handleLogin()" style="width: 100%; padding: 12px; background-color: #0066cc; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 20px;">Login Terminal</button>
-
-                <div style="margin-top: 20px; padding: 12px; background-color: #f0f0f0; border-radius: 6px; font-size: 11px; color: #666;">
-                    <strong>Demo Licenses:</strong><br>
-                    DS-2025-ADMIN-001 (Admin)<br>
-                    DS-2025-EMPLOYEE-002 (Employee)
-                </div>
+    </div>
+    <div class="flex-1 bg-gray-100 flex items-center justify-center p-12">
+        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-black mb-2">Login</h2>
+            <div class="space-y-4 mt-6">
+                <div><label class="text-xs font-bold text-gray-500 uppercase">Email</label>
+                <input type="email" id="loginEmail" class="w-full border p-3 rounded-lg mt-1" value="admin@dockside.com"></div>
+                <div><label class="text-xs font-bold text-gray-500 uppercase">License</label>
+                <input type="text" id="licenseNumber" class="w-full border p-3 rounded-lg mt-1" value="DS-2025-ADMIN-001"></div>
+                <button onclick="handleLogin()" class="w-full bg-amber-600 text-white font-black py-4 rounded-lg uppercase tracking-widest hover:bg-amber-700 transition">Enter Terminal</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MAIN APP (HIDDEN BY DEFAULT) -->
 <div id="mainApp" style="display: none;">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-brand">DOCKSIDE</div>
-            <div class="sidebar-subtitle">Timber & Plywood OS</div>
+    <aside class="sidebar">
+        <div class="p-6 border-b border-neutral-800">
+            <div class="text-xl font-black italic">DOCKSIDE</div>
+            <div id="userRoleDisplay" class="text-[10px] text-amber-500 font-bold mt-1 uppercase">ADMIN</div>
         </div>
-
-        <div class="sidebar-nav" id="sidebarNav"></div>
-
-        <div class="sidebar-footer">
-            <button class="btn-add" onclick="openAddLotModal()">+ Add Lot</button>
+        <nav class="flex-1 py-6" id="sidebarNav"></nav>
+        <div class="p-6 border-t border-neutral-800">
+            <button onclick="openAddLotModal()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg text-xs">+ ADD STOCK</button>
         </div>
-    </div>
+    </aside>
 
-    <div class="main-container">
-        <div class="top-bar">
-            <div class="top-bar-left">
-                <div id="pageTitle" style="font-size: 16px; font-weight: 900;">Dashboard</div>
-                <input type="text" class="search-box" placeholder="🔍 Search SKU / Product Name">
+    <main class="main-container">
+        <header class="h-20 bg-white border-b flex items-center justify-between px-10">
+            <div class="flex items-center gap-6">
+                <h3 id="pageTitle" class="font-black uppercase text-sm tracking-tighter">Dashboard</h3>
+                <input type="text" placeholder="Search SKU or Lot..." class="bg-gray-100 px-4 py-2 rounded-lg text-xs w-64 border-none focus:ring-2 focus:ring-amber-500">
             </div>
-            <div class="top-bar-right">
-                <button class="icon-btn">🔔</button>
-                <button class="icon-btn">⚙️</button>
-                <div class="user-badge" id="userInitial">A</div>
+            <div class="flex items-center gap-4">
+                <div class="text-right"><div id="userNameDisplay" class="text-xs font-bold">Admin</div><div class="text-[9px] text-green-500 font-bold">● SYSTEM LIVE</div></div>
+                <div id="userInitial" class="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center font-black text-white">A</div>
             </div>
-        </div>
-
-        <div class="content" id="mainContent"></div>
-    </div>
+        </header>
+        <div id="mainContent" class="p-10 overflow-y-auto"></div>
+    </main>
 </div>
 
-<!-- ADD LOT MODAL -->
 <div id="addLotModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">📦 Add New Timber Lot</div>
-            <button class="close-btn" onclick="closeAddLotModal()">✕</button>
+    <div class="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl">
+        <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="font-black uppercase tracking-tight">Create Timber Lot</h3>
+            <button onclick="closeAddLotModal()" class="text-gray-400 hover:text-black text-2xl">×</button>
         </div>
-        <div class="modal-body">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Product Name *</label>
-                    <input type="text" id="lotProductName" placeholder="e.g., Teak Logs">
-                </div>
-                <div class="form-group">
-                    <label>Product Type *</label>
-                    <select id="lotType">
-                        <option value="log">Log</option>
-                        <option value="sawn">Sawn Timber</option>
-                        <option value="plywood">Plywood</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>HSN Code *</label>
-                    <select id="hsnCode">
-                        <option value="">Select HSN</option>
-                        <option value="4403">4403 - Logs</option>
-                        <option value="4407">4407 - Sawn Timber</option>
-                        <option value="4412">4412 - Plywood</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Quantity (CBM/SqFt) *</label>
-                    <input type="number" id="lotQuantity" placeholder="0.00" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Rate (₹) *</label>
-                    <input type="number" id="lotRate" placeholder="0.00" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Warehouse *</label>
-                    <select id="lotWarehouse">
-                        <option>Plot 10 (North)</option>
-                        <option>Plot 12 (Central)</option>
-                        <option>Plot 15 (Port)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Container Number</label>
-                    <input type="text" id="containerNumber" placeholder="CONT-2025-001">
-                </div>
-                <div class="form-group">
-                    <label>BL Number</label>
-                    <input type="text" id="blNumber" placeholder="BL-123456">
-                </div>
+        <div class="p-8 grid grid-cols-2 gap-6">
+            <div class="col-span-2 flex gap-2">
+                <button id="btnLog" onclick="setEntryType('log')" class="flex-1 border-2 border-amber-600 bg-amber-50 p-3 rounded-lg font-bold text-xs">🌳 LOG (Hoppus)</button>
+                <button id="btnSawn" onclick="setEntryType('sawn')" class="flex-1 border-2 border-gray-200 p-3 rounded-lg font-bold text-xs">📏 SAWN</button>
+                <button id="btnPly" onclick="setEntryType('plywood')" class="flex-1 border-2 border-gray-200 p-3 rounded-lg font-bold text-xs">📋 PLYWOOD</button>
             </div>
+            <div><label class="text-[10px] font-bold text-gray-400 uppercase">Product Name</label>
+            <input type="text" id="lotProductName" class="w-full border p-2 rounded mt-1 text-sm"></div>
+            <div><label class="text-[10px] font-bold text-gray-400 uppercase">Warehouse</label>
+            <select id="lotWarehouse" class="w-full border p-2 rounded mt-1 text-sm">
+                <option>Plot 10 (North)</option><option>Plot 12 (Central)</option><option>Plot 15 (Port)</option>
+            </select></div>
+            <div id="calcFields" class="col-span-2 grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase">Length (ft)</label>
+                <input type="number" id="valL" class="w-full border p-2 rounded mt-1 text-sm" oninput="runCalculator()"></div>
+                <div><label id="labelW" class="text-[10px] font-bold text-gray-400 uppercase">Girth (in)</label>
+                <input type="number" id="valW" class="w-full border p-2 rounded mt-1 text-sm" oninput="runCalculator()"></div>
+            </div>
+            <div><label class="text-[10px] font-bold text-gray-400 uppercase">Final Qty (CBM/SqFt)</label>
+            <input type="number" id="lotQuantity" class="w-full border p-2 rounded mt-1 text-sm bg-gray-100 font-bold" readonly></div>
+            <div><label class="text-[10px] font-bold text-gray-400 uppercase">Rate (₹)</label>
+            <input type="number" id="lotRate" class="w-full border p-2 rounded mt-1 text-sm"></div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeAddLotModal()">Cancel</button>
-            <button class="btn-save" onclick="saveLot()">Create Lot</button>
+        <div class="p-6 border-t flex justify-end gap-3 bg-gray-50">
+            <button onclick="closeAddLotModal()" class="px-6 py-2 text-xs font-bold text-gray-500 uppercase">Cancel</button>
+            <button onclick="saveLot()" class="px-8 py-2 bg-amber-600 text-white rounded-lg text-xs font-black uppercase">Create Lot</button>
         </div>
     </div>
 </div>
 
 <script>
-    // ============== DATA STRUCTURE ==============
-    const erpDatabase = {
-        inventory: [],
-        warehouses: [
-            { name: 'Plot 10 (North)' },
-            { name: 'Plot 12 (Central)' },
-            { name: 'Plot 15 (Port)' }
-        ]
-    };
+    let erpDatabase = { inventory: [] };
+    let state = { authenticated: false, currentView: 'dashboard', userRole: 'admin', currentType: 'log' };
 
-    const state = {
-        authenticated: false,
-        currentView: 'dashboard',
-        userRole: 'admin',
-        licenseNumber: '',
-        userName: ''
-    };
-
-    // ============== LOGIN ==============
+    // --- FIX 1: RESTORE LOGIN & SIDEBAR ---
     function handleLogin() {
-        const email = document.getElementById('loginEmail').value;
         const license = document.getElementById('licenseNumber').value;
-
-        if (!email || !license) {
-            alert('Please fill all fields');
-            return;
-        }
-
-        const validLicenses = {
-            'DS-2025-ADMIN-001': 'admin',
-            'DS-2025-EMPLOYEE-002': 'employee'
-        };
-
-        if (!validLicenses[license]) {
-            alert('Invalid license');
-            return;
-        }
-
-        state.authenticated = true;
-        state.userRole = validLicenses[license];
-        state.licenseNumber = license;
-        state.userName = email.split('@')[0];
-
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'flex';
-        document.getElementById('userInitial').textContent = state.userName[0].toUpperCase();
-
-        loadSidebar();
-        renderDashboard();
+        const valid = {'DS-2025-ADMIN-001': 'admin', 'DS-2025-EMPLOYEE-002': 'employee'};
+        if (valid[license]) {
+            state.authenticated = true;
+            state.userRole = valid[license];
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('userRoleDisplay').textContent = state.userRole;
+            renderSidebar();
+            switchView('dashboard');
+        } else { alert("Invalid License"); }
     }
 
-    // ============== SIDEBAR ==============
-    function loadSidebar() {
-        const items = state.userRole === 'admin'
-            ? ['Dashboard', 'Inventory', 'Capital at Risk', 'Transit Timeline']
-            : ['Dashboard', 'Inventory', 'My Work'];
-
-        const html = items.map(item => `
-            <div class="nav-item ${state.currentView === item.toLowerCase().replace(/ /g, '-') ? 'active' : ''}" 
-                 onclick="switchView('${item.toLowerCase().replace(/ /g, '-')}')">
-                ${item}
-            </div>
+    function renderSidebar() {
+        const menu = state.userRole === 'admin' 
+            ? ['Dashboard', 'Inventory', 'Capital at Risk', 'Transit Timeline'] 
+            : ['Dashboard', 'Inventory'];
+        document.getElementById('sidebarNav').innerHTML = menu.map(m => `
+            <div class="nav-item ${state.currentView === m.toLowerCase() ? 'active' : ''}" onclick="switchView('${m.toLowerCase()}')">${m}</div>
         `).join('');
-
-        document.getElementById('sidebarNav').innerHTML = html;
     }
 
     function switchView(view) {
         state.currentView = view;
-        loadSidebar();
-
+        document.getElementById('pageTitle').textContent = view;
+        renderSidebar();
         if (view === 'dashboard') renderDashboard();
         else if (view === 'inventory') renderInventory();
         else if (view === 'capital-at-risk') renderCapitalAtRisk();
-        else if (view === 'transit-timeline') renderTransitTimeline();
     }
 
-    // ============== DASHBOARD ==============
+    // --- FIX 2: REBUILD TALLY ENGINE ---
+    function setEntryType(type) {
+        state.currentType = type;
+        const btns = {log: 'btnLog', sawn: 'btnSawn', plywood: 'btnPly'};
+        Object.values(btns).forEach(b => document.getElementById(b).className = "flex-1 border-2 border-gray-200 p-3 rounded-lg font-bold text-xs");
+        document.getElementById(btns[type]).className = "flex-1 border-2 border-amber-600 bg-amber-50 p-3 rounded-lg font-bold text-xs";
+        document.getElementById('labelW').textContent = type === 'log' ? 'Girth (in)' : (type === 'plywood' ? 'Width (ft)' : 'Width (in)');
+        runCalculator();
+    }
+
+    function runCalculator() {
+        const l = parseFloat(document.getElementById('valL').value) || 0;
+        const w = parseFloat(document.getElementById('valW').value) || 0;
+        let qty = 0;
+        if (state.currentType === 'log') qty = (Math.pow(w/4, 2) * l) / 144; // Hoppus
+        else if (state.currentType === 'plywood') qty = l * w; // SqFt
+        document.getElementById('lotQuantity').value = qty.toFixed(3);
+    }
+
+    // --- FIX 3: RENDER DASHBOARD (THE EXECUTIVE COMMAND STRIP) ---
     function renderDashboard() {
-        document.getElementById('pageTitle').textContent = 'Dashboard';
-
-        const totalValue = erpDatabase.inventory.reduce((sum, i) => sum + (i.quantity * i.rate), 0);
-        const totalQuantity = erpDatabase.inventory.reduce((sum, i) => sum + i.quantity, 0);
-        const inTransit = erpDatabase.inventory.filter(i => i.stage !== 'In Plot').length;
-
-        const html = `
-            <div class="page-title">Dashboard</div>
-            
-            <div class="grid-4">
-                <div class="card">
-                    <div class="card-title">Total Inventory Value</div>
-                    <div class="card-value">₹${(totalValue/100000).toFixed(1)}L</div>
-                    <div class="card-chart"></div>
-                    <div class="card-subtitle">Torbud Stecs</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Total Quantity</div>
-                    <div class="card-value">${totalQuantity.toLocaleString()}</div>
-                    <div class="card-chart"></div>
-                    <div class="card-subtitle">Total Units</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">In Transit</div>
-                    <div class="card-value">${inTransit}</div>
-                    <div class="card-chart"></div>
-                    <div class="card-subtitle">Active Shipments</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Available Cash</div>
-                    <div class="card-value">₹3,199</div>
-                    <div class="card-chart"></div>
-                    <div class="card-subtitle">1,151 | 300pm</div>
-                </div>
+        const inv = erpDatabase.inventory;
+        const totalVal = inv.reduce((s, i) => s + (i.quantity * i.rate), 0);
+        document.getElementById('mainContent').innerHTML = `
+            <div class="grid grid-cols-4 gap-6 mb-10">
+                <div class="card"><div class="text-[10px] font-black text-gray-400 uppercase mb-2">Total Inventory Value</div>
+                <div class="text-3xl font-black italic">₹${(totalVal/100000).toFixed(2)}L</div></div>
+                <div class="card"><div class="text-[10px] font-black text-gray-400 uppercase mb-2">Active Lots</div>
+                <div class="text-3xl font-black">${inv.length}</div></div>
+                <div class="card border-l-4 border-red-500"><div class="text-[10px] font-black text-gray-400 uppercase mb-2 text-red-500">Capital at Risk</div>
+                <div class="text-3xl font-black text-red-600">₹0.00L</div></div>
+                <div class="card"><div class="text-[10px] font-black text-gray-400 uppercase mb-2">Fleet Availability</div>
+                <div class="text-3xl font-black">100%</div></div>
             </div>
-
-            <div class="section-header">
-                <div class="section-title">Inventory Overview</div>
-                <select class="btn-secondary" style="padding: 6px 12px;">
-                    <option>Pack Itiner</option>
-                </select>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Lot #</th>
-                            <th>Product Name</th>
-                            <th>Quantity</th>
-                            <th>Warehouse</th>
-                            <th>Value (₹)</th>
-                            <th>Stage</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${erpDatabase.inventory.slice(0, 5).map(item => `
-                            <tr>
-                                <td><strong>${item.id}</strong></td>
-                                <td>${item.productName}</td>
-                                <td>${item.quantity}</td>
-                                <td>${item.warehouse}</td>
-                                <td>₹${(item.quantity * item.rate).toLocaleString()}</td>
-                                <td><span class="status-badge ${item.stage === 'In Plot' ? 'status-in-plot' : 'status-in-transit'}">${item.stage}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        document.getElementById('mainContent').innerHTML = html;
+            <div class="card"><h4 class="font-black uppercase mb-6 text-xs">Recent Movements</h4>
+            <table class="w-full text-left text-xs">
+                <thead><tr class="text-gray-400 border-b"><th class="pb-4">LOT #</th><th class="pb-4">PRODUCT</th><th class="pb-4">QTY</th><th class="pb-4">STATUS</th></tr></thead>
+                <tbody>${inv.map(i => `<tr class="border-b"><td class="py-4 font-bold">${i.id}</td><td>${i.productName}</td><td>${i.quantity} ${i.unit}</td><td><span class="status-badge status-in-plot">In Plot</span></td></tr>`).join('')}</tbody>
+            </table></div>`;
     }
 
-    // ============== INVENTORY ==============
-    function renderInventory() {
-        document.getElementById('pageTitle').textContent = 'Inventory Management';
-
-        const html = `
-            <div class="page-title">Inventory Management</div>
-
-            <div class="section-header" style="margin-bottom: 30px;">
-                <div>
-                    <div class="section-title">Multi-Yard View</div>
-                    <select class="btn-secondary" style="margin-top: 10px; padding: 6px 12px;">
-                        <option>Yard A</option>
-                        <option>Yard B</option>
-                        <option>Consolidated</option>
-                    </select>
-                </div>
-                <button class="btn-primary" onclick="openAddLotModal()">+ Add Stock</button>
-            </div>
-
-            <div class="grid-3" style="margin-bottom: 30px;">
-                <div class="card">
-                    <div class="card-title">Total Inventory Value</div>
-                    <div style="font-size: 24px; font-weight: 900;">₹12,45,678</div>
-                    <div class="card-subtitle">Torbud Stecs</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Total Stock Quantity</div>
-                    <div style="font-size: 24px; font-weight: 900;">45,678 units</div>
-                    <div class="card-subtitle">Toril Stecs</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Dead Stock (90d+)</div>
-                    <div style="font-size: 24px; font-weight: 900; color: #dc2626;">1,234 units</div>
-                    <div class="card-subtitle">Torbusul Stecs</div>
-                </div>
-            </div>
-
-            <div class="section-header">
-                <div class="section-title">Stock Details</div>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>SKU Code</th>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Current Stock</th>
-                            <th>Reserved Stock</th>
-                            <th>Dead Stock</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${erpDatabase.inventory.map((item, idx) => `
-                            <tr>
-                                <td><strong>SKU-${String(idx+1).padStart(3,'0')}</strong></td>
-                                <td>${item.productName}</td>
-                                <td>${item.type}</td>
-                                <td>${item.quantity} ${item.quantity > 1000 ? 'Prm' : 'Unt'}</td>
-                                <td>2,345 units</td>
-                                <td>07,345 umm</td>
-                                <td>${new Date(item.createdAt).toLocaleDateString()}</td>
-                                <td><button class="btn-secondary" style="padding: 4px 12px; font-size: 11px;">Excel</button></td>
-                            </tr>
-                        `).join('')}
-                        ${erpDatabase.inventory.length === 0 ? '<tr><td colspan="8" style="text-align: center; color: #999; padding: 30px;">No inventory yet. Click + Add Stock to create one.</td></tr>' : ''}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        document.getElementById('mainContent').innerHTML = html;
-    }
-
-    // ============== CAPITAL AT RISK ==============
-    function renderCapitalAtRisk() {
-        document.getElementById('pageTitle').textContent = 'Capital at Risk';
-
-        const inventory60Plus = erpDatabase.inventory.filter(i => {
-            const age = Math.floor((new Date() - new Date(i.createdAt)) / (1000 * 60 * 60 * 24));
-            return age >= 60;
-        });
-
-        const totalRisk = inventory60Plus.reduce((sum, i) => sum + (i.quantity * i.rate), 0);
-        const riskScore = inventory60Plus.length > 0 ? 74 : 10;
-
-        const html = `
-            <div class="page-title">Capital at Risk</div>
-            <div style="font-size: 12px; color: #999; margin-bottom: 30px;">Automatic financial exposure detection based on live operational data</div>
-
-            <div class="risk-summary">
-                <div class="risk-item">
-                    <div class="risk-label">Overall Capital Risk Score</div>
-                    <div class="risk-score">${riskScore}/100</div>
-                    <div class="risk-label" style="color: #d97706;">Risk Level: ${riskScore > 70 ? 'HIGH' : 'MEDIUM'}</div>
-                </div>
-                <div class="risk-item">
-                    <div class="risk-label">Total Capital Blocked (60+ days)</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #dc2626;">₹${(totalRisk/100000).toFixed(1)}L</div>
-                    <div class="risk-label">${inventory60Plus.length} lots at risk</div>
-                </div>
-            </div>
-
-            <div class="grid-2" style="margin-bottom: 30px;">
-                <div class="card">
-                    <div class="risk-label">Inventory Risk</div>
-                    <div class="risk-percentage">74%</div>
-                    <div class="risk-bar-container">
-                        <div class="risk-bar-fill" style="width: 74%;"></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="risk-label">Receivable Risk</div>
-                    <div class="risk-percentage">68%</div>
-                    <div class="risk-bar-container">
-                        <div class="risk-bar-fill" style="width: 68%;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-header">
-                <div class="section-title">Inventory Capital Exposure</div>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th>Product Name</th>
-                            <th>Warehouse</th>
-                            <th>Inventory Value (₹)</th>
-                            <th>Days Since Last Movement</th>
-                            <th>% of Total Capital</th>
-                            <th>Risk Score</th>
-                            <th>Risk Level</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${inventory60Plus.map((item, idx) => {
-                            const age = Math.floor((new Date() - new Date(item.createdAt)) / (1000 * 60 * 60 * 24));
-                            const value = item.quantity * item.rate;
-                            const risk = age > 90 ? 'Days > 90' : 'Days > 60';
-                            return `
-                                <tr>
-                                    <td>${idx + 1}</td>
-                                    <td><strong>${item.productName}</strong></td>
-                                    <td>${item.warehouse}</td>
-                                    <td>₹${value.toLocaleString()}</td>
-                                    <td>${age}</td>
-                                    <td>45,000</td>
-                                    <td>${age > 90 ? '90+' : '60-90'}</td>
-                                    <td><span class="status-badge ${age > 90 ? 'risk-high' : 'risk-medium'}">${risk}</span></td>
-                                </tr>
-                            `;
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        document.getElementById('mainContent').innerHTML = html;
-    }
-
-    // ============== TRANSIT TIMELINE ==============
-    function renderTransitTimeline() {
-        document.getElementById('pageTitle').textContent = 'Transit Timeline';
-
-        const html = `
-            <div class="page-title">Transit Timeline</div>
-            <div style="font-size: 12px; color: #999; margin-bottom: 30px;">Monitor all vehicle movements and cargo details</div>
-
-            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                <input type="text" class="search-box" placeholder="🔍 Search by Vehicle No / Driver Name / Supplier / Dispatch ID" style="flex: 1; width: auto;">
-                <select class="btn-secondary" style="padding: 8px 12px;">
-                    <option>All Status</option>
-                    <option>In Transit</option>
-                    <option>Delivered</option>
-                </select>
-                <button class="btn-primary" onclick="alert('Create Dispatch Modal')">+ Create Dispatch</button>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vehicle Number</th>
-                            <th>Driver Name</th>
-                            <th>Cargo Type</th>
-                            <th>Supplier Name</th>
-                            <th>Destination Yard</th>
-                            <th>Dispatch Date</th>
-                            <th>Estimated Arrival</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${erpDatabase.inventory.map((item, idx) => `
-                            <tr>
-                                <td><strong>MH-${String(idx+1).padStart(2,'0')}-XY${idx+1}</strong></td>
-                                <td>Driver Name</td>
-                                <td>${item.type === 'log' ? 'Timber Logs' : 'Plywood Sheets'}</td>
-                                <td>${item.warehouse}</td>
-                                <td>Pertinal Narrd</td>
-                                <td>${new Date(item.createdAt).toLocaleDateString()}</td>
-                                <td>1824.${100 + idx}</td>
-                                <td>
-                                    <span class="status-badge ${item.stage === 'In Plot' ? 'status-in-plot' : 'status-in-transit'}">
-                                        ${item.stage === 'In Plot' ? '✓ Delivered' : item.stage}
-                                    </span>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        document.getElementById('mainContent').innerHTML = html;
-    }
-
-    // ============== MODALS ==============
-    function openAddLotModal() {
-        document.getElementById('addLotModal').classList.add('show');
-    }
-
-    function closeAddLotModal() {
-        document.getElementById('addLotModal').classList.remove('show');
-    }
-
+    // --- MODAL CONTROLS ---
+    function openAddLotModal() { document.getElementById('addLotModal').classList.add('show'); }
+    function closeAddLotModal() { document.getElementById('addLotModal').classList.remove('show'); }
+    
     function saveLot() {
-        const productName = document.getElementById('lotProductName').value;
-        const type = document.getElementById('lotType').value;
-        const hsnCode = document.getElementById('hsnCode').value;
-        const quantity = parseFloat(document.getElementById('lotQuantity').value);
-        const rate = parseFloat(document.getElementById('lotRate').value);
-        const warehouse = document.getElementById('lotWarehouse').value;
-        const containerNumber = document.getElementById('containerNumber').value;
-        const blNumber = document.getElementById('blNumber').value;
-
-        if (!productName || !quantity || !rate || !hsnCode) {
-            alert('Please fill required fields');
-            return;
-        }
-
-        const newLot = {
-            id: `LOT-${Date.now().toString().slice(-6)}`,
-            productName,
-            type,
-            hsnCode,
-            quantity,
-            rate,
-            warehouse,
-            containerNumber,
-            blNumber,
-            stage: 'At Port',
+        const lot = {
+            id: 'LOT-' + Date.now().toString().slice(-4),
+            productName: document.getElementById('lotProductName').value,
+            quantity: parseFloat(document.getElementById('lotQuantity').value),
+            rate: parseFloat(document.getElementById('lotRate').value) || 0,
+            unit: state.currentType === 'plywood' ? 'SqFt' : 'CBM',
             createdAt: new Date().toISOString()
         };
-
-        erpDatabase.inventory.push(newLot);
+        erpDatabase.inventory.push(lot);
         closeAddLotModal();
-
-        document.getElementById('lotProductName').value = '';
-        document.getElementById('lotQuantity').value = '';
-        document.getElementById('lotRate').value = '';
-
-        alert(`✓ Lot ${newLot.id} created successfully!`);
         renderDashboard();
     }
-
-    // ============== INITIALIZE ==============
-    // Demo data
-    erpDatabase.inventory = [
-        { id: 'LOT-001', productName: 'Teak Logs', type: 'log', hsnCode: '4403', quantity: 450, rate: 5000, warehouse: 'Plot 10', containerNumber: 'CONT-001', blNumber: 'BL-001', stage: 'In Transit', createdAt: new Date(Date.now() - 45*24*60*60*1000).toISOString() },
-        { id: 'LOT-002', productName: 'Plywood Sheets', type: 'plywood', hsnCode: '4412', quantity: 320, rate: 3500, warehouse: 'Plot 12', containerNumber: 'CONT-002', blNumber: 'BL-002', stage: 'In Plot', createdAt: new Date(Date.now() - 15*24*60*60*1000).toISOString() },
-        { id: 'LOT-003', productName: 'Pine Timber', type: 'sawn', hsnCode: '4407', quantity: 280, rate: 4200, warehouse: 'Plot 15', containerNumber: 'CONT-003', blNumber: 'BL-003', stage: 'In Transit', createdAt: new Date(Date.now() - 70*24*60*60*1000).toISOString() }
-    ];
 </script>
-
 </body>
 </html>
