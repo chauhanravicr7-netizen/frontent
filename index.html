@@ -333,6 +333,41 @@
             text-align: center;
         }
 
+        .ai-assistant {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .ai-assistant-title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .ai-assistant textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            font-size: 12px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+        }
+
+        .ai-assistant button {
+            background-color: white;
+            color: #667eea;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
@@ -458,13 +493,13 @@
                 <div class="py-10">
                     <div class="form-row"><label class="form-label">Email</label><input type="email" class="form-input-login" id="loginEmail" value="admin@dockside.com"></div>
                     <div class="form-row"><label class="form-label">Password</label><input type="password" class="form-input-login" id="loginPassword" value="demo123456"></div>
-                    <div class="form-row"><label class="form-label">License No</label><input type="text" class="form-input-login" id="licenseNumber" value="DS-2025-001-ADMIN" placeholder="Enter License Number"></div>
-                    <div class="form-row"><label class="form-label">Role</label><select class="form-input-login" id="loginRole"><option value="admin">Admin</option><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+                    <div class="form-row"><label class="form-label">License No</label><input type="text" class="form-input-login" id="licenseNumber" value="DS-2025-ADMIN-001" placeholder="Enter License Number"></div>
                     <div class="flex justify-center mt-8 pt-8 border-t border-slate-300">
                         <button onclick="handleLogin()" class="action-btn-login uppercase">Login Terminal</button>
                     </div>
                     <div class="license-info">
-                        <strong>License Active:</strong> DS-2025-001 | Valid Until: 31-Dec-2025
+                        <strong>Available Licenses:</strong><br>
+                        DS-2025-ADMIN-001 | DS-2025-EMPLOYEE-002 | Valid Until: 31-Dec-2025
                     </div>
                 </div>
             </div>
@@ -495,10 +530,11 @@
     let state = {
         authenticated: false,
         currentView: 'dashboard',
-        userRole: 'admin',
+        userRole: 'admin', // 'admin' or 'employee'
         licenseNumber: '',
         companyId: 'COMP-001',
         userId: 'USER-001',
+        userName: '',
         inventory: [],
         orders: [],
         templateSettings: {
@@ -625,6 +661,55 @@
         return '#10b981';
     }
 
+    // ============== AI FINANCE ADVISOR ==============
+    function getAIFinanceAdvice() {
+        const totalInventoryValue = state.inventory.reduce((sum, i) => sum + i.amount, 0);
+        const averageOrderValue = state.inventory.length > 0 ? totalInventoryValue / state.inventory.length : 0;
+        const deadStockItems = state.inventory.filter(i => calculateStockAge(i.createdAt) >= 60).length;
+
+        let advice = `📊 **Finance Advisory Report**\n\n`;
+        advice += `💰 Total Inventory Value: ₹${totalInventoryValue.toLocaleString('en-IN')}\n`;
+        advice += `📦 Average Order Value: ₹${averageOrderValue.toLocaleString('en-IN', {maximumFractionDigits: 0})}\n`;
+        advice += `⚠️ Dead Stock Items (60+ days): ${deadStockItems}\n\n`;
+
+        if (deadStockItems > 0) {
+            advice += `🎯 ACTION REQUIRED: You have ${deadStockItems} items in dead stock for 60+ days.\n`;
+            advice += `💡 Recommendation: Consider liquidation or special discounts to free up capital.\n\n`;
+        }
+
+        if (totalInventoryValue > 500000) {
+            advice += `⚡ HIGH CAPITAL LOCK: Your inventory is utilizing significant capital.\n`;
+            advice += `💡 Recommendation: Optimize stock levels and accelerate sales.\n\n`;
+        }
+
+        advice += `📈 Next Review: Check daily for inventory optimization.\n`;
+        advice += `✅ System maintains real-time ledger & dead stock alerts.`;
+
+        return advice;
+    }
+
+    function askAIAssistant() {
+        const question = document.getElementById('aiQuestion').value;
+        if (!question.trim()) {
+            alert('Please ask a question');
+            return;
+        }
+
+        let response = '';
+        
+        if (question.toLowerCase().includes('finance') || question.toLowerCase().includes('revenue')) {
+            response = getAIFinanceAdvice();
+        } else if (question.toLowerCase().includes('inventory') || question.toLowerCase().includes('stock')) {
+            response = `📦 **Inventory Analysis**\n\nTotal Items: ${state.inventory.length}\nTotal Value: ₹${state.inventory.reduce((s, i) => s + i.amount, 0)}\n\nRecommendation: Regular stock audits and proper warehouse organization.`;
+        } else if (question.toLowerCase().includes('analysis')) {
+            response = getAIFinanceAdvice();
+        } else {
+            response = `🤖 AI Assistant Response\n\nBased on your query: "${question}"\n\n${getAIFinanceAdvice()}`;
+        }
+
+        document.getElementById('aiResponse').value = response;
+    }
+
     // ============== PERSISTENCE ==============
     function loadFromLocalStorage() {
         const saved = localStorage.getItem('dockside_erp_state');
@@ -702,20 +787,17 @@
     }
 
     function validateLicense(licenseNum) {
-        const validLicenses = [
-            'DS-2025-001-ADMIN',
-            'DS-2025-002-BUYER',
-            'DS-2025-003-SELLER',
-            'DS-2025-004-ADMIN',
-            'DEMO-2025-001'
-        ];
-        return validLicenses.includes(licenseNum.trim());
+        const validLicenses = {
+            'DS-2025-ADMIN-001': 'admin',
+            'DS-2025-EMPLOYEE-002': 'employee',
+            'DEMO-2025-001': 'admin'
+        };
+        return validLicenses[licenseNum.trim()];
     }
 
     function handleLogin() {
         const email = document.getElementById('loginEmail').value;
         const license = document.getElementById('licenseNumber').value;
-        const role = document.getElementById('loginRole').value;
         
         if (!email.trim()) {
             alert('❌ Please enter email');
@@ -727,14 +809,16 @@
             return;
         }
 
-        if (!validateLicense(license)) {
-            alert('❌ Invalid License Number\n\nValid Licenses:\nDS-2025-001-ADMIN\nDS-2025-002-BUYER\nDS-2025-003-SELLER\nDS-2025-004-ADMIN\nDEMO-2025-001');
+        const role = validateLicense(license);
+        if (!role) {
+            alert('❌ Invalid License Number\n\nValid Licenses:\nDS-2025-ADMIN-001 (Admin)\nDS-2025-EMPLOYEE-002 (Employee)\nDEMO-2025-001 (Demo)');
             return;
         }
 
         state.authenticated = true;
         state.userRole = role;
         state.licenseNumber = license;
+        state.userName = email.split('@')[0];
         loadFromLocalStorage();
         saveToLocalStorage();
         renderShell();
@@ -746,17 +830,16 @@
     }
 
     function getRoleBasedSections() {
-        const sections = {
-            admin: ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Settings'],
-            buyer: ['Dashboard', 'Inventory', 'Orders', 'Transit'],
-            seller: ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance']
-        };
-        return sections[state.userRole] || sections.admin;
+        if (state.userRole === 'admin') {
+            return ['Dashboard', 'Inventory', 'Orders', 'Transit', 'Finance', 'Analysis', 'AI Advisor', 'Settings'];
+        } else {
+            return ['Dashboard', 'Inventory', 'Orders', 'Transit', 'My Work'];
+        }
     }
 
     function generateInvoice(type, data) {
         const isGST = state.templateSettings.templateStyle === 'modern';
-        const invoiceType = state.userRole === 'buyer' ? 'PURCHASE INVOICE' : 'TAX INVOICE (SALES)';
+        const invoiceType = state.userRole === 'employee' ? 'WORK ORDER' : 'TAX INVOICE (SALES)';
         
         const items = data.items || [{
             description: data.product || data.cargo || 'Service',
@@ -924,9 +1007,9 @@
         if (!state.authenticated) return;
         const sections = getRoleBasedSections();
         const navItems = sections.map(item => `
-            <button onclick="switchView('${item.toLowerCase()}')" 
+            <button onclick="switchView('${item.toLowerCase().replace(/ /g, '_')}')" 
                 class="w-full text-left px-5 py-3 rounded text-[10px] font-black uppercase tracking-widest transition-all
-                ${state.currentView === item.toLowerCase() ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
+                ${state.currentView === item.toLowerCase().replace(/ /g, '_') ? 'bg-amber-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'}">
                 ${item}
             </button>
         `).join('');
@@ -936,7 +1019,8 @@
             <aside class="w-64 bg-[#E5E7EB] border-r border-gray-300 flex flex-col z-30 shadow-lg">
                 <div class="p-8">
                     <h2 class="text-2xl font-black text-gray-800 italic-brand uppercase tracking-tighter">DOCKSIDE</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 10px; color: #666; font-weight: bold;">${state.userRole.toUpperCase()}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 10px; color: #666; font-weight: bold;">${state.userRole === 'admin' ? '👑 ADMIN' : '👤 EMPLOYEE'}</p>
+                    <p style="margin: 3px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">User: ${state.userName}</p>
                     <p style="margin: 3px 0 0 0; font-size: 9px; color: #999; font-weight: bold;">License: ${state.licenseNumber}</p>
                 </div>
                 <nav class="flex-1 px-4 space-y-1">
@@ -947,12 +1031,16 @@
                         <button onclick="openModal('addStockModal')" style="width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; margin-bottom: 8px;">+ Add Stock</button>
                         <button onclick="openSettings()" style="width: 100%; padding: 8px; background-color: #D97706; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">⚙️ SETTINGS</button>
                     </div>
-                ` : ''}
+                ` : `
+                    <div class="p-4 border-t border-gray-300">
+                        <button onclick="alert('✅ Work logged for ${state.userName}')" style="width: 100%; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">✓ Log Work</button>
+                    </div>
+                `}
             </aside>
 
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="h-16 flex items-center justify-between px-10 border-b border-gray-300 bg-white/80 backdrop-blur-md">
-                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView}</h3>
+                    <h3 class="text-xs font-black text-gray-800 uppercase tracking-[0.2em] italic">${state.currentView.replace(/_/g, ' ')}</h3>
                     <div class="flex items-center gap-4 text-[10px] font-black">
                         <span class="text-green-600 uppercase tracking-widest">● Live</span>
                         <div class="w-px h-6 bg-gray-300 mx-2"></div>
@@ -966,7 +1054,14 @@
 
     function renderMainContent() {
         if (state.currentView === 'dashboard') {
-            return `<div class="grid grid-cols-4 gap-6"><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div><div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Items</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div></div>`;
+            const totalValue = state.inventory.reduce((sum, i) => sum + i.amount, 0);
+            return `
+            <div class="grid grid-cols-4 gap-6">
+                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Orders</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.length}</h4></div>
+                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Total Value</p><h4 class="text-2xl font-black text-gray-800">₹${(totalValue/100000).toFixed(1)}L</h4></div>
+                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">Dead Stock</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.filter(i => calculateStockAge(i.createdAt) >= 60).length}</h4></div>
+                <div class="deck-panel p-6"><p class="text-[9px] font-black text-gray-400 uppercase mb-3">In Transit</p><h4 class="text-2xl font-black text-gray-800">${state.inventory.filter(i => i.status === 'Dispatched').length}</h4></div>
+            </div>`;
         } else if (state.currentView === 'inventory') {
             return `
             <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -984,7 +1079,7 @@
                             <th style="padding: 10px; text-align: right;">Amount</th>
                             <th style="padding: 10px; text-align: left;">Status</th>
                             <th style="padding: 10px; text-align: left;">Dead Stock</th>
-                            <th style="padding: 10px; text-align: center;">Action</th>
+                            <th style="padding: 10px; text-align: center;">View</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -994,12 +1089,12 @@
                             const color = getDeadStockColor(age, i.status);
                             return `
                                 <tr style="border-bottom: 1px solid #ddd;">
-                                    <td style="padding: 10px; cursor: pointer; color: #D97706; font-weight: bold;" onclick="openInvoiceView(${JSON.stringify(i).replace(/"/g, '&quot;')})">${i.orderNum}</td>
+                                    <td style="padding: 10px; cursor: pointer; color: #D97706; font-weight: bold;">${i.orderNum}</td>
                                     <td style="padding: 10px;">${i.product}</td>
                                     <td style="padding: 10px;">${i.party}</td>
                                     <td style="padding: 10px; text-align: right;">${i.quantity}</td>
                                     <td style="padding: 10px; text-align: right;">₹${i.amount.toLocaleString('en-IN')}</td>
-                                    <td style="padding: 10px;"><span class="status-badge status-${i.status.toLowerCase().replace(' ', '_')}">${i.status}</span></td>
+                                    <td style="padding: 10px;"><span class="status-badge status-${i.status.toLowerCase().replace(/ /g, '_')}">${i.status}</span></td>
                                     <td style="padding: 10px; color: ${color}; font-weight: bold; font-size: 10px;">${deadStockStatus || '—'}</td>
                                     <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(i).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
                                 </tr>
@@ -1018,18 +1113,54 @@
                             <th style="padding: 10px; text-align: left;">Order</th>
                             <th style="padding: 10px; text-align: left;">Cargo</th>
                             <th style="padding: 10px; text-align: right;">Amount</th>
+                            <th style="padding: 10px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${state.orders.map((o, idx) => `
-                            <tr style="border-bottom: 1px solid #ddd; cursor: pointer;" onclick="openInvoiceView(${JSON.stringify(o).replace(/"/g, '&quot;')})">
+                            <tr style="border-bottom: 1px solid #ddd;">
                                 <td style="padding: 10px;">${o.orderNum}</td>
                                 <td style="padding: 10px;">${o.cargo}</td>
                                 <td style="padding: 10px; text-align: right;">₹${o.amount.toLocaleString('en-IN')}</td>
+                                <td style="padding: 10px; text-align: center;"><button onclick="openInvoiceView(${JSON.stringify(o).replace(/"/g, '&quot;')})" style="color: #D97706; cursor: pointer; border: none; background: none; font-weight: bold;">📄</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+            </div>`;
+        } else if (state.currentView === 'transit') {
+            return `<div class="deck-panel p-6"><p style="margin: 0; font-size: 12px; color: #666;">🚚 Transit tracking and logistics monitoring coming soon...</p></div>`;
+        } else if (state.currentView === 'finance') {
+            return `<div class="deck-panel p-6"><p style="margin: 0; font-size: 12px; color: #666;">💰 Financial reports and statements coming soon...</p></div>`;
+        } else if (state.currentView === 'analysis') {
+            if (state.userRole !== 'admin') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Admin only</p></div>';
+            return `
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">📊 Inventory & Financial Analysis</h4>
+            <div class="deck-panel p-6">
+                <pre style="font-size: 11px; white-space: pre-wrap; word-wrap: break-word;">${getAIFinanceAdvice()}</pre>
+            </div>`;
+        } else if (state.currentView === 'ai_advisor') {
+            if (state.userRole !== 'admin') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Admin only</p></div>';
+            return `
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">🤖 AI Financial Advisor</h4>
+            <div class="ai-assistant">
+                <div class="ai-assistant-title">Ask AI Assistant</div>
+                <textarea id="aiQuestion" placeholder="Ask about finance, inventory, analysis, etc..." style="height: 60px; resize: none;"></textarea>
+                <button onclick="askAIAssistant()" style="width: 100%; padding: 8px; margin-bottom: 8px;">Get AI Advice</button>
+            </div>
+            <div class="deck-panel p-6" style="margin-top: 15px;">
+                <textarea id="aiResponse" placeholder="AI Response will appear here..." style="width: 100%; height: 300px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; font-size: 11px; resize: none;" readonly></textarea>
+            </div>`;
+        } else if (state.currentView === 'my_work') {
+            if (state.userRole !== 'employee') return '<div class="deck-panel p-6"><p style="margin: 0; color: red;">Access Denied: Employee only</p></div>';
+            return `
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">👤 My Work Log</h4>
+            <div class="deck-panel p-6">
+                <p style="margin: 0; font-size: 12px;">Employee: <strong>${state.userName}</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">Role: <strong>Employee</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">License: <strong>${state.licenseNumber}</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">Status: <strong>Active</strong></p>
+                <button onclick="alert('✅ Work logged successfully for today')" style="margin-top: 15px; padding: 8px 16px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">Log Daily Work</button>
             </div>`;
         }
         return '<p>Section content</p>';
@@ -1055,7 +1186,6 @@
             { orderNum: 'ORD-002', cargo: 'Pine Planks', buyer: 'XYZ Corp', amount: 35000, transport: 1500, misc: 300 }
         ];
         
-        // Initialize ERP database with demo data
         erpDatabase.inventoryStock = [
             { id: 'inv-1', companyId: 'COMP-001', itemId: 'item-001', yardId: 'yard-001', quantity: 100, lastStockInDate: state.inventory[0].createdAt, createdAt: state.inventory[0].createdAt, updatedAt: new Date().toISOString() },
             { id: 'inv-2', companyId: 'COMP-001', itemId: 'item-002', yardId: 'yard-002', quantity: 50, lastStockInDate: state.inventory[1].createdAt, createdAt: state.inventory[1].createdAt, updatedAt: new Date().toISOString() }
