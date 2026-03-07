@@ -1,2008 +1,1524 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import {
-  LayoutDashboard, Package, Warehouse, Briefcase, Truck, Building2, Users,
-  BarChart3, Sparkles, FileText, Settings, Menu, X, Moon, Sun, LogOut,
-  Package2, AlertCircle, Plus, Search, ChevronRight, TrendingUp, TrendingDown,
-  RefreshCw, Download, Eye, Edit2, Trash2, ArrowRight, Filter, ChevronDown,
-  DollarSign, Activity, ShoppingCart, Star, MapPin, Phone, Mail, Calendar,
-  Zap, CheckCircle, Clock, XCircle, Loader
-} from 'lucide-react';
-import {
-  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { BrowserRouter, Routes, Route, NavLink, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-// ─── API CLIENT ───────────────────────────────────────────────────────────────
-const api = axios.create({ baseURL: API_URL, headers: { 'Content-Type': 'application/json' } });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('dockside-token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+const API = import.meta.env.VITE_API_URL || "https://dockside-backend-1.onrender.com";
+const api = axios.create({ baseURL: API });
+api.interceptors.request.use(c => {
+  const t = localStorage.getItem("dockside-token");
+  if (t) c.headers.Authorization = `Bearer ${t}`;
+  return c;
 });
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
-const formatCurrency = (val) => {
-  if (!val && val !== 0) return '—';
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
-  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-  return `₹${val.toLocaleString('en-IN')}`;
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+const fmt = (n) => {
+  if (!n && n !== 0) return "—";
+  if (n >= 1e7) return `₹${(n / 1e7).toFixed(2)}Cr`;
+  if (n >= 1e5) return `₹${(n / 1e5).toFixed(2)}L`;
+  return `₹${Number(n).toLocaleString("en-IN")}`;
 };
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
+const cls = (...a) => a.filter(Boolean).join(" ");
+const today = () => new Date().toISOString().split("T")[0];
 
-const cls = (...args) => args.filter(Boolean).join(' ');
-
-// ─── SHARED UI COMPONENTS ─────────────────────────────────────────────────────
-const Spinner = ({ size = 5 }) => (
-  <Loader className={`w-${size} h-${size} animate-spin text-blue-500`} />
-);
-
-const PageLoader = ({ text = 'Loading...' }) => (
-  <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
-    <Spinner size={8} />
-    <span className="text-sm">{text}</span>
-  </div>
-);
-
-const EmptyState = ({ icon: Icon, title, description, action }) => (
-  <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
-    <Icon className="w-14 h-14 opacity-30" />
-    <p className="text-lg font-semibold text-gray-500">{title}</p>
-    {description && <p className="text-sm text-center max-w-xs">{description}</p>}
-    {action}
-  </div>
-);
-
-const ErrorBanner = ({ message, onRetry }) => (
-  <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
-    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-    <span className="flex-1">{message}</span>
-    {onRetry && <button onClick={onRetry} className="text-xs underline">Retry</button>}
-  </div>
-);
-
-// Slide-in Panel (used for Add forms)
-function SlidePanel({ open, onClose, title, children }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-full max-w-md bg-white dark:bg-slate-800 h-full shadow-2xl flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-          {children}
-        </div>
+// ── SHARED UI ──────────────────────────────────────────────────────────────────
+const SlidePanel = ({ title, open, onClose, children, wide }) => (
+  <>
+    {open && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />}
+    <div className={cls(
+      "fixed top-0 right-0 h-full bg-white shadow-2xl z-50 transition-transform duration-300 flex flex-col",
+      wide ? "w-[600px]" : "w-[480px]",
+      open ? "translate-x-0" : "translate-x-full"
+    )}>
+      <div className="flex items-center justify-between p-5 border-b bg-gray-50">
+        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 text-xl">×</button>
       </div>
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">{children}</div>
     </div>
-  );
-}
+  </>
+);
 
-// Pill tab filter
-function TabFilter({ tabs, value, onChange }) {
-  return (
-    <div className="flex gap-2 flex-wrap">
-      {tabs.map(tab => (
-        <button
-          key={tab.value}
-          onClick={() => onChange(tab.value)}
-          className={cls(
-            'px-4 py-2 rounded-lg text-sm font-semibold transition-all',
-            value === tab.value
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
-          )}
-        >
-          {tab.label} {tab.count !== undefined && <span className="ml-1 opacity-70">{tab.count}</span>}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// Form field helpers
 const Field = ({ label, required, children }) => (
-  <div className="space-y-1.5">
-    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+      {label}{required && <span className="text-red-500 ml-1">*</span>}
     </label>
     {children}
   </div>
 );
-
-const Input = (props) => (
-  <input
-    {...props}
+const Input = ({ ...p }) => <input {...p} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />;
+const Select = ({ children, ...p }) => <select {...p} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">{children}</select>;
+const Textarea = ({ ...p }) => <textarea {...p} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />;
+const Btn = ({ children, onClick, disabled, variant = "primary", small }) => (
+  <button onClick={onClick} disabled={disabled}
     className={cls(
-      'w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg text-sm',
-      'bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400',
-      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-      props.className
-    )}
-  />
+      "rounded-lg font-semibold transition-all disabled:opacity-50 cursor-pointer",
+      small ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm",
+      variant === "primary" && "bg-blue-600 hover:bg-blue-700 text-white",
+      variant === "secondary" && "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200",
+      variant === "danger" && "bg-red-600 hover:bg-red-700 text-white",
+      variant === "green" && "bg-green-600 hover:bg-green-700 text-white",
+    )}>{children}</button>
 );
 
-const Select = ({ children, ...props }) => (
-  <select
-    {...props}
-    className={cls(
-      'w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg text-sm',
-      'bg-white dark:bg-slate-700 text-gray-900 dark:text-white',
-      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-      props.className
-    )}
-  >
-    {children}
-  </select>
-);
-
-const Textarea = (props) => (
-  <textarea
-    {...props}
-    rows={3}
-    className={cls(
-      'w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg text-sm resize-none',
-      'bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400',
-      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-      props.className
-    )}
-  />
-);
-
-const BtnPrimary = ({ children, loading, ...props }) => (
-  <button
-    {...props}
-    disabled={loading || props.disabled}
-    className={cls(
-      'flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      props.className
-    )}
-  >
-    {loading && <Spinner size={4} />}
-    {children}
-  </button>
-);
-
-const BtnSecondary = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={cls(
-      'flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-slate-600',
-      'text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all',
-      props.className
-    )}
-  >
-    {children}
-  </button>
-);
-
-// ─── STATUS BADGE ─────────────────────────────────────────────────────────────
-const STATUS_COLORS = {
-  active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  inactive: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400',
-  draft: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400',
-  confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  dispatched: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  delivered: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  completed: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  created: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  loaded: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  in_transit: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  arrived: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-  negotiation: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  contract: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  closed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+const Badge = ({ text, color }) => {
+  const map = {
+    green: "bg-green-100 text-green-700",
+    blue: "bg-blue-100 text-blue-700",
+    yellow: "bg-yellow-100 text-yellow-700",
+    red: "bg-red-100 text-red-700",
+    purple: "bg-purple-100 text-purple-700",
+    gray: "bg-gray-100 text-gray-600",
+    orange: "bg-orange-100 text-orange-700",
+  };
+  const auto = {
+    draft: "gray", confirmed: "blue", dispatched: "orange", delivered: "green", completed: "green",
+    created: "gray", loaded: "blue", "in transit": "purple", arrived: "yellow", paid: "green", pending: "yellow", partial: "orange"
+  };
+  const c = color || auto[(text || "").toLowerCase()] || "gray";
+  return <span className={cls("px-2 py-0.5 rounded-full text-xs font-semibold", map[c] || map.gray)}>{text}</span>;
 };
 
-const Badge = ({ status, label }) => (
-  <span className={cls(
-    'px-2.5 py-1 rounded-full text-xs font-semibold capitalize',
-    STATUS_COLORS[status?.toLowerCase()] || 'bg-gray-100 text-gray-600'
-  )}>
-    {label || status || '—'}
-  </span>
-);
-
-// ─── TABLE WRAPPER ────────────────────────────────────────────────────────────
-const Table = ({ headers, children, empty }) => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-left text-sm">
-      <thead className="border-b border-gray-100 dark:border-slate-700">
-        <tr>
-          {headers.map(h => (
-            <th key={h} className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-50 dark:divide-slate-700/50">
-        {children}
-      </tbody>
-    </table>
-    {empty}
+const ErrBanner = ({ msg }) => msg ? (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-start gap-2">
+    <span className="mt-0.5">⚠</span><span>{msg}</span>
   </div>
-);
+) : null;
 
-const Tr = ({ children, onClick }) => (
-  <tr
-    onClick={onClick}
-    className={cls(
-      'hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors',
-      onClick && 'cursor-pointer'
-    )}
-  >
-    {children}
-  </tr>
-);
+const StatCard = ({ label, value, icon, color = "blue" }) => {
+  const c = { blue: "bg-blue-50 text-blue-600", green: "bg-green-50 text-green-600", orange: "bg-orange-50 text-orange-600", purple: "bg-purple-50 text-purple-600", red: "bg-red-50 text-red-600" };
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
+      <div className={cls("w-12 h-12 rounded-xl flex items-center justify-center text-xl", c[color])}>{icon}</div>
+      <div><p className="text-xs text-gray-400 uppercase tracking-wide">{label}</p><p className="text-xl font-bold text-gray-800 mt-0.5">{value}</p></div>
+    </div>
+  );
+};
 
-const Td = ({ children, className }) => (
-  <td className={cls('px-5 py-3.5 text-gray-700 dark:text-gray-300', className)}>
-    {children}
-  </td>
-);
+const Spinner = () => <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-// ─── LOGIN ────────────────────────────────────────────────────────────────────
-function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+// ── GST AUTOFILL COMPONENT ─────────────────────────────────────────────────────
+const GstLookup = ({ onFound }) => {
+  const [gst, setGst] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showPass, setShowPass] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  const [msg, setMsg] = useState("");
+  const lookup = async () => {
+    if (!gst.trim()) return;
+    setLoading(true); setMsg("");
     try {
-      const res = await api.post('/api/auth/login', { email, password });
-      localStorage.setItem('dockside-token', res.data.token);
-      localStorage.setItem('dockside-user', JSON.stringify(res.data.user));
-      onLogin();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      const { data } = await api.get(`/api/lookup/gst/${gst.trim()}`);
+      if (data) { onFound(data); setMsg(`✅ Found: ${data.name}`); }
+      else setMsg("❌ GST number not found in records");
+    } catch { setMsg("❌ Lookup failed"); }
+    finally { setLoading(false); }
+  };
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <p className="text-xs font-semibold text-blue-700 mb-2">🔍 GST Auto-Fill</p>
+      <div className="flex gap-2">
+        <input value={gst} onChange={e => setGst(e.target.value.toUpperCase())}
+          onKeyDown={e => e.key === "Enter" && lookup()}
+          placeholder="Type GST number & press Enter…"
+          className="flex-1 border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white uppercase" />
+        <Btn onClick={lookup} disabled={loading} small>{loading ? "…" : "Fill"}</Btn>
+      </div>
+      {msg && <p className="text-xs mt-1.5 text-blue-700">{msg}</p>}
+    </div>
+  );
+};
+
+// ── AUTOCOMPLETE INPUT ─────────────────────────────────────────────────────────
+const AutocompleteInput = ({ endpoint, placeholder, onSelect, value, onChange }) => {
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const search = async (q) => {
+    if (!q) { setSuggestions([]); return; }
+    try {
+      const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`);
+      setSuggestions(data || []);
+      setOpen(true);
+    } catch { }
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-950">
-      {/* Left decorative panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0e4d7a 100%)' }}>
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 20%, #06b6d4 0%, transparent 50%)' }} />
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
-            <Package2 className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-xl">Dockside</p>
-            <p className="text-blue-300 text-xs">Trade Operating System</p>
-          </div>
+    <div className="relative" ref={ref}>
+      <input value={value} onChange={e => { onChange(e.target.value); search(e.target.value); }}
+        placeholder={placeholder}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      {open && suggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto mt-1">
+          {suggestions.map(s => (
+            <button key={s.id} onClick={() => { onSelect(s); setOpen(false); onChange(s.name); }}
+              className="w-full text-left px-3 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-0">
+              <p className="font-semibold text-gray-800">{s.name}</p>
+              <p className="text-xs text-gray-400">{[s.city, s.gst_number].filter(Boolean).join(" · ")}</p>
+            </button>
+          ))}
         </div>
-        <div className="relative z-10 space-y-6">
-          <h1 className="text-4xl font-bold text-white leading-tight">
-            Manage your timber<br />operations smarter.
-          </h1>
-          <p className="text-blue-200 text-lg leading-relaxed">
-            Real-time inventory, transit tracking, deals pipeline and financial insights — all in one platform.
-          </p>
-          <div className="flex gap-6">
-            {[['₹10L+', 'Inventory Managed'], ['3', 'Active Yards'], ['100%', 'Uptime']].map(([val, label]) => (
-              <div key={label}>
-                <p className="text-2xl font-bold text-white">{val}</p>
-                <p className="text-blue-300 text-xs">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="relative z-10 text-blue-400 text-sm">© 2026 Dockside Trade OS. All rights reserved.</p>
-      </div>
-
-      {/* Right login form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-900">
-        <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-              <Package2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-gray-900 dark:text-white font-bold text-xl">Dockside</p>
-              <p className="text-gray-500 text-xs">Trade Operating System</p>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">Sign in to your account to continue</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Field label="Email address" required>
-              <Input
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                disabled={loading}
-                autoFocus
-              />
-            </Field>
-
-            <Field label="Password" required>
-              <div className="relative">
-                <Input
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
-                >
-                  {showPass ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </Field>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
-              </label>
-              <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </button>
-            </div>
-
-            {error && <ErrorBanner message={error} />}
-
-            <BtnPrimary type="submit" loading={loading} className="w-full justify-center py-3 text-base">
-              {loading ? 'Signing in...' : 'Sign in'}
-            </BtnPrimary>
-          </form>
-        </div>
-      </div>
+      )}
     </div>
   );
-}
+};
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+// ── SIDEBAR ────────────────────────────────────────────────────────────────────
 const NAV = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { path: '/inventory', icon: Package, label: 'Inventory' },
-  { path: '/yards', icon: Warehouse, label: 'Yards' },
-  { path: '/deals', icon: Briefcase, label: 'Deals' },
-  { path: '/transit', icon: Truck, label: 'Transit' },
-  { path: '/suppliers', icon: Building2, label: 'Suppliers' },
-  { path: '/customers', icon: Users, label: 'Customers' },
-  { path: '/financials', icon: BarChart3, label: 'Financials' },
-  { path: '/ai-insights', icon: Sparkles, label: 'AI Insights' },
-  { path: '/reports', icon: FileText, label: 'Reports' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { to: "/", label: "Dashboard", icon: "⬛" },
+  { to: "/inventory", label: "Inventory", icon: "📦" },
+  { to: "/yards", label: "Yards", icon: "🏗️" },
+  { to: "/deals", label: "Deals", icon: "🤝" },
+  { to: "/transit", label: "Transit", icon: "🚛" },
+  { to: "/suppliers", label: "Suppliers", icon: "🏭" },
+  { to: "/customers", label: "Customers", icon: "👥" },
+  { to: "/financials", label: "Financials", icon: "📊" },
+  { to: "/reports", label: "Reports", icon: "📄" },
+  { to: "/company", label: "Company", icon: "🏢" },
+  { to: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
-function Sidebar({ isOpen, onClose, darkMode, onToggleDarkMode, onLogout }) {
-  return (
-    <>
-      {isOpen && <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={onClose} />}
-      <aside className={cls(
-        'fixed inset-y-0 left-0 z-50 w-52 bg-slate-900 flex flex-col transition-transform duration-300',
-        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      )}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
-            <Package2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-base leading-tight">Dockside</p>
-            <p className="text-slate-400 text-[10px] uppercase tracking-wider">Trade OS</p>
-          </div>
-          <button onClick={onClose} className="ml-auto lg:hidden text-slate-400 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.end}
-              onClick={onClose}
-              className={({ isActive }) => cls(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              )}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Bottom */}
-        <div className="px-3 py-4 border-t border-slate-800 space-y-1">
-          <button
-            onClick={onToggleDarkMode}
-            className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm font-medium transition-all"
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {darkMode ? 'Light Mode' : 'Dark Mode'}
-          </button>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 text-sm font-medium transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-// ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ onSidebarOpen }) {
-  const user = JSON.parse(localStorage.getItem('dockside-user') || '{}');
-  return (
-    <header className="h-14 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-30">
-      <button onClick={onSidebarOpen} className="lg:hidden p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-        <Menu className="w-5 h-5" />
+const Sidebar = ({ onSignOut }) => (
+  <div className="w-52 bg-gray-900 text-white flex flex-col min-h-screen fixed top-0 left-0">
+    <div className="px-4 py-5 border-b border-gray-700">
+      <div className="text-lg font-black tracking-tight text-white">⚓ Dockside</div>
+      <div className="text-xs text-gray-400 mt-0.5">Timber Trade OS</div>
+    </div>
+    <nav className="flex-1 py-3 px-2">
+      {NAV.map(n => (
+        <NavLink key={n.to} to={n.to} end={n.to === "/"}
+          className={({ isActive }) => cls(
+            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium mb-0.5 transition-all",
+            isActive ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-800 hover:text-white"
+          )}>
+          <span className="text-base">{n.icon}</span>{n.label}
+        </NavLink>
+      ))}
+    </nav>
+    <div className="p-3 border-t border-gray-700">
+      <button onClick={onSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
+        <span>🚪</span> Sign Out
       </button>
-      <div className="flex-1" />
-      <div className="flex items-center gap-3">
-        <div className="text-right hidden sm:block">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">{user.full_name || user.email || 'User'}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role || 'admin'}</p>
-        </div>
-        <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
-          {(user.full_name || user.email || 'U')[0].toUpperCase()}
-        </div>
-      </div>
-    </header>
-  );
-}
+    </div>
+  </div>
+);
 
-// ─── PAGE SHELL ───────────────────────────────────────────────────────────────
-function Page({ title, subtitle, actions, children }) {
+// ── LOGIN ──────────────────────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setLoading(true); setErr("");
+    try {
+      const { data } = await api.post("/api/auth/login", { email, password });
+      localStorage.setItem("dockside-token", data.token);
+      localStorage.setItem("dockside-user", JSON.stringify(data.user));
+      onLogin(data.user);
+    } catch (e) {
+      setErr(e.response?.data?.error || "Login failed");
+    } finally { setLoading(false); }
+  };
+
   return (
-    <div className="p-6 space-y-5 max-w-screen-xl">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-3">⚓</div>
+          <h1 className="text-2xl font-black text-gray-800">Dockside ERP</h1>
+          <p className="text-gray-400 text-sm mt-1">Timber Trade Operating System</p>
         </div>
-        {actions && <div className="flex items-center gap-3 flex-wrap">{actions}</div>}
+        <div className="space-y-4">
+          <Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></Field>
+          <Field label="Password"><Input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••" /></Field>
+          {err && <ErrBanner msg={err} />}
+          <button onClick={submit} disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50">
+            {loading ? "Signing in…" : "Sign In"}
+          </button>
+        </div>
       </div>
-      {children}
     </div>
   );
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
 function Dashboard() {
-  const [stats, setStats] = useState({
-    totalInventoryValue: 0, totalVolume: 0, activeShipments: 0,
-    pendingDeliveries: 0, activeYards: 0, monthlyRevenue: 0, monthlyPurchases: 0,
-  });
-  const [categoryData, setCategoryData] = useState([]);
-  const [trendData, setTrendData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({});
+  const [inv, setInv] = useState([]);
+  const [deals, setDeals] = useState([]);
 
-  const fetch = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [statsRes, invRes] = await Promise.all([
-        api.get('/api/dashboard/stats'),
-        api.get('/api/inventory'),
-      ]);
-      setStats(statsRes.data);
-      const cat = invRes.data.reduce((acc, item) => {
-        const ex = acc.find(d => d.name === item.category);
-        const v = (item.available_quantity || 0) * (item.cost_price || 0);
-        if (ex) ex.value += v; else acc.push({ name: item.category || 'Other', value: v });
-        return acc;
-      }, []);
-      setCategoryData(cat);
-
-      // Build simple 6-month trend mock from inventory cost
-      const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
-      const base = statsRes.data.totalInventoryValue || 500000;
-      setTrendData(months.map((m, i) => ({
-        month: m,
-        Revenue: Math.round(base * 0.3 + base * 0.05 * i + Math.random() * base * 0.05),
-        Purchases: Math.round(base * 0.4 + base * 0.04 * i + Math.random() * base * 0.04),
-      })));
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+  useEffect(() => {
+    api.get("/api/dashboard/stats").then(r => setStats(r.data)).catch(() => { });
+    api.get("/api/inventory").then(r => setInv(r.data || [])).catch(() => { });
+    api.get("/api/deals").then(r => setDeals(r.data || [])).catch(() => { });
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  const catMap = {};
+  inv.forEach(i => { const c = i.category || i.wood_type || "Other"; catMap[c] = (catMap[c] || 0) + (i.cost_price || 0) * (i.available_quantity || 0); });
+  const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
+  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
 
-  const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
-
-  const statCards = [
-    { label: 'Inventory Value', value: formatCurrency(stats.totalInventoryValue), sub: 'Total stock worth', icon: DollarSign, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { label: 'Inventory Volume', value: `${Math.round(stats.totalVolume)} units`, icon: Package, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
-    { label: 'Active Shipments', value: stats.activeShipments, icon: Truck, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-    { label: 'Pending Deliveries', value: stats.pendingDeliveries, icon: Activity, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
-    { label: 'Monthly Revenue', value: formatCurrency(stats.monthlyRevenue || 0), icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Monthly Purchases', value: formatCurrency(stats.monthlyPurchases || stats.totalInventoryValue * 0.07), icon: ShoppingCart, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-    { label: 'Profit Estimate', value: formatCurrency(0), sub: '~18% margin', icon: Star, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-    { label: 'Active Yards', value: stats.activeYards, icon: Warehouse, color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20' },
-  ];
-
-  if (loading) return <PageLoader text="Loading dashboard..." />;
+  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  const chartData = months.map((m, i) => ({
+    month: m,
+    revenue: Math.round((stats.monthlyRevenue || 0) * (0.7 + i * 0.06)),
+    cost: Math.round((stats.totalInventoryValue || 0) * 0.1 * (0.8 + i * 0.04)),
+  }));
 
   return (
-    <Page title="Command Center" subtitle="Real-time overview of your timber operations">
-      {error && <ErrorBanner message={error} onRetry={fetch} />}
-
-      {/* Stat Cards */}
+    <div className="p-6 space-y-6">
+      <div><h1 className="text-2xl font-black text-gray-800">Command Center</h1><p className="text-gray-400 text-sm">Live business overview</p></div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(s => (
-          <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 space-y-3">
-            <div className={cls('w-10 h-10 rounded-lg flex items-center justify-center', s.bg)}>
-              <s.icon className={cls('w-5 h-5', s.color)} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</p>
-              {s.sub && <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{s.sub}</p>}
-            </div>
-          </div>
-        ))}
+        <StatCard label="Inventory Value" value={fmt(stats.totalInventoryValue)} icon="📦" color="blue" />
+        <StatCard label="Total Volume" value={`${stats.totalVolume || 0} units`} icon="📊" color="green" />
+        <StatCard label="Active Shipments" value={stats.activeShipments || 0} icon="🚛" color="orange" />
+        <StatCard label="Pending Deliveries" value={stats.pendingDeliveries || 0} icon="⏳" color="purple" />
+        <StatCard label="Monthly Revenue" value={fmt(stats.monthlyRevenue)} icon="💰" color="green" />
+        <StatCard label="Active Yards" value={stats.activeYards || 0} icon="🏗️" color="blue" />
+        <StatCard label="Total Products" value={stats.totalProducts || 0} icon="🪵" color="orange" />
+        <StatCard label="Total Deals" value={deals.length} icon="🤝" color="purple" />
       </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Revenue vs Purchases</h3>
-          <p className="text-xs text-gray-400 mb-5">Last 6 months trend</p>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={trendData}>
-              <defs>
-                <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="pur" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" className="dark:stroke-slate-700" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/100000).toFixed(0)}L`} />
-              <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="Revenue" stroke="#3b82f6" strokeWidth={2} fill="url(#rev)" />
-              <Area type="monotone" dataKey="Purchases" stroke="#10b981" strokeWidth={2} fill="url(#pur)" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <h3 className="font-bold text-gray-700 mb-4">Revenue vs Cost (6M)</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={chartData}>
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v / 1e5).toFixed(0)}L` : v} />
+              <Tooltip formatter={v => fmt(v)} />
+              <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#dbeafe" name="Revenue" />
+              <Area type="monotone" dataKey="cost" stroke="#f59e0b" fill="#fef3c7" name="Cost" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Inventory by Category</h3>
-          <p className="text-xs text-gray-400 mb-5">Value distribution</p>
-          {categoryData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie data={categoryData} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={80}>
-                    {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2 mt-3">
-                {categoryData.map((d, i) => (
-                  <div key={d.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-gray-600 dark:text-gray-400">{d.name}</span>
-                    </div>
-                    <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(d.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <EmptyState icon={Package} title="No data" description="Add inventory to see breakdown" />
-          )}
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <h3 className="font-bold text-gray-700 mb-4">Inventory by Category</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              </Pie>
+              <Tooltip formatter={v => fmt(v)} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
-    </Page>
+    </div>
   );
 }
 
-// ─── INVENTORY ────────────────────────────────────────────────────────────────
+// ── INVENTORY ──────────────────────────────────────────────────────────────────
 function Inventory() {
   const [items, setItems] = useState([]);
   const [yards, setYards] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [yardFilter, setYardFilter] = useState('All');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    product_name: '', category: 'Logs', wood_type: '', thickness: '18', length: '8', width: '4',
-    quality_grade: 'A Grade', supplier_id: '', yard_id: '', cost_price: '', market_value: '',
-    total_quantity: '', available_quantity: '', unit: 'Pieces', date_added: new Date().toISOString().split('T')[0], notes: '',
-  });
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState({ product_name: "", category: "Plywood", wood_type: "", grade: "A", yard_id: "", supplier_id: "", unit: "pcs", cost_price: "", market_value: "", available_quantity: "", date: today(), notes: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [inv, y, s] = await Promise.all([
-        api.get('/api/inventory'), api.get('/api/yards'), api.get('/api/suppliers')
-      ]);
-      setItems(inv.data); setYards(y.data); setSuppliers(s.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b, c] = await Promise.all([api.get("/api/inventory"), api.get("/api/yards"), api.get("/api/suppliers")]).catch(() => [[], [], []]);
+    setItems(a?.data || []); setYards(b?.data || []); setSuppliers(c?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleSubmit = async () => {
-    if (!form.product_name || !form.total_quantity || !form.cost_price) return;
-    setSaving(true);
+  const save = async () => {
+    if (!form.product_name) { setErr("Product name required"); return; }
+    setSaving(true); setErr("");
     try {
-      await api.post('/api/inventory', {
-        ...form,
-        total_quantity: parseFloat(form.total_quantity),
-        available_quantity: parseFloat(form.total_quantity),
-        cost_price: parseFloat(form.cost_price),
-        market_value: parseFloat(form.market_value) || parseFloat(form.cost_price) * 1.18,
-      });
-      setShowAdd(false);
-      setForm({ product_name:'',category:'Logs',wood_type:'',thickness:'18',length:'8',width:'4',quality_grade:'A Grade',supplier_id:'',yard_id:'',cost_price:'',market_value:'',total_quantity:'',available_quantity:'',unit:'Pieces',date_added:new Date().toISOString().split('T')[0],notes:'' });
-      fetchAll();
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
+      await api.post("/api/inventory", { ...form, cost_price: parseFloat(form.cost_price) || 0, market_value: parseFloat(form.market_value) || 0, available_quantity: parseFloat(form.available_quantity) || 0 });
+      setShowAdd(false); fetchAll();
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
 
-  const filtered = items.filter(i => {
-    const matchSearch = !search || i.product_name?.toLowerCase().includes(search.toLowerCase()) || i.wood_type?.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categoryFilter === 'All' || i.category === categoryFilter;
-    const matchYard = yardFilter === 'All' || (i.yard_id === yardFilter || i.yard?.name === yardFilter);
-    return matchSearch && matchCat && matchYard;
-  });
-
-  const categories = ['All', ...new Set(items.map(i => i.category).filter(Boolean))];
-  const totalValue = items.reduce((a, i) => a + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+  const filtered = items.filter(i => !search || (i.product_name || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <Page
-      title="Inventory"
-      subtitle={`${items.length} products · ${filtered.length} shown`}
-      actions={
-        <BtnPrimary onClick={() => setShowAdd(true)}>
-          <Plus className="w-4 h-4" /> Add Stock
-        </BtnPrimary>
-      }
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap items-center">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input placeholder="Search by name, wood type, category..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div><h1 className="text-2xl font-black text-gray-800">Inventory</h1><p className="text-gray-400 text-sm">{items.length} products</p></div>
+        <div className="flex gap-3">
+          <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Btn onClick={() => setShowAdd(true)}>+ Add Stock</Btn>
         </div>
-        <Select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-36">
-          {categories.map(c => <option key={c}>{c}</option>)}
-        </Select>
-        <Select value={yardFilter} onChange={e => setYardFilter(e.target.value)} className="w-40">
-          <option value="All">All Yards</option>
-          {yards.map(y => <option key={y.id} value={y.id}>{y.name || y.yard_name}</option>)}
-        </Select>
       </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-        {loading ? <PageLoader /> : (
-          <Table
-            headers={['Product','Category','Wood Type','Grade','Yard','Available','Reserved','Cost Price','Total Value']}
-            empty={filtered.length === 0 && <EmptyState icon={Package} title="No inventory items" description="Add your first stock item to get started." />}
-          >
-            {filtered.map(item => (
-              <Tr key={item.id}>
-                <Td>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{item.product_name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{[item.thickness, item.length, item.width].filter(Boolean).map(v => `${v}`).join(' × ')}{item.thickness ? ' mm × ft' : ''}</p>
-                  </div>
-                </Td>
-                <Td>{item.category}</Td>
-                <Td>{item.wood_type || '—'}</Td>
-                <Td><Badge status={item.quality_grade?.toLowerCase().replace(' ','')} label={item.quality_grade} /></Td>
-                <Td>{yards.find(y => y.id === item.yard_id)?.name || item.yard_id || 'Unassigned'}</Td>
-                <Td className="font-semibold">{item.available_quantity} {item.unit || 'CBM'}</Td>
-                <Td>{item.reserved_quantity || 0}</Td>
-                <Td>{formatCurrency(item.cost_price)}</Td>
-                <Td className="font-bold text-gray-900 dark:text-white">{formatCurrency((item.cost_price || 0) * (item.available_quantity || 0))}</Td>
-              </Tr>
-            ))}
-          </Table>
-        )}
-      </div>
-
-      {/* Add Stock Panel */}
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Add Stock">
-        <Field label="Product Name" required>
-          <Input placeholder="e.g. Teak Logs 8ft" value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />
-        </Field>
+      {loading ? <Spinner /> : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{["Product", "Category", "Wood Type", "Grade", "Yard", "Available", "Reserved", "Cost Price", "Total Value"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {filtered.map(i => (
+                <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-semibold text-gray-800">{i.product_name || i.name || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{i.category || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{i.wood_type || "—"}</td>
+                  <td className="px-4 py-3"><Badge text={i.grade || "—"} /></td>
+                  <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === i.yard_id)?.name || i.yard_id || "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-800">{i.available_quantity || 0}</td>
+                  <td className="px-4 py-3 text-gray-500">{i.reserved_quantity || 0}</td>
+                  <td className="px-4 py-3 font-semibold text-green-700">{fmt(i.cost_price)}</td>
+                  <td className="px-4 py-3 font-bold text-blue-700">{fmt((i.cost_price || 0) * (i.available_quantity || 0))}</td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No inventory found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <SlidePanel title="Add Stock" open={showAdd} onClose={() => setShowAdd(false)}>
+        <Field label="Product Name" required><Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. Plywood 18mm" /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Category" required>
-            <Select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-              {['Logs','Plywood','Timber','Veneer','MDF','Hardwood','Softwood','Other'].map(c => <option key={c}>{c}</option>)}
-            </Select>
-          </Field>
-          <Field label="Wood Type">
-            <Input placeholder="e.g. Teak, Pine, Oak" value={form.wood_type} onChange={e => setForm({...form, wood_type: e.target.value})} />
-          </Field>
+          <Field label="Category"><Select value={form.category} onChange={set("category")}><option>Plywood</option><option>Hardwood</option><option>Softwood</option><option>Veneer</option><option>MDF</option><option>Particle Board</option></Select></Field>
+          <Field label="Wood Type"><Input value={form.wood_type} onChange={set("wood_type")} placeholder="Teak, Pine…" /></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Thickness (mm)"><Input type="number" value={form.thickness} onChange={e => setForm({...form, thickness: e.target.value})} /></Field>
-          <Field label="Length (ft)"><Input type="number" value={form.length} onChange={e => setForm({...form, length: e.target.value})} /></Field>
-          <Field label="Width (ft)"><Input type="number" value={form.width} onChange={e => setForm({...form, width: e.target.value})} /></Field>
+          <Field label="Thickness (mm)"><Input value={form.thickness} onChange={set("thickness")} placeholder="18" /></Field>
+          <Field label="Length (ft)"><Input value={form.length} onChange={set("length")} placeholder="8" /></Field>
+          <Field label="Width (ft)"><Input value={form.width} onChange={set("width")} placeholder="4" /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Quality Grade">
-            <Select value={form.quality_grade} onChange={e => setForm({...form, quality_grade: e.target.value})}>
-              {['A Grade','B Grade','C Grade','Premium','Standard','Export Quality'].map(g => <option key={g}>{g}</option>)}
-            </Select>
-          </Field>
-          <Field label="Yard Location" required>
-            <Select value={form.yard_id} onChange={e => setForm({...form, yard_id: e.target.value})}>
-              <option value="">Select yard</option>
-              {yards.map(y => <option key={y.id} value={y.id}>{y.name || y.yard_name}</option>)}
-            </Select>
-          </Field>
+          <Field label="Grade"><Select value={form.grade} onChange={set("grade")}><option>A</option><option>B</option><option>C</option><option>Premium</option></Select></Field>
+          <Field label="Unit"><Select value={form.unit} onChange={set("unit")}><option>pcs</option><option>sheets</option><option>m³</option><option>sqft</option><option>kg</option></Select></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Supplier">
-            <Select value={form.supplier_id} onChange={e => setForm({...form, supplier_id: e.target.value})}>
-              <option value="">Select supplier</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name || s.supplier_name}</option>)}
-            </Select>
-          </Field>
-          <Field label="Unit">
-            <Select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}>
-              {['Pieces','CBM','MT','SFT','Sheets'].map(u => <option key={u}>{u}</option>)}
-            </Select>
-          </Field>
+          <Field label="Yard"><Select value={form.yard_id} onChange={set("yard_id")}><option value="">— Select —</option>{yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}</Select></Field>
+          <Field label="Supplier"><Select value={form.supplier_id} onChange={set("supplier_id")}><option value="">— Select —</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Cost Price (₹)"><Input type="number" placeholder="0" value={form.cost_price} onChange={e => setForm({...form, cost_price: e.target.value})} /></Field>
-          <Field label="Market Value (₹)"><Input type="number" placeholder="0" value={form.market_value} onChange={e => setForm({...form, market_value: e.target.value})} /></Field>
+          <Field label="Cost Price (₹)"><Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" /></Field>
+          <Field label="Market Value (₹)"><Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" /></Field>
         </div>
-        <Field label="Quantity" required>
-          <Input type="number" placeholder="0" value={form.total_quantity} onChange={e => setForm({...form, total_quantity: e.target.value})} />
-        </Field>
-        <Field label="Date Added">
-          <Input type="date" value={form.date_added} onChange={e => setForm({...form, date_added: e.target.value})} />
-        </Field>
-        <Field label="Notes">
-          <Textarea placeholder="Additional notes..." value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Quantity" required><Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0" /></Field>
+          <Field label="Date"><Input type="date" value={form.date} onChange={set("date")} /></Field>
+        </div>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleSubmit} loading={saving} className="flex-1 justify-center">Add Stock</BtnPrimary>
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add to Inventory"}</Btn>
+          <Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn>
         </div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── YARDS ────────────────────────────────────────────────────────────────────
+// ── YARDS ──────────────────────────────────────────────────────────────────────
 function Yards() {
   const [yards, setYards] = useState([]);
-  const [inventory, setInventory] = useState([]);
+  const [inv, setInv] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [form, setForm] = useState({ name:'', city:'', address:'', manager_name:'', manager_phone:'', notes:'' });
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState({ name: "", city: "", address: "", manager_name: "", manager_phone: "", notes: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [y, i] = await Promise.all([api.get('/api/yards'), api.get('/api/inventory')]);
-      setYards(y.data); setInventory(i.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b] = await Promise.all([api.get("/api/yards"), api.get("/api/inventory")]).catch(() => [[], []]);
+    setYards(a?.data || []); setInv(b?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleCreate = async () => {
-    if (!form.name || !form.city) return;
-    setSaving(true);
-    try {
-      await api.post('/api/yards', { ...form, is_active: true });
-      setShowAdd(false);
-      setForm({ name:'', city:'', address:'', manager_name:'', manager_phone:'', notes:'' });
-      fetchAll();
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
-  };
-
-  const yardStats = (yardId) => {
-    const items = inventory.filter(i => i.yard_id === yardId);
-    return {
-      products: items.length,
-      totalUnits: items.reduce((a, i) => a + (i.available_quantity || 0), 0),
-      value: items.reduce((a, i) => a + (i.cost_price || 0) * (i.available_quantity || 0), 0),
-    };
+  const save = async () => {
+    if (!form.name) { setErr("Yard name required"); return; }
+    setSaving(true); setErr("");
+    try { await api.post("/api/yards", form); setShowAdd(false); fetchAll(); }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
 
   return (
-    <Page
-      title="Yards"
-      subtitle={`${yards.length} storage locations`}
-      actions={
-        <>
-          <BtnSecondary><RefreshCw className="w-4 h-4" /> Transfer Stock</BtnSecondary>
-          <BtnPrimary onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Yard</BtnPrimary>
-        </>
-      }
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-      {loading ? <PageLoader /> : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {yards.length === 0 ? (
-            <EmptyState icon={Warehouse} title="No yards yet" description="Add your first storage location." />
-          ) : yards.map(yard => {
-            const st = yardStats(yard.id);
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div><h1 className="text-2xl font-black text-gray-800">Yards</h1><p className="text-gray-400 text-sm">{yards.length} locations</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Add Yard</Btn>
+      </div>
+      {loading ? <Spinner /> : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {yards.map(y => {
+            const yInv = inv.filter(i => i.yard_id === y.id);
+            const val = yInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+            const units = yInv.reduce((s, i) => s + (i.available_quantity || 0), 0);
             return (
-              <div key={yard.id} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                      <Warehouse className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 dark:text-white">{yard.name || yard.yard_name}</p>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                        <MapPin className="w-3 h-3" />
-                        {yard.city || yard.location || 'Location not set'}
-                      </div>
-                    </div>
+              <div key={y.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg">{y.name}</h3>
+                    <p className="text-gray-400 text-sm">{y.city}</p>
                   </div>
-                  <Badge status={yard.is_active ? 'active' : 'inactive'} label={yard.is_active ? 'Active' : 'Inactive'} />
+                  <Badge text={y.is_active !== false ? "Active" : "Inactive"} color={y.is_active !== false ? "green" : "gray"} />
                 </div>
-
-                <div className="grid grid-cols-3 gap-3 py-3 border-y border-gray-50 dark:border-slate-700">
-                  {[['Products', st.products], ['Total Units', st.totalUnits], ['Value', formatCurrency(st.value)]].map(([l, v]) => (
-                    <div key={l} className="text-center">
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">{v}</p>
-                      <p className="text-xs text-gray-400">{l}</p>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="bg-blue-50 rounded-lg p-2 text-center"><p className="text-xs text-blue-400">Products</p><p className="font-bold text-blue-700">{yInv.length}</p></div>
+                  <div className="bg-green-50 rounded-lg p-2 text-center"><p className="text-xs text-green-400">Units</p><p className="font-bold text-green-700">{units}</p></div>
+                  <div className="bg-purple-50 rounded-lg p-2 text-center"><p className="text-xs text-purple-400">Value</p><p className="font-bold text-purple-700 text-xs">{fmt(val)}</p></div>
                 </div>
-
-                <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                  {yard.manager_name && (
-                    <p>Manager: <span className="font-semibold text-gray-700 dark:text-gray-300">{yard.manager_name}</span>
-                      {yard.manager_phone && <span className="ml-2 text-gray-400">· {yard.manager_phone}</span>}
-                    </p>
-                  )}
-                  {yard.address && <p className="text-xs text-gray-400">{yard.address}</p>}
-                </div>
+                {y.manager_name && <p className="text-xs text-gray-400">👤 {y.manager_name} {y.manager_phone && `· ${y.manager_phone}`}</p>}
+                {y.address && <p className="text-xs text-gray-300 mt-1">📍 {y.address}</p>}
               </div>
             );
           })}
+          {yards.length === 0 && <div className="col-span-3 text-center py-20 text-gray-300">No yards added yet</div>}
         </div>
       )}
-
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Add New Yard">
-        <Field label="Yard Name" required>
-          <Input placeholder="e.g. Gandhidham Yard" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-        </Field>
-        <Field label="City" required>
-          <Input placeholder="e.g. Gandhidham" value={form.city} onChange={e => setForm({...form, city: e.target.value})} />
-        </Field>
-        <Field label="Full Address">
-          <Input placeholder="Street, area..." value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
-        </Field>
+      <SlidePanel title="Add Yard" open={showAdd} onClose={() => setShowAdd(false)}>
+        <Field label="Yard Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Manager Name">
-            <Input value={form.manager_name} onChange={e => setForm({...form, manager_name: e.target.value})} />
-          </Field>
-          <Field label="Manager Phone">
-            <Input value={form.manager_phone} onChange={e => setForm({...form, manager_phone: e.target.value})} />
-          </Field>
+          <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
+          <Field label="Manager Name"><Input value={form.manager_name} onChange={set("manager_name")} /></Field>
         </div>
-        <Field label="Notes">
-          <Textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
-        </Field>
-        <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleCreate} loading={saving} className="flex-1 justify-center">Create Yard</BtnPrimary>
-        </div>
+        <Field label="Full Address"><Textarea value={form.address} onChange={set("address")} /></Field>
+        <Field label="Manager Phone"><Input value={form.manager_phone} onChange={set("manager_phone")} /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Yard"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── DEALS ────────────────────────────────────────────────────────────────────
+// ── DEALS ──────────────────────────────────────────────────────────────────────
 function Deals() {
   const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tab, setTab] = useState('All');
-  const [search, setSearch] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [form, setForm] = useState({ customer_id:'', product_id:'', quantity:'', unit_price:'', status:'draft', payment_status:'Pending', notes:'' });
-
-  const STAGES = ['All','Draft','Confirmed','Dispatched','Delivered','Completed'];
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("All");
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [custName, setCustName] = useState("");
+  const [form, setForm] = useState({ customer_id: "", product_id: "", quantity: "", unit_price: "", status: "draft", payment_status: "Pending", notes: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [d, c, i] = await Promise.all([api.get('/api/deals'), api.get('/api/customers'), api.get('/api/inventory')]);
-      setDeals(d.data); setCustomers(c.data); setInventory(i.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b, c] = await Promise.all([api.get("/api/deals"), api.get("/api/customers"), api.get("/api/inventory")]).catch(() => [[], [], []]);
+    setDeals(a?.data || []); setCustomers(b?.data || []); setInventory(c?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleCreate = async () => {
-    setSaving(true);
+  const TABS = ["All", "Draft", "Confirmed", "Dispatched", "Delivered", "Completed"];
+  const filtered = tab === "All" ? deals : deals.filter(d => (d.status || "").toLowerCase() === tab.toLowerCase());
+
+  const save = async () => {
+    if (!form.customer_id && !custName) { setErr("Customer required"); return; }
+    setSaving(true); setErr("");
     try {
-      await api.post('/api/deals', { ...form, quantity: parseFloat(form.quantity), unit_price: parseFloat(form.unit_price) });
+      const qty = parseFloat(form.quantity) || 0;
+      const price = parseFloat(form.unit_price) || 0;
+      const selProd = inventory.find(i => i.id === form.product_id);
+      await api.post("/api/deals", {
+        customer_id: form.customer_id || undefined,
+        customer_name: custName,
+        product_id: form.product_id || undefined,
+        product_name: selProd?.product_name || selProd?.name || undefined,
+        quantity: qty,
+        unit_price: price,
+        total_value: qty * price,
+        total_amount: qty * price,
+        status: form.status,
+        stage: form.status,
+        payment_status: form.payment_status,
+        notes: form.notes || undefined,
+      });
       setShowAdd(false);
-      setForm({ customer_id:'', product_id:'', quantity:'', unit_price:'', status:'draft', payment_status:'Pending', notes:'' });
+      setForm({ customer_id: "", product_id: "", quantity: "", unit_price: "", status: "draft", payment_status: "Pending", notes: "" });
+      setCustName("");
       fetchAll();
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      await api.patch(`/api/deals/${id}/status`, { status });
-      fetchAll();
-    } catch (e) { console.error(e); }
-  };
-
-  const tabs = STAGES.map(s => ({
-    value: s,
-    label: s,
-    count: s === 'All' ? deals.length : deals.filter(d => d.status?.toLowerCase() === s.toLowerCase()).length
-  }));
-
-  const filtered = deals.filter(d => {
-    const matchTab = tab === 'All' || d.status?.toLowerCase() === tab.toLowerCase();
-    const matchSearch = !search || d.deal_number?.toLowerCase().includes(search.toLowerCase()) ||
-      customers.find(c => c.id === d.customer_id)?.name?.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
-  });
 
   return (
-    <Page
-      title="Deals"
-      subtitle={`${deals.length} total deals`}
-      actions={<BtnPrimary onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Create Deal</BtnPrimary>}
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-
-      <TabFilter tabs={tabs} value={tab} onChange={setTab} />
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input placeholder="Search deals..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 max-w-md" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div><h1 className="text-2xl font-black text-gray-800">Deals</h1><p className="text-gray-400 text-sm">{deals.length} total deals</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Create Deal</Btn>
       </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-        {loading ? <PageLoader /> : (
-          <Table
-            headers={['Deal #','Customer','Product','Qty','Value','Stage','Payment','Date']}
-            empty={filtered.length === 0 && <EmptyState icon={Briefcase} title="No deals found" description="Create your first deal to start tracking sales." />}
-          >
-            {filtered.map(deal => {
-              const cust = customers.find(c => c.id === deal.customer_id);
-              const prod = inventory.find(i => i.id === deal.product_id);
-              const total = (deal.quantity || 0) * (deal.unit_price || 0);
-              return (
-                <Tr key={deal.id}>
-                  <Td><span className="font-mono text-xs text-gray-500">{deal.deal_number}</span></Td>
-                  <Td className="font-semibold text-gray-900 dark:text-white">{cust?.name || deal.customer_id || '—'}</Td>
-                  <Td>{prod?.product_name || deal.product_id || '—'}</Td>
-                  <Td>{deal.quantity || '—'}</Td>
-                  <Td className="font-semibold">{formatCurrency(deal.total_value || total)}</Td>
-                  <Td><Badge status={deal.status} /></Td>
-                  <Td>
-                    <span className={cls('px-2 py-0.5 rounded text-xs font-medium',
-                      deal.payment_status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    )}>
-                      {deal.payment_status || 'Pending'}
-                    </span>
-                  </Td>
-                  <Td className="text-xs text-gray-400">{deal.created_at ? new Date(deal.created_at).toLocaleDateString('en-IN') : '—'}</Td>
-                </Tr>
-              );
-            })}
-          </Table>
-        )}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
+            {t} {t === "All" ? `(${deals.length})` : `(${deals.filter(d => (d.status || "").toLowerCase() === t.toLowerCase()).length})`}
+          </button>
+        ))}
       </div>
-
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Create Deal">
-        <Field label="Customer">
-          <Select value={form.customer_id} onChange={e => setForm({...form, customer_id: e.target.value})}>
-            <option value="">Select customer</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
+      {loading ? <Spinner /> : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{["Deal #", "Customer", "Product", "Qty", "Value", "Stage", "Payment", "Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {filtered.map(d => {
+                const cust = customers.find(c => c.id === d.customer_id);
+                const prod = inventory.find(i => i.id === d.product_id);
+                return (
+                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-blue-600">{d.deal_number || `#${d.id?.toString().slice(-6)}`}</td>
+                    <td className="px-4 py-3 font-semibold">{d.customer_name || cust?.name || d.customer_id || "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">{d.product_name || prod?.product_name || "—"}</td>
+                    <td className="px-4 py-3">{d.quantity || "—"}</td>
+                    <td className="px-4 py-3 font-bold text-green-700">{fmt(d.total_value || d.value || d.total_amount)}</td>
+                    <td className="px-4 py-3"><Badge text={d.status || d.stage || "draft"} /></td>
+                    <td className="px-4 py-3"><Badge text={d.payment_status || "—"} /></td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(d.created_at)}</td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <SlidePanel title="Create Deal" open={showAdd} onClose={() => setShowAdd(false)}>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+          💡 Type customer name to search existing, or select from dropdown
+        </div>
+        <Field label="Customer" required>
+          <AutocompleteInput
+            endpoint="/api/autocomplete/customers"
+            placeholder="Type customer name…"
+            value={custName}
+            onChange={v => setCustName(v)}
+            onSelect={c => { setForm(p => ({ ...p, customer_id: c.id })); setCustName(c.name); }}
+          />
         </Field>
         <Field label="Product">
-          <Select value={form.product_id} onChange={e => setForm({...form, product_id: e.target.value})}>
-            <option value="">Select product</option>
-            {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name}</option>)}
+          <Select value={form.product_id} onChange={set("product_id")}>
+            <option value="">— Select product —</option>
+            {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name || i.name} ({i.available_quantity} {i.unit || "pcs"})</option>)}
           </Select>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity"><Input type="number" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} /></Field>
-          <Field label="Unit Price (₹)"><Input type="number" value={form.unit_price} onChange={e => setForm({...form, unit_price: e.target.value})} /></Field>
+          <Field label="Quantity"><Input type="number" value={form.quantity} onChange={set("quantity")} placeholder="0" /></Field>
+          <Field label="Unit Price (₹)"><Input type="number" value={form.unit_price} onChange={set("unit_price")} placeholder="0" /></Field>
         </div>
+        {form.quantity && form.unit_price && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-sm text-green-700 font-semibold">
+            Total Value: {fmt(parseFloat(form.quantity) * parseFloat(form.unit_price))}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Stage">
-            <Select value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-              {['draft','confirmed','dispatched','delivered','completed'].map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+            <Select value={form.status} onChange={set("status")}>
+              <option value="draft">Draft</option><option value="confirmed">Confirmed</option>
+              <option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="completed">Completed</option>
             </Select>
           </Field>
           <Field label="Payment">
-            <Select value={form.payment_status} onChange={e => setForm({...form, payment_status: e.target.value})}>
-              {['Pending','Partial','Paid'].map(s => <option key={s}>{s}</option>)}
+            <Select value={form.payment_status} onChange={set("payment_status")}>
+              <option>Pending</option><option>Partial</option><option>Paid</option>
             </Select>
           </Field>
         </div>
-        <Field label="Notes"><Textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></Field>
-        <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleCreate} loading={saving} className="flex-1 justify-center">Create Deal</BtnPrimary>
-        </div>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── TRANSIT ──────────────────────────────────────────────────────────────────
+// ── TRANSIT ────────────────────────────────────────────────────────────────────
 function Transit() {
-  const [shipments, setShipments] = useState([]);
+  const [ships, setShips] = useState([]);
   const [yards, setYards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tab, setTab] = useState('All');
-  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [form, setForm] = useState({
-    vehicle_number:'', driver_name:'', driver_phone:'', origin_yard_id:'',
-    destination:'', dispatch_date: new Date().toISOString().split('T')[0],
-    expected_arrival:'', freight_cost:'', status:'Created', cargo_details:'',
-  });
-
-  const STAGES = ['All','Created','Loaded','Dispatched','In Transit','Arrived','Delivered'];
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState({ vehicle_number: "", driver_name: "", driver_phone: "", origin_yard_id: "", origin_yard_name: "", destination: "", dispatch_date: today(), expected_arrival: "", freight_cost: "", status: "Created", cargo_details: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [s, y] = await Promise.all([api.get('/api/shipments'), api.get('/api/yards')]);
-      setShipments(s.data); setYards(y.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b] = await Promise.all([api.get("/api/shipments"), api.get("/api/yards")]).catch(() => [[], []]);
+    setShips(a?.data || []); setYards(b?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleCreate = async () => {
-    if (!form.vehicle_number) { setFormError('Vehicle number is required.'); return; }
-    if (!form.destination) { setFormError('Destination is required.'); return; }
-    setSaving(true);
-    setFormError(null);
+  const TABS = ["All", "Created", "Loaded", "Dispatched", "In Transit", "Arrived", "Delivered"];
+  const filtered = tab === "All" ? ships : ships.filter(s => (s.status || "").toLowerCase() === tab.toLowerCase());
+
+  const save = async () => {
+    if (!form.destination) { setErr("Destination required"); return; }
+    setSaving(true); setErr("");
     try {
-      const res = await api.post('/api/shipments', {
-        vehicle_number: form.vehicle_number,
-        driver_name: form.driver_name || undefined,
-        driver_phone: form.driver_phone || undefined,
-        origin_yard_id: form.origin_yard_id || undefined,
-        destination: form.destination,
-        dispatch_date: form.dispatch_date || undefined,
-        expected_arrival: form.expected_arrival || undefined,
-        freight_cost: parseFloat(form.freight_cost) || 0,
-        status: form.status || 'Created',
-        cargo_details: form.cargo_details || undefined,
+      // Send all possible column name aliases — server safeInsert keeps only valid ones
+      console.log("origin_yard_name:", form.origin_yard_name, "yards:", yards);
+      await api.post("/api/shipments", {
+        vehicle_number: form.vehicle_number, vehicle_no: form.vehicle_number,
+        driver_name: form.driver_name, driver_phone: form.driver_phone, driver_contact: form.driver_phone,
+        origin_yard_id: form.origin_yard_id || null, from_yard_id: form.origin_yard_id || null,
+        origin_yard_name: form.origin_yard_name || null, from_yard_name: form.origin_yard_name || null,
+        destination: form.destination, to_location: form.destination,
+        dispatch_date: form.dispatch_date, dispatched_at: form.dispatch_date, shipment_date: form.dispatch_date,
+        expected_arrival: form.expected_arrival, eta: form.expected_arrival, estimated_arrival: form.expected_arrival,
+        freight_cost: parseFloat(form.freight_cost) || 0, freight_charges: parseFloat(form.freight_cost) || 0,
+        status: form.status, shipment_status: form.status,
+        cargo_details: form.cargo_details, cargo_description: form.cargo_details, notes: form.cargo_details,
       });
       setShowAdd(false);
-      setFormError(null);
-      setForm({ vehicle_number:'', driver_name:'', driver_phone:'', origin_yard_id:'', destination:'', dispatch_date: new Date().toISOString().split('T')[0], expected_arrival:'', freight_cost:'', status:'Created', cargo_details:'' });
+      setForm({ vehicle_number: "", driver_name: "", driver_phone: "", origin_yard_id: "", destination: "", dispatch_date: today(), expected_arrival: "", freight_cost: "", status: "Created", cargo_details: "" });
       fetchAll();
-    } catch (e) {
-      const msg = e.response?.data?.error || e.response?.data?.hint || e.message || 'Failed to add shipment.';
-      setFormError(msg);
-    }
-    finally { setSaving(false); }
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
 
-  const tabs = STAGES.map(s => ({
-    value: s, label: s,
-    count: s === 'All' ? shipments.length : shipments.filter(sh => sh.status === s).length
-  }));
-
-  const filtered = shipments.filter(s => {
-    const matchTab = tab === 'All' || s.status === tab;
-    const matchSearch = !search || s.shipment_number?.toLowerCase().includes(search.toLowerCase()) ||
-      s.vehicle_number?.toLowerCase().includes(search.toLowerCase()) || s.destination?.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
-  });
-
   return (
-    <Page
-      title="Transit"
-      subtitle={`${shipments.length} shipments tracked`}
-      actions={<BtnPrimary onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Shipment</BtnPrimary>}
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-      <TabFilter tabs={tabs} value={tab} onChange={setTab} />
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input placeholder="Search by vehicle, destination, driver..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 max-w-md" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div><h1 className="text-2xl font-black text-gray-800">Transit</h1><p className="text-gray-400 text-sm">{ships.length} shipments tracked</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Add Shipment</Btn>
       </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-        {loading ? <PageLoader /> : (
-          <Table
-            headers={['Shipment #','Vehicle','Driver','Origin','Destination','Dispatch','ETA','Status','Freight']}
-            empty={filtered.length === 0 && <EmptyState icon={Truck} title="No shipments found" description="Add your first shipment to start tracking." />}
-          >
-            {filtered.map(sh => (
-              <Tr key={sh.id}>
-                <Td><span className="font-mono text-xs text-gray-500">{sh.shipment_number}</span></Td>
-                <Td className="font-semibold">{sh.vehicle_number || '—'}</Td>
-                <Td>{sh.driver_name || '—'}</Td>
-                <Td>{yards.find(y => y.id === sh.origin_yard_id)?.name || '—'}</Td>
-                <Td>{sh.destination || '—'}</Td>
-                <Td className="text-xs">{sh.dispatch_date ? new Date(sh.dispatch_date).toLocaleDateString('en-IN') : '—'}</Td>
-                <Td className="text-xs">{sh.expected_arrival ? new Date(sh.expected_arrival).toLocaleDateString('en-IN') : '—'}</Td>
-                <Td><Badge status={sh.status?.toLowerCase().replace(' ','_')} label={sh.status} /></Td>
-                <Td>{formatCurrency(sh.freight_cost)}</Td>
-              </Tr>
-            ))}
-          </Table>
-        )}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
+            {t} {t !== "All" && `(${ships.filter(s => (s.status || "").toLowerCase() === t.toLowerCase()).length})`}
+          </button>
+        ))}
       </div>
-
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Add Shipment">
-        <Field label="Vehicle Number" required>
-          <Input placeholder="GJ-01-AB-1234" value={form.vehicle_number} onChange={e => setForm({...form, vehicle_number: e.target.value})} />
-        </Field>
+      {loading ? <Spinner /> : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{["Shipment #", "Vehicle", "Driver", "Origin", "Destination", "Dispatch", "ETA", "Status", "Freight"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {filtered.map(s => (
+                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{s.shipment_number || `#${s.id?.toString().slice(-6)}`}</td>
+                  <td className="px-4 py-3 font-semibold">{s.vehicle_number || s.vehicle_no || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{s.driver_name || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === s.origin_yard_id)?.name || "—"}</td>
+                  <td className="px-4 py-3">{s.destination || s.to_location || "—"}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(s.dispatch_date || s.dispatched_at)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(s.expected_arrival || s.eta)}</td>
+                  <td className="px-4 py-3"><Badge text={s.status || "—"} /></td>
+                  <td className="px-4 py-3 font-semibold text-gray-700">{fmt(s.freight_cost || s.freight_charges)}</td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No shipments found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <SlidePanel title="Add Shipment" open={showAdd} onClose={() => setShowAdd(false)}>
+        <Field label="Vehicle Number"><Input value={form.vehicle_number} onChange={set("vehicle_number")} placeholder="MH-12-AB-1234" /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Driver Name"><Input value={form.driver_name} onChange={e => setForm({...form, driver_name: e.target.value})} /></Field>
-          <Field label="Driver Phone"><Input value={form.driver_phone} onChange={e => setForm({...form, driver_phone: e.target.value})} /></Field>
-        </div>
-        <Field label="Origin Yard" required>
-          <Select value={form.origin_yard_id} onChange={e => setForm({...form, origin_yard_id: e.target.value})}>
-            <option value="">Select yard</option>
-            {yards.map(y => <option key={y.id} value={y.id}>{y.name || y.yard_name}</option>)}
-          </Select>
-        </Field>
-        <Field label="Destination" required>
-          <Input placeholder="e.g. Ahmedabad Warehouse" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Dispatch Date"><Input type="date" value={form.dispatch_date} onChange={e => setForm({...form, dispatch_date: e.target.value})} /></Field>
-          <Field label="Expected Arrival"><Input type="date" value={form.expected_arrival} onChange={e => setForm({...form, expected_arrival: e.target.value})} /></Field>
+          <Field label="Driver Name"><Input value={form.driver_name} onChange={set("driver_name")} /></Field>
+          <Field label="Driver Phone"><Input value={form.driver_phone} onChange={set("driver_phone")} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Freight Cost (₹)"><Input type="number" value={form.freight_cost} onChange={e => setForm({...form, freight_cost: e.target.value})} /></Field>
-          <Field label="Status">
-            <Select value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-              {['Created','Loaded','Dispatched','In Transit','Arrived','Delivered'].map(s => <option key={s}>{s}</option>)}
-            </Select>
-          </Field>
+          <Field label="Origin Yard"><Select value={form.origin_yard_id} onChange={e => { const yard = yards.find(y => String(y.id) === String(e.target.value)); setForm(p => ({ ...p, origin_yard_id: e.target.value, origin_yard_name: yard?.name || "" })); }}><option value="">— Select —</option>{yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}</Select></Field>
+          <Field label="Destination" required><Input value={form.destination} onChange={set("destination")} placeholder="City / Address" /></Field>
         </div>
-        <Field label="Cargo Details">
-          <Textarea placeholder="Describe the cargo..." value={form.cargo_details} onChange={e => setForm({...form, cargo_details: e.target.value})} />
-        </Field>
-        {formError && <ErrorBanner message={formError} />}
-        <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleCreate} loading={saving} className="flex-1 justify-center">Add Shipment</BtnPrimary>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Dispatch Date"><Input type="date" value={form.dispatch_date} onChange={set("dispatch_date")} /></Field>
+          <Field label="Expected Arrival"><Input type="date" value={form.expected_arrival} onChange={set("expected_arrival")} /></Field>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Freight Cost (₹)"><Input type="number" value={form.freight_cost} onChange={set("freight_cost")} placeholder="0" /></Field>
+          <Field label="Status"><Select value={form.status} onChange={set("status")}>
+            {["Created", "Loaded", "Dispatched", "In Transit", "Arrived", "Delivered"].map(s => <option key={s}>{s}</option>)}
+          </Select></Field>
+        </div>
+        <Field label="Cargo Details"><Textarea value={form.cargo_details} onChange={set("cargo_details")} placeholder="Describe the cargo…" /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Adding…" : "Add Shipment"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── SUPPLIERS ────────────────────────────────────────────────────────────────
+// ── SUPPLIERS ──────────────────────────────────────────────────────────────────
 function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
-  const [inventory, setInventory] = useState([]);
+  const [inv, setInv] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name:'', city:'', country:'India', contact_person:'', phone:'', email:'', products_supplied:'', notes:'' });
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState({ name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", notes: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [s, i] = await Promise.all([api.get('/api/suppliers'), api.get('/api/inventory')]);
-      setSuppliers(s.data); setInventory(i.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b] = await Promise.all([api.get("/api/suppliers"), api.get("/api/inventory")]).catch(() => [[], []]);
+    setSuppliers(a?.data || []); setInv(b?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleCreate = async () => {
-    if (!form.name) return;
-    setSaving(true);
-    try {
-      await api.post('/api/suppliers', form);
-      setShowAdd(false);
-      setForm({ name:'', city:'', country:'India', contact_person:'', phone:'', email:'', products_supplied:'', notes:'' });
-      fetchAll();
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try { await api.post("/api/suppliers", form); setShowAdd(false); fetchAll(); }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
 
-  const filtered = suppliers.filter(s =>
-    !search || s.name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.city?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const supplierInventory = (id) => inventory.filter(i => i.supplier_id === id);
-
   return (
-    <Page
-      title="Suppliers"
-      subtitle={`${suppliers.length} suppliers`}
-      actions={<BtnPrimary onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Supplier</BtnPrimary>}
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input placeholder="Search suppliers..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 max-w-md" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div><h1 className="text-2xl font-black text-gray-800">Suppliers</h1><p className="text-gray-400 text-sm">{suppliers.length} suppliers</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Add Supplier</Btn>
       </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-        {loading ? <PageLoader /> : (
-          <Table
-            headers={['Supplier','Location','Contact','Products Supplied','Inventory Items','Total Purchased']}
-            empty={filtered.length === 0 && <EmptyState icon={Building2} title="No suppliers found" />}
-          >
-            {filtered.map(s => {
-              const inv = supplierInventory(s.id);
-              const total = inv.reduce((a, i) => a + (i.cost_price || 0) * (i.available_quantity || 0), 0);
-              return (
-                <Tr key={s.id}>
-                  <Td>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <Building2 className="w-4 h-4 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{s.name}</p>
-                        <p className="text-xs text-gray-400">{s.email}</p>
-                      </div>
-                    </div>
-                  </Td>
-                  <Td>
-                    <div className="flex items-center gap-1 text-sm">
-                      <MapPin className="w-3 h-3 text-gray-400" />
-                      {[s.city, s.country].filter(Boolean).join(', ') || '—'}
-                    </div>
-                  </Td>
-                  <Td>
-                    {s.contact_person && <p className="font-medium text-sm">{s.contact_person}</p>}
-                    {s.phone && <p className="text-xs text-gray-400 flex items-center gap-1"><Phone className="w-3 h-3" />{s.phone}</p>}
-                  </Td>
-                  <Td className="text-sm">{s.products_supplied || '—'}</Td>
-                  <Td className="font-semibold">{inv.length}</Td>
-                  <Td className="font-semibold">{formatCurrency(total)}</Td>
-                </Tr>
-              );
-            })}
-          </Table>
-        )}
-      </div>
-
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Add Supplier">
-        <Field label="Supplier Name" required>
-          <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-        </Field>
+      {loading ? <Spinner /> : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{["Supplier", "Location", "GST", "Contact", "Products Supplied", "Inv. Items", "Action"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {suppliers.map(s => (
+                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="px-4 py-3"><p className="font-bold text-gray-800">{s.name}</p><p className="text-xs text-gray-400">{s.contact_person}</p></td>
+                  <td className="px-4 py-3 text-gray-500">{[s.city, s.country].filter(Boolean).join(", ")}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.gst_number || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{s.phone || s.email || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500">{s.products_supplied || "—"}</td>
+                  <td className="px-4 py-3 font-semibold">{inv.filter(i => i.supplier_id === s.id).length}</td>
+                  <td className="px-4 py-3"><Btn small variant="secondary" onClick={() => { }}>View</Btn></td>
+                </tr>
+              ))}
+              {suppliers.length === 0 && <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-300">No suppliers yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <SlidePanel title="Add Supplier" open={showAdd} onClose={() => setShowAdd(false)}>
+        <GstLookup onFound={d => { setForm(p => ({ ...p, name: d.name || p.name, city: d.city || p.city, contact_person: d.contact_person || p.contact_person, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number, pan_number: d.pan_number || p.pan_number })); }} />
+        <Field label="Supplier Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="City"><Input value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></Field>
-          <Field label="Country"><Input value={form.country} onChange={e => setForm({...form, country: e.target.value})} /></Field>
+          <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
+          <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Contact Person"><Input value={form.contact_person} onChange={e => setForm({...form, contact_person: e.target.value})} /></Field>
-          <Field label="Phone"><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></Field>
+          <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="27XXXXX…" className="uppercase" /></Field>
+          <Field label="PAN Number"><Input value={form.pan_number} onChange={set("pan_number")} placeholder="AAAAA0000A" className="uppercase" /></Field>
         </div>
-        <Field label="Email"><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></Field>
-        <Field label="Products Supplied">
-          <Input placeholder="e.g. Teak Logs, Plywood Sheets" value={form.products_supplied} onChange={e => setForm({...form, products_supplied: e.target.value})} />
-        </Field>
-        <Field label="Notes"><Textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></Field>
-        <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleCreate} loading={saving} className="flex-1 justify-center">Add Supplier</BtnPrimary>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Contact Person"><Input value={form.contact_person} onChange={set("contact_person")} /></Field>
+          <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
         </div>
+        <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+        <Field label="Products Supplied"><Input value={form.products_supplied} onChange={set("products_supplied")} placeholder="Teak, Plywood…" /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── CUSTOMERS ────────────────────────────────────────────────────────────────
+// ── CUSTOMERS ──────────────────────────────────────────────────────────────────
 function Customers() {
   const [customers, setCustomers] = useState([]);
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name:'', city:'', country:'India', phone:'', email:'', notes:'' });
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState({ name: "", city: "", country: "India", phone: "", email: "", gst_number: "", pan_number: "", notes: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [c, d] = await Promise.all([api.get('/api/customers'), api.get('/api/deals')]);
-      setCustomers(c.data); setDeals(d.data);
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
+    setLoading(true);
+    const [a, b] = await Promise.all([api.get("/api/customers"), api.get("/api/deals")]).catch(() => [[], []]);
+    setCustomers(a?.data || []); setDeals(b?.data || []);
+    setLoading(false);
   }, []);
-
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleCreate = async () => {
-    if (!form.name) return;
-    setSaving(true);
-    try {
-      await api.post('/api/customers', form);
-      setShowAdd(false);
-      setForm({ name:'', city:'', country:'India', phone:'', email:'', notes:'' });
-      fetchAll();
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try { await api.post("/api/customers", form); setShowAdd(false); fetchAll(); }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
 
-  const filtered = customers.filter(c =>
-    !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const custDeals = (id) => deals.filter(d => d.customer_id === id);
-
   return (
-    <Page
-      title="Customers"
-      subtitle={`${customers.length} customers`}
-      actions={<BtnPrimary onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Customer</BtnPrimary>}
-    >
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 max-w-md" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div><h1 className="text-2xl font-black text-gray-800">Customers</h1><p className="text-gray-400 text-sm">{customers.length} customers</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Add Customer</Btn>
       </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-        {loading ? <PageLoader /> : (
-          <Table
-            headers={['Customer','Location','Contact','Total Deals','Revenue','Last Deal']}
-            empty={filtered.length === 0 && <EmptyState icon={Users} title="No customers yet" description="Add your first customer." />}
-          >
-            {filtered.map(c => {
-              const cd = custDeals(c.id);
-              const rev = cd.filter(d => ['delivered','completed'].includes(d.status)).reduce((a, d) => a + (d.total_value || 0), 0);
-              const last = cd.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-              return (
-                <Tr key={c.id}>
-                  <Td>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
-                        {(c.name || 'U')[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{c.name}</p>
-                        <p className="text-xs text-gray-400">{c.email}</p>
-                      </div>
-                    </div>
-                  </Td>
-                  <Td>
-                    <div className="flex items-center gap-1 text-sm">
-                      <MapPin className="w-3 h-3 text-gray-400" />
-                      {[c.city, c.country].filter(Boolean).join(', ') || '—'}
-                    </div>
-                  </Td>
-                  <Td>
-                    {c.phone && <p className="text-sm flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400" />{c.phone}</p>}
-                  </Td>
-                  <Td className="font-semibold">{cd.length}</Td>
-                  <Td className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(rev)}</Td>
-                  <Td className="text-xs text-gray-400">{last ? new Date(last.created_at).toLocaleDateString('en-IN') : '—'}</Td>
-                </Tr>
-              );
-            })}
-          </Table>
-        )}
-      </div>
-
-      <SlidePanel open={showAdd} onClose={() => setShowAdd(false)} title="Add Customer">
-        <Field label="Customer Name" required><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></Field>
+      {loading ? <Spinner /> : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{["Customer", "Location", "GST", "Contact", "Total Deals", "Revenue", "Last Deal"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {customers.map(c => {
+                const cDeals = deals.filter(d => d.customer_id === c.id);
+                const rev = cDeals.reduce((s, d) => s + (d.total_value || d.value || 0), 0);
+                const last = cDeals.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                return (
+                  <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-3"><p className="font-bold">{c.name}</p></td>
+                    <td className="px-4 py-3 text-gray-500">{[c.city, c.country].filter(Boolean).join(", ")}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{c.gst_number || "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">{c.phone || c.email || "—"}</td>
+                    <td className="px-4 py-3 font-semibold text-blue-700">{cDeals.length}</td>
+                    <td className="px-4 py-3 font-bold text-green-700">{fmt(rev)}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(last?.created_at)}</td>
+                  </tr>
+                );
+              })}
+              {customers.length === 0 && <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-300">No customers yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <SlidePanel title="Add Customer" open={showAdd} onClose={() => setShowAdd(false)}>
+        <GstLookup onFound={d => { setForm(p => ({ ...p, name: d.name || p.name, city: d.city || p.city, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number })); }} />
+        <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="City"><Input value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></Field>
-          <Field label="Country"><Input value={form.country} onChange={e => setForm({...form, country: e.target.value})} /></Field>
+          <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
+          <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Phone"><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></Field>
-          <Field label="Email"><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></Field>
+          <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="27XXXXX…" /></Field>
+          <Field label="PAN Number"><Input value={form.pan_number} onChange={set("pan_number")} placeholder="AAAAA0000A" /></Field>
         </div>
-        <Field label="Notes"><Textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></Field>
-        <div className="flex gap-3 pt-2">
-          <BtnSecondary onClick={() => setShowAdd(false)} className="flex-1 justify-center">Cancel</BtnSecondary>
-          <BtnPrimary onClick={handleCreate} loading={saving} className="flex-1 justify-center">Add Customer</BtnPrimary>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+          <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
         </div>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Customer"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
       </SlidePanel>
-    </Page>
+    </div>
   );
 }
 
-// ─── FINANCIALS ───────────────────────────────────────────────────────────────
+// ── FINANCIALS ─────────────────────────────────────────────────────────────────
 function Financials() {
-  const [data, setData] = useState({ inventory: [], deals: [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [inv, deals] = await Promise.all([api.get('/api/inventory'), api.get('/api/deals')]);
-      setData({ inventory: inv.data, deals: deals.data });
-    } catch (e) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const inventoryCost = data.inventory.reduce((a, i) => a + (i.cost_price || 0) * (i.available_quantity || 0), 0);
-  const marketValue = data.inventory.reduce((a, i) => a + (i.market_value || i.cost_price || 0) * (i.available_quantity || 0), 0);
-  const revenue = data.deals.filter(d => ['delivered','completed'].includes(d.status)).reduce((a, d) => a + (d.total_value || 0), 0);
-  const profit = revenue * 0.18;
-  const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6'];
-
-  const categoryBar = data.inventory.reduce((acc, item) => {
-    const ex = acc.find(d => d.name === item.category);
-    const v = (item.cost_price || 0) * (item.available_quantity || 0);
-    if (ex) ex.value += v; else acc.push({ name: item.category || 'Other', value: v });
-    return acc;
-  }, []);
-
-  const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
-  const base = inventoryCost || 700000;
-  const trend = months.map((m, i) => ({
-    month: m,
-    Revenue: Math.round(revenue / 6 + Math.random() * 50000 * i),
-    Cost: Math.round(base * 0.4 + base * 0.03 * i),
-    Profit: Math.round(profit / 6 + Math.random() * 10000 * i),
-  }));
-
-  if (loading) return <PageLoader text="Loading financials..." />;
-
-  return (
-    <Page title="Financials" subtitle="Financial overview and analytics">
-      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Revenue', value: formatCurrency(revenue), icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
-          { label: 'Inventory Cost', value: formatCurrency(inventoryCost), icon: Package, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-          { label: 'Market Value', value: formatCurrency(marketValue), icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-          { label: 'Profit Estimate', value: formatCurrency(profit), sub: '~18% margin', icon: Star, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-        ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 space-y-3">
-            <div className={cls('w-10 h-10 rounded-lg flex items-center justify-center', s.bg)}>
-              <s.icon className={cls('w-5 h-5', s.color)} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-              {s.sub && <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Revenue, Cost & Profit Trend</h3>
-        <p className="text-xs text-gray-400 mb-5">6-month overview</p>
-        <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={trend}>
-            <defs>
-              {['#3b82f6','#10b981','#f59e0b'].map((c, i) => (
-                <linearGradient key={i} id={`g${i}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={c} stopOpacity={0.12} />
-                  <stop offset="95%" stopColor={c} stopOpacity={0} />
-                </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" className="dark:stroke-slate-700" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/100000).toFixed(0)}L`} />
-            <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Area type="monotone" dataKey="Revenue" stroke="#3b82f6" strokeWidth={2} fill="url(#g0)" />
-            <Area type="monotone" dataKey="Cost" stroke="#10b981" strokeWidth={2} fill="url(#g1)" />
-            <Area type="monotone" dataKey="Profit" stroke="#f59e0b" strokeWidth={2} fill="url(#g2)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-5">Revenue by Customer</h3>
-          {data.deals.length === 0
-            ? <p className="text-gray-400 text-sm text-center py-8">No deal data yet</p>
-            : <p className="text-gray-400 text-sm text-center py-8">Deal revenue breakdown coming soon</p>
-          }
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-5">Inventory Value by Category</h3>
-          {categoryBar.length > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={categoryBar} layout="vertical">
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/100000).toFixed(0)}L`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={60} />
-                <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12 }} />
-                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <EmptyState icon={BarChart3} title="No inventory data" />}
-        </div>
-      </div>
-
-      {/* P&L Summary */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-6">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">P&L Summary</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { label: 'TOTAL REVENUE', value: formatCurrency(revenue), sub: 'From completed & delivered deals', color: 'border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800' },
-            { label: 'INVENTORY INVESTMENT', value: formatCurrency(inventoryCost), sub: 'Current stock at cost price', color: 'border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800' },
-            { label: 'PROFIT ESTIMATE', value: formatCurrency(profit), sub: '~18% estimated margin', color: 'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800' },
-          ].map(item => (
-            <div key={item.label} className={cls('rounded-xl border p-4', item.color)}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">{item.label}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{item.value}</p>
-              <p className="text-xs text-gray-400 mt-1">{item.sub}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Page>
-  );
-}
-
-// ─── AI INSIGHTS ──────────────────────────────────────────────────────────────
-function AIInsights() {
-  const [inventory, setInventory] = useState([]);
+  const [inv, setInv] = useState([]);
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState({});
-  const [insights, setInsights] = useState({ demand: [], alerts: [], sales: [] });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [inv, d] = await Promise.all([api.get('/api/inventory'), api.get('/api/deals')]);
-        setInventory(inv.data); setDeals(d.data);
-        generateInitialInsights(inv.data, d.data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    fetchData();
+    Promise.all([api.get("/api/inventory"), api.get("/api/deals")]).then(([a, b]) => {
+      setInv(a.data || []); setDeals(b.data || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  const generateInitialInsights = (inv, deals) => {
-    const alerts = inv.map(item => ({
-      tag: `${item.available_quantity || 0} ${item.unit || 'CBM'}`,
-      title: `${item.available_quantity < 20 ? 'Low Stock Alert' : 'Stock Availability'} for ${item.product_name}`,
-      body: item.available_quantity < 20
-        ? `Current inventory is at ${item.available_quantity} ${item.unit}, close to minimum threshold.`
-        : `Currently holds ${item.available_quantity} ${item.unit}. Ensure logistics are in place.`,
-      color: item.available_quantity < 20 ? 'orange' : 'blue',
-    }));
+  const totalCost = inv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+  const marketVal = inv.reduce((s, i) => s + (i.market_value || i.cost_price || 0) * (i.available_quantity || 0), 0);
+  const revenue = deals.filter(d => ["completed", "delivered", "closed"].includes((d.status || "").toLowerCase())).reduce((s, d) => s + (d.total_value || d.value || 0), 0);
+  const profit = revenue - totalCost * 0.7;
 
-    setInsights({
-      demand: [
-        { tag: '25% INCREASE', title: 'Increase in Teak Wood Demand', body: 'Expected increase due to growth in luxury furniture and interior design projects.', color: 'green' },
-        { tag: '15% INCREASE', title: 'Rise in Parawood Utilization', body: 'Parawood projected to see 15% rise in demand due to cost-effectiveness and sustainability.', color: 'green' },
-        { tag: '20% INCREASE', title: 'Shift Towards Engineered Wood', body: 'Growing trend with a predicted 20% increase as builders seek cost-efficient solutions.', color: 'green' },
-      ],
-      alerts,
-      sales: [
-        { tag: 'AVG PURCHASE FREQUENCY: 2 MONTHS', title: 'Customer Purchase Frequency', body: 'Timber buyers tend to purchase every 2 months on average, driven by seasonal projects.', color: 'blue' },
-        { tag: 'TOP PRODUCTS: OAK (40%), PINE (30%)', title: 'Top Performing Timber Products', body: 'Oak and Pine accounted for 70% of total sales in the last quarter.', color: 'blue' },
-        { tag: 'QUARTERLY REVENUE GROWTH: 15%', title: 'Revenue Trends Over Time', body: 'Steady 15% quarterly growth with spikes during home improvement seasons.', color: 'blue' },
-      ],
-    });
-  };
-
-  const regenerate = async (section) => {
-    setGenerating(p => ({ ...p, [section]: true }));
-    await new Promise(r => setTimeout(r, 1500));
-    setGenerating(p => ({ ...p, [section]: false }));
-  };
-
-  const InsightCard = ({ tag, title, body, color }) => {
-    const colors = {
-      green: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
-      blue: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400',
-      orange: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400',
-    };
-    return (
-      <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-2">
-        <p className={cls('text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded w-fit', colors[color] || colors.blue)}>{tag}</p>
-        <p className="font-semibold text-gray-900 dark:text-white text-sm">{title}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{body}</p>
-      </div>
-    );
-  };
-
-  const columns = [
-    { key: 'demand', title: 'Demand Prediction', icon: TrendingUp, data: insights.demand },
-    { key: 'alerts', title: 'Inventory Alerts', icon: AlertCircle, data: insights.alerts },
-    { key: 'sales', title: 'Sales Analytics', icon: BarChart3, data: insights.sales },
-  ];
-
-  if (loading) return <PageLoader text="Loading AI data..." />;
+  const catData = {};
+  inv.forEach(i => { const c = i.category || "Other"; catData[c] = (catData[c] || 0) + (i.cost_price || 0) * (i.available_quantity || 0); });
+  const barData = Object.entries(catData).map(([name, value]) => ({ name, value }));
 
   return (
-    <Page title="AI Insights" subtitle="AI-powered analytics for your timber operations">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 flex items-start gap-4">
-        <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-5 h-5 text-blue-500" />
-        </div>
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">Powered by AI Analytics</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Generate real-time insights based on your actual inventory and deal data. Click any module below to analyze your data.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {columns.map(col => (
-          <div key={col.key} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
-              <div className="flex items-center gap-2">
-                <col.icon className="w-4 h-4 text-blue-500" />
-                <span className="font-semibold text-gray-900 dark:text-white text-sm">{col.title}</span>
-              </div>
-              <button
-                onClick={() => regenerate(col.key)}
-                disabled={generating[col.key]}
-                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
-              >
-                {generating[col.key] ? <Spinner size={3} /> : <RefreshCw className="w-3 h-3" />}
-                Generate
-              </button>
+    <div className="p-6 space-y-6">
+      <div><h1 className="text-2xl font-black text-gray-800">Financials</h1><p className="text-gray-400 text-sm">P&L overview</p></div>
+      {loading ? <Spinner /> : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Total Revenue" value={fmt(revenue)} icon="💰" color="green" />
+            <StatCard label="Inventory Cost" value={fmt(totalCost)} icon="📦" color="blue" />
+            <StatCard label="Market Value" value={fmt(marketVal)} icon="📈" color="purple" />
+            <StatCard label="Est. Profit (18%)" value={fmt(profit)} icon="✨" color="orange" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border p-5">
+              <h3 className="font-bold mb-4">Inventory by Category (₹)</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={barData} layout="vertical">
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v / 1e5).toFixed(0)}L` : v} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
+                  <Tooltip formatter={v => fmt(v)} />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div className="p-4 space-y-3">
-              {col.data.length === 0
-                ? <p className="text-gray-400 text-sm text-center py-4">No data available. Click Generate.</p>
-                : col.data.map((item, i) => <InsightCard key={i} {...item} />)
-              }
+            <div className="bg-white rounded-xl border p-5 space-y-4">
+              <h3 className="font-bold">P&L Summary</h3>
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-xs text-green-500 uppercase tracking-wide">Total Revenue</p>
+                <p className="text-2xl font-black text-green-700">{fmt(revenue)}</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-xs text-blue-500 uppercase tracking-wide">Inventory Cost</p>
+                <p className="text-2xl font-black text-blue-700">{fmt(totalCost)}</p>
+              </div>
+              <div className={`${profit >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"} border rounded-xl p-4`}>
+                <p className="text-xs uppercase tracking-wide text-gray-500">Estimated Profit</p>
+                <p className={`text-2xl font-black ${profit >= 0 ? "text-green-700" : "text-red-700"}`}>{fmt(profit)}</p>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-    </Page>
+        </>
+      )}
+    </div>
   );
 }
 
-// ─── REPORTS ──────────────────────────────────────────────────────────────────
+// ── REPORTS (PDF download) ─────────────────────────────────────────────────────
 function Reports() {
-  const [loading, setLoading] = useState(false);
+  const [company, setCompany] = useState({});
+  const [loading, setLoading] = useState({});
+  useEffect(() => { api.get("/api/company").then(r => setCompany(r.data || {})).catch(() => { }); }, []);
 
-  const downloadCSV = async (type) => {
+  const REPORTS = [
+    { key: "inventory", label: "Inventory Report", icon: "📦", desc: "All stock with valuation" },
+    { key: "sales", label: "Sales Report", icon: "🤝", desc: "All deals and revenue" },
+    { key: "shipments", label: "Shipment Report", icon: "🚛", desc: "Transit & logistics" },
+    { key: "suppliers", label: "Supplier Report", icon: "🏭", desc: "Supplier directory" },
+    { key: "customers", label: "Customer Report", icon: "👥", desc: "Customer revenue analysis" },
+  ];
+
+  const downloadPDF = async (type, label) => {
+    setLoading(p => ({ ...p, [type]: true }));
+    try {
+      const { data } = await api.get(`/api/reports/${type}`);
+      generatePDF(type, label, data, company);
+    } catch (e) { alert("Failed to fetch data: " + e.message); }
+    setLoading(p => ({ ...p, [type]: false }));
+  };
+
+  const generatePDF = (type, label, data, co) => {
+    const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const rows = buildTableRows(type, data);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${label}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a1a; background: #fff; }
+  .page { max-width: 900px; margin: 0 auto; padding: 32px; }
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 3px solid #1e3a5f; margin-bottom: 20px; }
+  .company-name { font-size: 22px; font-weight: 900; color: #1e3a5f; letter-spacing: -0.5px; }
+  .company-tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+  .company-legal { text-align: right; font-size: 10px; color: #475569; line-height: 1.6; }
+  .company-legal strong { color: #1e3a5f; }
+  /* Report title */
+  .report-title-box { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .report-title { font-size: 16px; font-weight: 800; }
+  .report-meta { font-size: 10px; opacity: 0.85; text-align: right; }
+  /* Summary cards */
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+  .card-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }
+  .card-value { font-size: 18px; font-weight: 800; color: #1e3a5f; margin-top: 2px; }
+  /* Table */
+  .section-title { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  thead tr { background: #1e3a5f; color: white; }
+  th { padding: 8px 10px; text-align: left; font-weight: 600; letter-spacing: 0.3px; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  .num { text-align: right; font-weight: 600; font-family: monospace; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-orange { background: #fed7aa; color: #9a3412; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+  /* Footer */
+  .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="company-name">${co.name || "Dockside Timber"}</div>
+      <div class="company-tagline">Timber Trade Operating System</div>
+      ${co.address ? `<div style="font-size:10px;color:#64748b;margin-top:4px">${co.address}</div>` : ""}
+    </div>
+    <div class="company-legal">
+      ${co.gst_number ? `<div><strong>GST:</strong> ${co.gst_number}</div>` : ""}
+      ${co.pan_number ? `<div><strong>PAN:</strong> ${co.pan_number}</div>` : ""}
+      ${co.iec_number ? `<div><strong>IEC:</strong> ${co.iec_number}</div>` : ""}
+      ${co.owner_name ? `<div><strong>Proprietor:</strong> ${co.owner_name}</div>` : ""}
+      ${co.phone ? `<div><strong>Ph:</strong> ${co.phone}</div>` : ""}
+      ${co.email ? `<div><strong>Email:</strong> ${co.email}</div>` : ""}
+    </div>
+  </div>
+  <div class="report-title-box">
+    <div>
+      <div class="report-title">📊 ${label}</div>
+      <div style="font-size:11px;opacity:0.8;margin-top:2px">${data.length} records</div>
+    </div>
+    <div class="report-meta">
+      <div>Generated: ${now}</div>
+      <div>Dockside ERP v2.0</div>
+    </div>
+  </div>
+  ${buildSummary(type, data)}
+  <div class="section-title">Detailed Records</div>
+  ${rows}
+</div>
+<div style="max-width:900px;margin:0 auto;padding:0 32px">
+  <div class="footer">
+    <span>${co.name || "Dockside Timber"} · Confidential Business Report</span>
+    <span>Generated on ${now} by Dockside ERP</span>
+  </div>
+</div>
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 800);
+  };
+
+  const buildSummary = (type, data) => {
+    if (type === "inventory") {
+      const total = data.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+      const units = data.reduce((s, i) => s + (i.available_quantity || 0), 0);
+      return `<div class="summary">
+        <div class="card"><div class="card-label">Total Products</div><div class="card-value">${data.length}</div></div>
+        <div class="card"><div class="card-label">Total Units</div><div class="card-value">${units}</div></div>
+        <div class="card"><div class="card-label">Inventory Value</div><div class="card-value">${fmt(total)}</div></div>
+        <div class="card"><div class="card-label">Avg Cost</div><div class="card-value">${fmt(total / (data.length || 1))}</div></div>
+      </div>`;
+    }
+    if (type === "sales") {
+      const rev = data.reduce((s, d) => s + (d.total_value || d.value || 0), 0);
+      const completed = data.filter(d => ["completed", "delivered"].includes((d.status || "").toLowerCase())).length;
+      return `<div class="summary">
+        <div class="card"><div class="card-label">Total Deals</div><div class="card-value">${data.length}</div></div>
+        <div class="card"><div class="card-label">Total Revenue</div><div class="card-value">${fmt(rev)}</div></div>
+        <div class="card"><div class="card-label">Completed</div><div class="card-value">${completed}</div></div>
+        <div class="card"><div class="card-label">Avg Deal Value</div><div class="card-value">${fmt(rev / (data.length || 1))}</div></div>
+      </div>`;
+    }
+    if (type === "shipments") {
+      const freight = data.reduce((s, d) => s + (d.freight_cost || d.freight_charges || 0), 0);
+      const delivered = data.filter(d => (d.status || "").toLowerCase() === "delivered").length;
+      return `<div class="summary">
+        <div class="card"><div class="card-label">Total Shipments</div><div class="card-value">${data.length}</div></div>
+        <div class="card"><div class="card-label">Delivered</div><div class="card-value">${delivered}</div></div>
+        <div class="card"><div class="card-label">Total Freight</div><div class="card-value">${fmt(freight)}</div></div>
+        <div class="card"><div class="card-label">In Transit</div><div class="card-value">${data.length - delivered}</div></div>
+      </div>`;
+    }
+    return `<div class="summary"><div class="card"><div class="card-label">Total Records</div><div class="card-value">${data.length}</div></div></div>`;
+  };
+
+  const buildTableRows = (type, data) => {
+    const badge = (text, color = "gray") => `<span class="badge badge-${color}">${text || "—"}</span>`;
+    if (type === "inventory") {
+      return `<table><thead><tr><th>#</th><th>Product</th><th>Category</th><th>Wood Type</th><th>Grade</th><th>Unit</th><th class="num">Qty</th><th class="num">Cost Price</th><th class="num">Total Value</th></tr></thead><tbody>
+        ${data.map((i, idx) => `<tr><td>${idx + 1}</td><td><strong>${i.product_name || i.name || "—"}</strong></td><td>${i.category || "—"}</td><td>${i.wood_type || "—"}</td><td>${i.grade || "—"}</td><td>${i.unit || "—"}</td><td class="num">${i.available_quantity || 0}</td><td class="num">₹${(i.cost_price || 0).toLocaleString("en-IN")}</td><td class="num">₹${((i.cost_price || 0) * (i.available_quantity || 0)).toLocaleString("en-IN")}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    if (type === "sales") {
+      return `<table><thead><tr><th>#</th><th>Deal No.</th><th>Customer</th><th>Product</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Total Value</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead><tbody>
+        ${data.map((d, idx) => `<tr><td>${idx + 1}</td><td>${d.deal_number || "—"}</td><td>${d.customer_name || "—"}</td><td>${d.product_name || "—"}</td><td class="num">${d.quantity || "—"}</td><td class="num">₹${(d.unit_price || 0).toLocaleString("en-IN")}</td><td class="num">₹${(d.total_value || d.value || 0).toLocaleString("en-IN")}</td><td>${badge(d.status || "draft", "blue")}</td><td>${badge(d.payment_status || "—", "orange")}</td><td>${fmtDate(d.created_at)}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    if (type === "shipments") {
+      return `<table><thead><tr><th>#</th><th>Shipment No.</th><th>Vehicle</th><th>Driver</th><th>Destination</th><th>Dispatch Date</th><th>ETA</th><th>Status</th><th class="num">Freight</th></tr></thead><tbody>
+        ${data.map((s, idx) => `<tr><td>${idx + 1}</td><td>${s.shipment_number || "—"}</td><td>${s.vehicle_number || s.vehicle_no || "—"}</td><td>${s.driver_name || "—"}</td><td>${s.destination || s.to_location || "—"}</td><td>${fmtDate(s.dispatch_date || s.dispatched_at)}</td><td>${fmtDate(s.expected_arrival || s.eta)}</td><td>${badge(s.status || "—", "blue")}</td><td class="num">₹${(s.freight_cost || s.freight_charges || 0).toLocaleString("en-IN")}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    if (type === "suppliers") {
+      return `<table><thead><tr><th>#</th><th>Supplier Name</th><th>City</th><th>Country</th><th>GST No.</th><th>Contact Person</th><th>Phone</th><th>Email</th><th>Products</th></tr></thead><tbody>
+        ${data.map((s, idx) => `<tr><td>${idx + 1}</td><td><strong>${s.name || "—"}</strong></td><td>${s.city || "—"}</td><td>${s.country || "—"}</td><td>${s.gst_number || "—"}</td><td>${s.contact_person || "—"}</td><td>${s.phone || "—"}</td><td>${s.email || "—"}</td><td>${s.products_supplied || "—"}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    if (type === "customers") {
+      return `<table><thead><tr><th>#</th><th>Customer Name</th><th>City</th><th>Country</th><th>GST No.</th><th>Phone</th><th>Email</th><th>Notes</th></tr></thead><tbody>
+        ${data.map((c, idx) => `<tr><td>${idx + 1}</td><td><strong>${c.name || "—"}</strong></td><td>${c.city || "—"}</td><td>${c.country || "—"}</td><td>${c.gst_number || "—"}</td><td>${c.phone || "—"}</td><td>${c.email || "—"}</td><td>${c.notes || "—"}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    return "<p>No data</p>";
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-black text-gray-800">Reports</h1>
+        <p className="text-gray-400 text-sm">Professional PDF reports with company letterhead</p>
+      </div>
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <span className="text-2xl">💡</span>
+        <div>
+          <p className="font-semibold text-blue-800 text-sm">Reports include your company letterhead</p>
+          <p className="text-blue-600 text-xs mt-0.5">Go to Company Settings to add GST, IEC, PAN, owner name and address — these will appear on all reports.</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {REPORTS.map(r => (
+          <div key={r.key} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="text-3xl mb-3">{r.icon}</div>
+            <h3 className="font-bold text-gray-800 text-base">{r.label}</h3>
+            <p className="text-gray-400 text-xs mt-1 mb-4">{r.desc}</p>
+            <Btn onClick={() => downloadPDF(r.key, r.label)} disabled={loading[r.key]}>
+              {loading[r.key] ? "Generating…" : "📥 Download PDF"}
+            </Btn>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── COMPANY MODULE ─────────────────────────────────────────────────────────────
+function Company() {
+  const [company, setCompany] = useState(null);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savingBranch, setSavingBranch] = useState(false);
+  const [err, setErr] = useState("");
+  const [branchErr, setBranchErr] = useState("");
+  const [showBranch, setShowBranch] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [form, setForm] = useState({
+    name: "", industry: "Timber Trade", city: "", country: "India", address: "",
+    owner_name: "", phone: "", email: "", website: "",
+    gst_number: "", pan_number: "", iec_number: "", cin_number: "",
+    bank_name: "", bank_account: "", bank_ifsc: "", bank_branch: "",
+    notes: ""
+  });
+  const [branchForm, setBranchForm] = useState({ name: "", city: "", address: "", manager_name: "", phone: "", gst_number: "" });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const setB = k => e => setBranchForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      let data, filename, headers;
-      switch (type) {
-        case 'inventory': {
-          const res = await api.get('/api/inventory');
-          data = res.data;
-          headers = ['id','product_name','category','wood_type','quality_grade','available_quantity','unit','cost_price','market_value'];
-          filename = 'inventory_report.csv';
-          break;
-        }
-        case 'deals': {
-          const res = await api.get('/api/deals');
-          data = res.data;
-          headers = ['id','deal_number','customer_id','quantity','unit_price','total_value','status','payment_status','created_at'];
-          filename = 'sales_report.csv';
-          break;
-        }
-        case 'shipments': {
-          const res = await api.get('/api/shipments');
-          data = res.data;
-          headers = ['id','shipment_number','vehicle_number','driver_name','destination','status','dispatch_date','expected_arrival','freight_cost'];
-          filename = 'shipment_report.csv';
-          break;
-        }
-        case 'suppliers': {
-          const res = await api.get('/api/suppliers');
-          data = res.data;
-          headers = ['id','name','city','country','contact_person','phone','email','products_supplied'];
-          filename = 'supplier_report.csv';
-          break;
-        }
-        case 'customers': {
-          const res = await api.get('/api/customers');
-          data = res.data;
-          headers = ['id','name','city','country','phone','email'];
-          filename = 'customer_report.csv';
-          break;
-        }
-        default: return;
-      }
-      const csvRows = [headers.join(',')];
-      data.forEach(row => csvRows.push(headers.map(h => JSON.stringify(row[h] ?? '')).join(',')));
-      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) { alert('Export failed: ' + e.message); }
-    finally { setLoading(false); }
+      const [co, br] = await Promise.all([api.get("/api/company"), api.get("/api/branches").catch(() => ({ data: [] }))]);
+      const coData = co.data || {};
+      setCompany(coData);
+      if (coData.id) setForm(coData);
+      setBranches(br.data || []);
+    } catch { }
+    setLoading(false);
+  }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const save = async () => {
+    setSaving(true); setErr("");
+    try {
+      if (company?.id) { await api.put(`/api/company/${company.id}`, form); }
+      else { await api.post("/api/company", form); }
+      fetchAll();
+      alert("✅ Company profile saved!");
+    } catch (e) { setErr(e.response?.data?.error || e.message); }
+    setSaving(false);
   };
 
-  const reports = [
-    { key: 'inventory', icon: Package, label: 'Inventory Report', desc: 'Full inventory listing with values and yard locations', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { key: 'deals', icon: Briefcase, label: 'Sales Report', desc: 'All deals with customer, value, and payment status', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
-    { key: 'shipments', icon: Truck, label: 'Shipment Report', desc: 'Transit history with vehicle and status details', color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-    { key: 'suppliers', icon: Building2, label: 'Supplier Report', desc: 'Supplier list with purchase volumes', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-    { key: 'customers', icon: Users, label: 'Customer Report', desc: 'Customer list with deal history and revenue', color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+  const saveBranch = async () => {
+    if (!branchForm.name) { setBranchErr("Branch name required"); return; }
+    setSavingBranch(true); setBranchErr("");
+    try {
+      await api.post("/api/branches", { ...branchForm, company_id: company?.id });
+      setShowBranch(false); setBranchForm({ name: "", city: "", address: "", manager_name: "", phone: "", gst_number: "" });
+      fetchAll();
+    } catch (e) { setBranchErr(e.response?.data?.error || e.message); }
+    setSavingBranch(false);
+  };
+
+  const TABS = [
+    { id: "profile", label: "Company Profile", icon: "🏢" },
+    { id: "legal", label: "Legal & Tax", icon: "⚖️" },
+    { id: "banking", label: "Banking", icon: "🏦" },
+    { id: "branches", label: "Branches", icon: "📍" },
   ];
 
+  if (loading) return <div className="p-6"><Spinner /></div>;
+
   return (
-    <Page title="Reports" subtitle="Export your business data in CSV format">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {reports.map(r => (
-          <div key={r.key} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className={cls('w-10 h-10 rounded-xl flex items-center justify-center', r.bg)}>
-                <r.icon className={cls('w-5 h-5', r.color)} />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{r.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{r.desc}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => downloadCSV(r.key)}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-black text-gray-800">Company Settings</h1>
+        <p className="text-gray-400 text-sm">Legal details, tax registration, banking & branches</p>
+      </div>
+
+      {/* Company card preview */}
+      {company?.name && (
+        <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white rounded-xl p-5 mb-6 flex items-start justify-between">
+          <div>
+            <p className="text-2xl font-black">{company.name}</p>
+            <p className="text-blue-200 text-sm mt-1">{company.industry}</p>
+            <p className="text-gray-300 text-xs mt-2">{company.address}</p>
           </div>
+          <div className="text-right text-xs text-blue-200 space-y-1">
+            {company.gst_number && <p>GST: <span className="text-white font-mono">{company.gst_number}</span></p>}
+            {company.pan_number && <p>PAN: <span className="text-white font-mono">{company.pan_number}</span></p>}
+            {company.iec_number && <p>IEC: <span className="text-white font-mono">{company.iec_number}</span></p>}
+            {company.owner_name && <p>👤 {company.owner_name}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Tab navigation */}
+      <div className="flex gap-2 mb-6 border-b border-gray-200 pb-0">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className={cls("px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all",
+              activeTab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700")}>
+            {t.icon} {t.label}
+          </button>
         ))}
       </div>
 
-      <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-700 p-5">
-        <p className="font-semibold text-gray-900 dark:text-white mb-3">About Reports</p>
-        <ul className="space-y-1.5 text-sm text-gray-500 dark:text-gray-400">
-          {[
-            'All reports are exported as CSV files, compatible with Excel and Google Sheets',
-            'Reports include all records from your account',
-            'Data is exported with real-time values at time of export',
-            'PDF export coming soon in the next update',
-          ].map((t, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <span className="text-blue-400 mt-0.5">•</span> {t}
-            </li>
-          ))}
-        </ul>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        {activeTab === "profile" && (
+          <div className="space-y-4">
+            <h3 className="font-bold text-gray-700">Company Profile</h3>
+            <Field label="Company / Firm Name" required><Input value={form.name} onChange={set("name")} placeholder="Your company name" /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Industry"><Select value={form.industry} onChange={set("industry")}><option>Timber Trade</option><option>Wood Products</option><option>Construction Materials</option><option>Import/Export</option></Select></Field>
+              <Field label="Owner / Proprietor Name"><Input value={form.owner_name} onChange={set("owner_name")} /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
+              <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
+            </div>
+            <Field label="Registered Address"><Textarea value={form.address} onChange={set("address")} /></Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+              <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+              <Field label="Website"><Input value={form.website} onChange={set("website")} /></Field>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "legal" && (
+          <div className="space-y-4">
+            <h3 className="font-bold text-gray-700">Legal & Tax Registration</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="27AABCS1429B1ZB" className="font-mono uppercase" /></Field>
+              <Field label="PAN Number"><Input value={form.pan_number} onChange={set("pan_number")} placeholder="AABCS1429B" className="font-mono uppercase" /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="IEC Number (Import/Export Code)"><Input value={form.iec_number} onChange={set("iec_number")} placeholder="AABCS1429" className="font-mono uppercase" /></Field>
+              <Field label="CIN Number (if Pvt Ltd)"><Input value={form.cin_number} onChange={set("cin_number")} className="font-mono uppercase" /></Field>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700">
+              ⚠️ These numbers appear on all PDF reports as company letterhead. Keep them accurate.
+            </div>
+          </div>
+        )}
+
+        {activeTab === "banking" && (
+          <div className="space-y-4">
+            <h3 className="font-bold text-gray-700">Banking Details</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Bank Name"><Input value={form.bank_name} onChange={set("bank_name")} /></Field>
+              <Field label="Account Number"><Input value={form.bank_account} onChange={set("bank_account")} className="font-mono" /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="IFSC Code"><Input value={form.bank_ifsc} onChange={set("bank_ifsc")} className="font-mono uppercase" /></Field>
+              <Field label="Branch Name"><Input value={form.bank_branch} onChange={set("bank_branch")} /></Field>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "branches" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-700">Branch Offices</h3>
+              <Btn small onClick={() => setShowBranch(true)}>+ Add Branch</Btn>
+            </div>
+            {branches.length === 0 ? (
+              <div className="text-center py-10 text-gray-300"><p className="text-4xl mb-2">📍</p><p>No branches added</p></div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {branches.map(b => (
+                  <div key={b.id} className="border border-gray-200 rounded-xl p-4">
+                    <p className="font-bold text-gray-800">{b.name}</p>
+                    <p className="text-sm text-gray-500">{b.city}</p>
+                    <p className="text-xs text-gray-400 mt-1">{b.address}</p>
+                    {b.manager_name && <p className="text-xs text-gray-400 mt-1">👤 {b.manager_name} · {b.phone}</p>}
+                    {b.gst_number && <p className="text-xs font-mono text-gray-400">GST: {b.gst_number}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {showBranch && (
+              <div className="border border-blue-200 rounded-xl p-4 bg-blue-50 space-y-3">
+                <h4 className="font-bold text-blue-800 text-sm">New Branch</h4>
+                <Field label="Branch Name" required><Input value={branchForm.name} onChange={setB("name")} /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="City"><Input value={branchForm.city} onChange={setB("city")} /></Field>
+                  <Field label="Manager"><Input value={branchForm.manager_name} onChange={setB("manager_name")} /></Field>
+                </div>
+                <Field label="Address"><Textarea value={branchForm.address} onChange={setB("address")} /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Phone"><Input value={branchForm.phone} onChange={setB("phone")} /></Field>
+                  <Field label="GST Number"><Input value={branchForm.gst_number} onChange={setB("gst_number")} className="font-mono" /></Field>
+                </div>
+                <ErrBanner msg={branchErr} />
+                <div className="flex gap-2"><Btn small onClick={saveBranch} disabled={savingBranch}>{savingBranch ? "…" : "Save Branch"}</Btn><Btn small variant="secondary" onClick={() => setShowBranch(false)}>Cancel</Btn></div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <ErrBanner msg={err} />
+        {activeTab !== "branches" && (
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "💾 Save Company Profile"}</Btn>
+          </div>
+        )}
       </div>
-    </Page>
+    </div>
   );
 }
 
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
-function SettingsPage() {
-  const user = JSON.parse(localStorage.getItem('dockside-user') || '{}');
-  const [company, setCompany] = useState({ name:'', industry:'Timber & Plywood', currency:'INR', city:'', country:'India', phone:'', email:'' });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+// ── SETTINGS ───────────────────────────────────────────────────────────────────
+function Settings() {
+  const user = JSON.parse(localStorage.getItem("dockside-user") || "{}");
+  return (
+    <div className="p-6 max-w-xl">
+      <h1 className="text-2xl font-black text-gray-800 mb-6">Settings</h1>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h3 className="font-bold text-gray-700">Account</h3>
+        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600">{(user.full_name || user.email || "U")[0].toUpperCase()}</div>
+          <div>
+            <p className="font-bold text-gray-800">{user.full_name || "User"}</p>
+            <p className="text-sm text-gray-400">{user.email}</p>
+            <Badge text={user.role || "user"} color="blue" />
+          </div>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+          💡 To update company details (GST, PAN, IEC, branches), go to the <strong>Company</strong> section in the sidebar.
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// ── AI INSIGHTS ────────────────────────────────────────────────────────────────
+function AIInsights() {
+  const [inv, setInv] = useState([]);
+  const [deals, setDeals] = useState([]);
   useEffect(() => {
-    api.get('/api/company').then(res => {
-      if (res.data && res.data.id) setCompany(res.data);
-    }).catch(() => {});
+    api.get("/api/inventory").then(r => setInv(r.data || []));
+    api.get("/api/deals").then(r => setDeals(r.data || []));
   }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      if (company.id) await api.put(`/api/company/${company.id}`, company);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) { console.error(e); setFormError?.(e.response?.data?.error || e.response?.data?.hint || e.message || "An error occurred."); }
-    finally { setSaving(false); }
-  };
+  const lowStock = inv.filter(i => (i.available_quantity || 0) < 10);
+  const topProducts = Object.entries(inv.reduce((m, i) => { const k = i.category || "Other"; m[k] = (m[k] || 0) + (i.available_quantity || 0); return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
-    <Page title="Settings" subtitle="Manage your account and company settings">
-      <div className="max-w-2xl space-y-6">
-        {/* Account */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3">
-            <Users className="w-5 h-5 text-gray-400" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Account</h2>
-          </div>
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Name</p>
-                <p className="font-semibold text-gray-900 dark:text-white mt-1 uppercase">{user.full_name || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Email</p>
-                <p className="font-semibold text-gray-900 dark:text-white mt-1">{user.email || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Role</p>
-                <Badge status={user.role || 'admin'} label={user.role || 'admin'} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Company Profile */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3">
-            <Building2 className="w-5 h-5 text-gray-400" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Company Profile</h2>
-          </div>
-          <div className="px-6 py-5 space-y-4">
-            <Field label="Company Name">
-              <Input placeholder="Your company name" value={company.name || ''} onChange={e => setCompany({...company, name: e.target.value})} />
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Industry">
-                <Select value={company.industry || 'Timber & Plywood'} onChange={e => setCompany({...company, industry: e.target.value})}>
-                  {['Timber & Plywood','Steel','Paper','Agriculture','Other'].map(i => <option key={i}>{i}</option>)}
-                </Select>
-              </Field>
-              <Field label="Currency">
-                <Select value={company.currency || 'INR'} onChange={e => setCompany({...company, currency: e.target.value})}>
-                  {['INR','USD','EUR','AED','GBP'].map(c => <option key={c}>{c}</option>)}
-                </Select>
-              </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="City"><Input value={company.city || ''} onChange={e => setCompany({...company, city: e.target.value})} /></Field>
-              <Field label="Country"><Input value={company.country || ''} onChange={e => setCompany({...company, country: e.target.value})} /></Field>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Phone"><Input value={company.phone || ''} onChange={e => setCompany({...company, phone: e.target.value})} /></Field>
-              <Field label="Email"><Input type="email" value={company.email || ''} onChange={e => setCompany({...company, email: e.target.value})} /></Field>
-            </div>
-            <BtnPrimary onClick={handleSave} loading={saving} className={saved ? 'bg-green-600 hover:bg-green-700' : ''}>
-              {saved ? <><CheckCircle className="w-4 h-4" /> Saved!</> : <><FileText className="w-4 h-4" /> Save Settings</>}
-            </BtnPrimary>
-          </div>
-        </div>
-
-        {/* Platform Info */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3">
-            <Settings className="w-5 h-5 text-gray-400" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Platform</h2>
-          </div>
-          <div className="px-6 py-5 space-y-3">
-            {[
-              ['Version', 'Dockside v1.0'],
-              ['Platform', 'Timber & Plywood Trade OS'],
-              ['Support Industries', 'Timber, Steel, Paper, Agriculture'],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">{k}</span>
-                <span className="text-gray-900 dark:text-white font-medium">{v}</span>
+    <div className="p-6">
+      <h1 className="text-2xl font-black text-gray-800 mb-6">AI Insights</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="text-2xl mb-2">🔮</div>
+          <h3 className="font-bold text-gray-800 mb-3">Demand Prediction</h3>
+          <div className="space-y-2 text-sm">
+            {topProducts.map(([cat, qty]) => (
+              <div key={cat} className="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
+                <span className="text-gray-700">{cat}</span>
+                <span className="font-bold text-blue-700">{qty} units</span>
               </div>
             ))}
+            <p className="text-xs text-gray-400 mt-2">Based on current inventory levels</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="text-2xl mb-2">⚠️</div>
+          <h3 className="font-bold text-gray-800 mb-3">Inventory Alerts</h3>
+          <div className="space-y-2 text-sm">
+            {lowStock.length === 0 ? <p className="text-green-600 text-sm">✅ All stock levels healthy</p> :
+              lowStock.slice(0, 4).map(i => (
+                <div key={i.id} className="flex justify-between items-center p-2 bg-red-50 rounded-lg">
+                  <span className="text-gray-700">{i.product_name || i.name}</span>
+                  <Badge text={`${i.available_quantity} left`} color="red" />
+                </div>
+              ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="text-2xl mb-2">📈</div>
+          <h3 className="font-bold text-gray-800 mb-3">Sales Analytics</h3>
+          <div className="space-y-2 text-sm">
+            <div className="p-2 bg-green-50 rounded-lg flex justify-between">
+              <span className="text-gray-700">Total Deals</span>
+              <span className="font-bold text-green-700">{deals.length}</span>
+            </div>
+            <div className="p-2 bg-orange-50 rounded-lg flex justify-between">
+              <span className="text-gray-700">Pending</span>
+              <span className="font-bold text-orange-700">{deals.filter(d => d.status === "draft").length}</span>
+            </div>
+            <div className="p-2 bg-blue-50 rounded-lg flex justify-between">
+              <span className="text-gray-700">Completed</span>
+              <span className="font-bold text-blue-700">{deals.filter(d => ["completed", "delivered"].includes(d.status)).length}</span>
+            </div>
           </div>
         </div>
       </div>
-    </Page>
+    </div>
   );
 }
 
-// ─── APP ROOT ─────────────────────────────────────────────────────────────────
+// ── APP ROOT ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('dockside-token'));
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('dockside-dark') === 'true');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem("dockside-user")); } catch { return null; } });
 
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    localStorage.setItem('dockside-dark', darkMode);
-  }, [darkMode]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('dockside-token');
-    localStorage.removeItem('dockside-user');
-    setIsAuth(false);
+  const signOut = () => {
+    localStorage.removeItem("dockside-token");
+    localStorage.removeItem("dockside-user");
+    setUser(null);
   };
 
-  if (!isAuth) return <Login onLogin={() => setIsAuth(true)} />;
+  if (!user) return <Login onLogin={setUser} />;
 
   return (
-    <Router>
-      <div className="flex h-screen bg-gray-50 dark:bg-slate-900 overflow-hidden">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          darkMode={darkMode}
-          onToggleDarkMode={() => setDarkMode(p => !p)}
-          onLogout={handleLogout}
-        />
-        <div className="flex-1 flex flex-col lg:ml-52 min-w-0 overflow-hidden">
-          <Header onSidebarOpen={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-auto">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/yards" element={<Yards />} />
-              <Route path="/deals" element={<Deals />} />
-              <Route path="/transit" element={<Transit />} />
-              <Route path="/suppliers" element={<Suppliers />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/financials" element={<Financials />} />
-              <Route path="/ai-insights" element={<AIInsights />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
+    <BrowserRouter>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar onSignOut={signOut} />
+        <div className="flex-1 ml-52 min-h-screen">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/yards" element={<Yards />} />
+            <Route path="/deals" element={<Deals />} />
+            <Route path="/transit" element={<Transit />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/financials" element={<Financials />} />
+            <Route path="/ai-insights" element={<AIInsights />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/company" element={<Company />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
         </div>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
