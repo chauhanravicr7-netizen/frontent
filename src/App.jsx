@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, NavLink, useNavigate } from "react-router
 import axios from "axios";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const API = import.meta.env.VITE_API_URL || "https://dockside-backend-1.onrender.com";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const api = axios.create({ baseURL: API });
 api.interceptors.request.use(c => {
   const t = localStorage.getItem("dockside-token");
@@ -73,11 +73,9 @@ const Badge = ({ text, color }) => {
     gray: "bg-gray-100 text-gray-600",
     orange: "bg-orange-100 text-orange-700",
   };
-  const auto = {
-    draft: "gray", confirmed: "blue", dispatched: "orange", delivered: "green", completed: "green",
-    created: "gray", loaded: "blue", "in transit": "purple", arrived: "yellow", paid: "green", pending: "yellow", partial: "orange"
-  };
-  const c = color || auto[(text || "").toLowerCase()] || "gray";
+  const auto = { draft:"gray", confirmed:"blue", dispatched:"orange", delivered:"green", completed:"green",
+    created:"gray", loaded:"blue", "in transit":"purple", arrived:"yellow", paid:"green", pending:"yellow", partial:"orange" };
+  const c = color || auto[(text||"").toLowerCase()] || "gray";
   return <span className={cls("px-2 py-0.5 rounded-full text-xs font-semibold", map[c] || map.gray)}>{text}</span>;
 };
 
@@ -88,7 +86,7 @@ const ErrBanner = ({ msg }) => msg ? (
 ) : null;
 
 const StatCard = ({ label, value, icon, color = "blue" }) => {
-  const c = { blue: "bg-blue-50 text-blue-600", green: "bg-green-50 text-green-600", orange: "bg-orange-50 text-orange-600", purple: "bg-purple-50 text-purple-600", red: "bg-red-50 text-red-600" };
+  const c = { blue:"bg-blue-50 text-blue-600", green:"bg-green-50 text-green-600", orange:"bg-orange-50 text-orange-600", purple:"bg-purple-50 text-purple-600", red:"bg-red-50 text-red-600" };
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
       <div className={cls("w-12 h-12 rounded-xl flex items-center justify-center text-xl", c[color])}>{icon}</div>
@@ -147,7 +145,7 @@ const AutocompleteInput = ({ endpoint, placeholder, onSelect, value, onChange })
       const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`);
       setSuggestions(data || []);
       setOpen(true);
-    } catch { }
+    } catch {}
   };
 
   return (
@@ -258,17 +256,17 @@ function Dashboard() {
   const [deals, setDeals] = useState([]);
 
   useEffect(() => {
-    api.get("/api/dashboard/stats").then(r => setStats(r.data)).catch(() => { });
-    api.get("/api/inventory").then(r => setInv(r.data || [])).catch(() => { });
-    api.get("/api/deals").then(r => setDeals(r.data || [])).catch(() => { });
+    api.get("/api/dashboard/stats").then(r => setStats(r.data)).catch(() => {});
+    api.get("/api/inventory").then(r => setInv(r.data || [])).catch(() => {});
+    api.get("/api/deals").then(r => setDeals(r.data || [])).catch(() => {});
   }, []);
 
   const catMap = {};
   inv.forEach(i => { const c = i.category || i.wood_type || "Other"; catMap[c] = (catMap[c] || 0) + (i.cost_price || 0) * (i.available_quantity || 0); });
   const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
-  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
+  const COLORS = ["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4"];
 
-  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  const months = ["Oct","Nov","Dec","Jan","Feb","Mar"];
   const chartData = months.map((m, i) => ({
     month: m,
     revenue: Math.round((stats.monthlyRevenue || 0) * (0.7 + i * 0.06)),
@@ -294,7 +292,7 @@ function Dashboard() {
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData}>
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v / 1e5).toFixed(0)}L` : v} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v/1e5).toFixed(0)}L` : v} />
               <Tooltip formatter={v => fmt(v)} />
               <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#dbeafe" name="Revenue" />
               <Area type="monotone" dataKey="cost" stroke="#f59e0b" fill="#fef3c7" name="Cost" />
@@ -305,7 +303,7 @@ function Dashboard() {
           <h3 className="font-bold text-gray-700 mb-4">Inventory by Category</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+              <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false}>
                 {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip formatter={v => fmt(v)} />
@@ -327,23 +325,25 @@ function Inventory() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ product_name: "", category: "Plywood", wood_type: "", grade: "A", yard_id: "", supplier_id: "", unit: "pcs", cost_price: "", market_value: "", available_quantity: "", date: today(), notes: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ product_name:"", category:"Plywood", wood_type:"", grade:"A", yard_id:"", supplier_id:"", unit:"pcs", cost_price:"", market_value:"", available_quantity:"", date: today(), notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b, c] = await Promise.all([api.get("/api/inventory"), api.get("/api/yards"), api.get("/api/suppliers")]).catch(() => [[], [], []]);
+    const [a, b, c] = await Promise.all([api.get("/api/inventory"), api.get("/api/yards"), api.get("/api/suppliers")]).catch(() => [[],[],[]]);
     setItems(a?.data || []); setYards(b?.data || []); setSuppliers(c?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const INV_DEFAULTS = { product_name:"", category:"Plywood", wood_type:"", grade:"A", yard_id:"", supplier_id:"", unit:"pcs", cost_price:"", market_value:"", available_quantity:"", date: today(), notes:"" };
+  const closeInv = () => { setShowAdd(false); setForm(INV_DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.product_name) { setErr("Product name required"); return; }
     setSaving(true); setErr("");
     try {
       await api.post("/api/inventory", { ...form, cost_price: parseFloat(form.cost_price) || 0, market_value: parseFloat(form.market_value) || 0, available_quantity: parseFloat(form.available_quantity) || 0 });
-      setShowAdd(false); fetchAll();
+      closeInv(); fetchAll();
     } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
@@ -363,7 +363,7 @@ function Inventory() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Product", "Category", "Wood Type", "Grade", "Yard", "Available", "Reserved", "Cost Price", "Total Value"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Product","Category","Wood Type","Grade","Yard","Available","Reserved","Cost Price","Total Value"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(i => (
@@ -415,7 +415,7 @@ function Inventory() {
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add to Inventory"}</Btn>
-          <Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn>
+          <Btn variant="secondary" onClick={closeInv}>Cancel</Btn>
         </div>
       </SlidePanel>
     </div>
@@ -430,21 +430,23 @@ function Yards() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name: "", city: "", address: "", manager_name: "", manager_phone: "", notes: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b] = await Promise.all([api.get("/api/yards"), api.get("/api/inventory")]).catch(() => [[], []]);
+    const [a, b] = await Promise.all([api.get("/api/yards"), api.get("/api/inventory")]).catch(() => [[],[]]);
     setYards(a?.data || []); setInv(b?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const YARD_DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
+  const closeYard = () => { setShowAdd(false); setForm(YARD_DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Yard name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/yards", form); setShowAdd(false); fetchAll(); }
+    try { await api.post("/api/yards", form); closeYard(); fetchAll(); }
     catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
@@ -483,7 +485,7 @@ function Yards() {
           {yards.length === 0 && <div className="col-span-3 text-center py-20 text-gray-300">No yards added yet</div>}
         </div>
       )}
-      <SlidePanel title="Add Yard" open={showAdd} onClose={() => setShowAdd(false)}>
+      <SlidePanel title="Add Yard" open={showAdd} onClose={closeYard}>
         <Field label="Yard Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
@@ -493,7 +495,7 @@ function Yards() {
         <Field label="Manager Phone"><Input value={form.manager_phone} onChange={set("manager_phone")} /></Field>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Yard"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Yard"}</Btn><Btn variant="secondary" onClick={closeYard}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -510,20 +512,22 @@ function Deals() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [custName, setCustName] = useState("");
-  const [form, setForm] = useState({ customer_id: "", product_id: "", quantity: "", unit_price: "", status: "draft", payment_status: "Pending", notes: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b, c] = await Promise.all([api.get("/api/deals"), api.get("/api/customers"), api.get("/api/inventory")]).catch(() => [[], [], []]);
+    const [a, b, c] = await Promise.all([api.get("/api/deals"), api.get("/api/customers"), api.get("/api/inventory")]).catch(() => [[],[],[]]);
     setDeals(a?.data || []); setCustomers(b?.data || []); setInventory(c?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const TABS = ["All", "Draft", "Confirmed", "Dispatched", "Delivered", "Completed"];
-  const filtered = tab === "All" ? deals : deals.filter(d => (d.status || "").toLowerCase() === tab.toLowerCase());
+  const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
+  const filtered = tab === "All" ? deals : deals.filter(d => (d.status||"").toLowerCase() === tab.toLowerCase());
 
+  const DEAL_DEFAULTS = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
+  const closeDeal = () => { setShowAdd(false); setForm(DEAL_DEFAULTS); setCustName(""); setErr(""); };
   const save = async () => {
     if (!form.customer_id && !custName) { setErr("Customer required"); return; }
     setSaving(true); setErr("");
@@ -545,9 +549,7 @@ function Deals() {
         payment_status: form.payment_status,
         notes: form.notes || undefined,
       });
-      setShowAdd(false);
-      setForm({ customer_id: "", product_id: "", quantity: "", unit_price: "", status: "draft", payment_status: "Pending", notes: "" });
-      setCustName("");
+      closeDeal();
       fetchAll();
     } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
@@ -562,7 +564,7 @@ function Deals() {
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
-            {t} {t === "All" ? `(${deals.length})` : `(${deals.filter(d => (d.status || "").toLowerCase() === t.toLowerCase()).length})`}
+            {t} {t === "All" ? `(${deals.length})` : `(${deals.filter(d => (d.status||"").toLowerCase() === t.toLowerCase()).length})`}
           </button>
         ))}
       </div>
@@ -570,7 +572,7 @@ function Deals() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Deal #", "Customer", "Product", "Qty", "Value", "Stage", "Payment", "Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Deal #","Customer","Product","Qty","Value","Stage","Payment","Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(d => {
@@ -594,7 +596,7 @@ function Deals() {
           </table>
         </div>
       )}
-      <SlidePanel title="Create Deal" open={showAdd} onClose={() => setShowAdd(false)}>
+      <SlidePanel title="Create Deal" open={showAdd} onClose={closeDeal}>
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
           💡 Type customer name to search existing, or select from dropdown
         </div>
@@ -604,7 +606,7 @@ function Deals() {
             placeholder="Type customer name…"
             value={custName}
             onChange={v => setCustName(v)}
-            onSelect={c => { setForm(p => ({ ...p, customer_id: c.id })); setCustName(c.name); }}
+            onSelect={c => { setForm(p => ({...p, customer_id: c.id})); setCustName(c.name); }}
           />
         </Field>
         <Field label="Product">
@@ -637,7 +639,7 @@ function Deals() {
         </div>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={closeDeal}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -652,31 +654,31 @@ function Transit() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ vehicle_number: "", driver_name: "", driver_phone: "", origin_yard_id: "", origin_yard_name: "", destination: "", dispatch_date: today(), expected_arrival: "", freight_cost: "", status: "Created", cargo_details: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date: today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b] = await Promise.all([api.get("/api/shipments"), api.get("/api/yards")]).catch(() => [[], []]);
+    const [a, b] = await Promise.all([api.get("/api/shipments"), api.get("/api/yards")]).catch(() => [[],[]]);
     setShips(a?.data || []); setYards(b?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const TABS = ["All", "Created", "Loaded", "Dispatched", "In Transit", "Arrived", "Delivered"];
-  const filtered = tab === "All" ? ships : ships.filter(s => (s.status || "").toLowerCase() === tab.toLowerCase());
+  const TABS = ["All","Created","Loaded","Dispatched","In Transit","Arrived","Delivered"];
+  const filtered = tab === "All" ? ships : ships.filter(s => (s.status||"").toLowerCase() === tab.toLowerCase());
 
+  const TRANSIT_DEFAULTS = { vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date: today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" };
+  const closeTransit = () => { setShowAdd(false); setForm(TRANSIT_DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.destination) { setErr("Destination required"); return; }
     setSaving(true); setErr("");
     try {
       // Send all possible column name aliases — server safeInsert keeps only valid ones
-      console.log("origin_yard_name:", form.origin_yard_name, "yards:", yards);
       await api.post("/api/shipments", {
         vehicle_number: form.vehicle_number, vehicle_no: form.vehicle_number,
         driver_name: form.driver_name, driver_phone: form.driver_phone, driver_contact: form.driver_phone,
         origin_yard_id: form.origin_yard_id || null, from_yard_id: form.origin_yard_id || null,
-        origin_yard_name: form.origin_yard_name || null, from_yard_name: form.origin_yard_name || null,
         destination: form.destination, to_location: form.destination,
         dispatch_date: form.dispatch_date, dispatched_at: form.dispatch_date, shipment_date: form.dispatch_date,
         expected_arrival: form.expected_arrival, eta: form.expected_arrival, estimated_arrival: form.expected_arrival,
@@ -684,8 +686,7 @@ function Transit() {
         status: form.status, shipment_status: form.status,
         cargo_details: form.cargo_details, cargo_description: form.cargo_details, notes: form.cargo_details,
       });
-      setShowAdd(false);
-      setForm({ vehicle_number: "", driver_name: "", driver_phone: "", origin_yard_id: "", destination: "", dispatch_date: today(), expected_arrival: "", freight_cost: "", status: "Created", cargo_details: "" });
+      closeTransit();
       fetchAll();
     } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
@@ -700,7 +701,7 @@ function Transit() {
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
-            {t} {t !== "All" && `(${ships.filter(s => (s.status || "").toLowerCase() === t.toLowerCase()).length})`}
+            {t} {t !== "All" && `(${ships.filter(s => (s.status||"").toLowerCase() === t.toLowerCase()).length})`}
           </button>
         ))}
       </div>
@@ -708,7 +709,7 @@ function Transit() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Shipment #", "Vehicle", "Driver", "Origin", "Destination", "Dispatch", "ETA", "Status", "Freight"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Shipment #","Vehicle","Driver","Origin","Destination","Dispatch","ETA","Status","Freight"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(s => (
@@ -729,14 +730,14 @@ function Transit() {
           </table>
         </div>
       )}
-      <SlidePanel title="Add Shipment" open={showAdd} onClose={() => setShowAdd(false)}>
+      <SlidePanel title="Add Shipment" open={showAdd} onClose={closeTransit}>
         <Field label="Vehicle Number"><Input value={form.vehicle_number} onChange={set("vehicle_number")} placeholder="MH-12-AB-1234" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Driver Name"><Input value={form.driver_name} onChange={set("driver_name")} /></Field>
           <Field label="Driver Phone"><Input value={form.driver_phone} onChange={set("driver_phone")} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Origin Yard"><Select value={form.origin_yard_id} onChange={e => { const yard = yards.find(y => String(y.id) === String(e.target.value)); setForm(p => ({ ...p, origin_yard_id: e.target.value, origin_yard_name: yard?.name || "" })); }}><option value="">— Select —</option>{yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}</Select></Field>
+          <Field label="Origin Yard"><Select value={form.origin_yard_id} onChange={set("origin_yard_id")}><option value="">— Select —</option>{yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}</Select></Field>
           <Field label="Destination" required><Input value={form.destination} onChange={set("destination")} placeholder="City / Address" /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -746,12 +747,12 @@ function Transit() {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Freight Cost (₹)"><Input type="number" value={form.freight_cost} onChange={set("freight_cost")} placeholder="0" /></Field>
           <Field label="Status"><Select value={form.status} onChange={set("status")}>
-            {["Created", "Loaded", "Dispatched", "In Transit", "Arrived", "Delivered"].map(s => <option key={s}>{s}</option>)}
+            {["Created","Loaded","Dispatched","In Transit","Arrived","Delivered"].map(s => <option key={s}>{s}</option>)}
           </Select></Field>
         </div>
         <Field label="Cargo Details"><Textarea value={form.cargo_details} onChange={set("cargo_details")} placeholder="Describe the cargo…" /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Adding…" : "Add Shipment"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Adding…" : "Add Shipment"}</Btn><Btn variant="secondary" onClick={closeTransit}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -765,21 +766,23 @@ function Suppliers() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", notes: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b] = await Promise.all([api.get("/api/suppliers"), api.get("/api/inventory")]).catch(() => [[], []]);
+    const [a, b] = await Promise.all([api.get("/api/suppliers"), api.get("/api/inventory")]).catch(() => [[],[]]);
     setSuppliers(a?.data || []); setInv(b?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const SUPPLIER_DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" };
+  const closeSupplier = () => { setShowAdd(false); setForm(SUPPLIER_DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/suppliers", form); setShowAdd(false); fetchAll(); }
+    try { await api.post("/api/suppliers", form); closeSupplier(); fetchAll(); }
     catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
@@ -794,7 +797,7 @@ function Suppliers() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Supplier", "Location", "GST", "Contact", "Products Supplied", "Inv. Items", "Action"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Supplier","Location","GST","Contact","Products Supplied","Inv. Items","Action"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {suppliers.map(s => (
@@ -805,7 +808,7 @@ function Suppliers() {
                   <td className="px-4 py-3 text-gray-500">{s.phone || s.email || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{s.products_supplied || "—"}</td>
                   <td className="px-4 py-3 font-semibold">{inv.filter(i => i.supplier_id === s.id).length}</td>
-                  <td className="px-4 py-3"><Btn small variant="secondary" onClick={() => { }}>View</Btn></td>
+                  <td className="px-4 py-3"><Btn small variant="secondary" onClick={() => {}}>View</Btn></td>
                 </tr>
               ))}
               {suppliers.length === 0 && <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-300">No suppliers yet</td></tr>}
@@ -813,8 +816,8 @@ function Suppliers() {
           </table>
         </div>
       )}
-      <SlidePanel title="Add Supplier" open={showAdd} onClose={() => setShowAdd(false)}>
-        <GstLookup onFound={d => { setForm(p => ({ ...p, name: d.name || p.name, city: d.city || p.city, contact_person: d.contact_person || p.contact_person, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number, pan_number: d.pan_number || p.pan_number })); }} />
+      <SlidePanel title="Add Supplier" open={showAdd} onClose={closeSupplier}>
+        <GstLookup onFound={d => { setForm(p => ({...p, name: d.name || p.name, city: d.city || p.city, contact_person: d.contact_person || p.contact_person, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number, pan_number: d.pan_number || p.pan_number })); }} />
         <Field label="Supplier Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
@@ -832,7 +835,7 @@ function Suppliers() {
         <Field label="Products Supplied"><Input value={form.products_supplied} onChange={set("products_supplied")} placeholder="Teak, Plywood…" /></Field>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={closeSupplier}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -846,21 +849,23 @@ function Customers() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name: "", city: "", country: "India", phone: "", email: "", gst_number: "", pan_number: "", notes: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ name:"", city:"", country:"India", phone:"", email:"", gst_number:"", pan_number:"", notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [a, b] = await Promise.all([api.get("/api/customers"), api.get("/api/deals")]).catch(() => [[], []]);
+    const [a, b] = await Promise.all([api.get("/api/customers"), api.get("/api/deals")]).catch(() => [[],[]]);
     setCustomers(a?.data || []); setDeals(b?.data || []);
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const CUSTOMER_DEFAULTS = { name:"", city:"", country:"India", phone:"", email:"", gst_number:"", pan_number:"", notes:"" };
+  const closeCustomer = () => { setShowAdd(false); setForm(CUSTOMER_DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/customers", form); setShowAdd(false); fetchAll(); }
+    try { await api.post("/api/customers", form); closeCustomer(); fetchAll(); }
     catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
@@ -875,7 +880,7 @@ function Customers() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Customer", "Location", "GST", "Contact", "Total Deals", "Revenue", "Last Deal"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Customer","Location","GST","Contact","Total Deals","Revenue","Last Deal"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {customers.map(c => {
@@ -899,8 +904,8 @@ function Customers() {
           </table>
         </div>
       )}
-      <SlidePanel title="Add Customer" open={showAdd} onClose={() => setShowAdd(false)}>
-        <GstLookup onFound={d => { setForm(p => ({ ...p, name: d.name || p.name, city: d.city || p.city, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number })); }} />
+      <SlidePanel title="Add Customer" open={showAdd} onClose={closeCustomer}>
+        <GstLookup onFound={d => { setForm(p => ({...p, name: d.name || p.name, city: d.city || p.city, phone: d.phone || p.phone, email: d.email || p.email, gst_number: d.gst_number || p.gst_number })); }} />
         <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
@@ -916,7 +921,7 @@ function Customers() {
         </div>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Customer"}</Btn><Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Customer"}</Btn><Btn variant="secondary" onClick={closeCustomer}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -937,7 +942,7 @@ function Financials() {
 
   const totalCost = inv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
   const marketVal = inv.reduce((s, i) => s + (i.market_value || i.cost_price || 0) * (i.available_quantity || 0), 0);
-  const revenue = deals.filter(d => ["completed", "delivered", "closed"].includes((d.status || "").toLowerCase())).reduce((s, d) => s + (d.total_value || d.value || 0), 0);
+  const revenue = deals.filter(d => ["completed","delivered","closed"].includes((d.status||"").toLowerCase())).reduce((s, d) => s + (d.total_value || d.value || 0), 0);
   const profit = revenue - totalCost * 0.7;
 
   const catData = {};
@@ -960,7 +965,7 @@ function Financials() {
               <h3 className="font-bold mb-4">Inventory by Category (₹)</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={barData} layout="vertical">
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v / 1e5).toFixed(0)}L` : v} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e5 ? `${(v/1e5).toFixed(0)}L` : v} />
                   <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
                   <Tooltip formatter={v => fmt(v)} />
                   <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
@@ -993,27 +998,27 @@ function Financials() {
 function Reports() {
   const [company, setCompany] = useState({});
   const [loading, setLoading] = useState({});
-  useEffect(() => { api.get("/api/company").then(r => setCompany(r.data || {})).catch(() => { }); }, []);
+  useEffect(() => { api.get("/api/company").then(r => setCompany(r.data || {})).catch(() => {}); }, []);
 
   const REPORTS = [
-    { key: "inventory", label: "Inventory Report", icon: "📦", desc: "All stock with valuation" },
-    { key: "sales", label: "Sales Report", icon: "🤝", desc: "All deals and revenue" },
-    { key: "shipments", label: "Shipment Report", icon: "🚛", desc: "Transit & logistics" },
-    { key: "suppliers", label: "Supplier Report", icon: "🏭", desc: "Supplier directory" },
-    { key: "customers", label: "Customer Report", icon: "👥", desc: "Customer revenue analysis" },
+    { key:"inventory", label:"Inventory Report", icon:"📦", desc:"All stock with valuation" },
+    { key:"sales", label:"Sales Report", icon:"🤝", desc:"All deals and revenue" },
+    { key:"shipments", label:"Shipment Report", icon:"🚛", desc:"Transit & logistics" },
+    { key:"suppliers", label:"Supplier Report", icon:"🏭", desc:"Supplier directory" },
+    { key:"customers", label:"Customer Report", icon:"👥", desc:"Customer revenue analysis" },
   ];
 
   const downloadPDF = async (type, label) => {
-    setLoading(p => ({ ...p, [type]: true }));
+    setLoading(p => ({...p, [type]: true}));
     try {
       const { data } = await api.get(`/api/reports/${type}`);
       generatePDF(type, label, data, company);
     } catch (e) { alert("Failed to fetch data: " + e.message); }
-    setLoading(p => ({ ...p, [type]: false }));
+    setLoading(p => ({...p, [type]: false}));
   };
 
   const generatePDF = (type, label, data, co) => {
-    const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const now = new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
     const rows = buildTableRows(type, data);
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>${label}</title>
@@ -1111,7 +1116,7 @@ function Reports() {
     }
     if (type === "sales") {
       const rev = data.reduce((s, d) => s + (d.total_value || d.value || 0), 0);
-      const completed = data.filter(d => ["completed", "delivered"].includes((d.status || "").toLowerCase())).length;
+      const completed = data.filter(d => ["completed","delivered"].includes((d.status||"").toLowerCase())).length;
       return `<div class="summary">
         <div class="card"><div class="card-label">Total Deals</div><div class="card-value">${data.length}</div></div>
         <div class="card"><div class="card-label">Total Revenue</div><div class="card-value">${fmt(rev)}</div></div>
@@ -1121,7 +1126,7 @@ function Reports() {
     }
     if (type === "shipments") {
       const freight = data.reduce((s, d) => s + (d.freight_cost || d.freight_charges || 0), 0);
-      const delivered = data.filter(d => (d.status || "").toLowerCase() === "delivered").length;
+      const delivered = data.filter(d => (d.status||"").toLowerCase() === "delivered").length;
       return `<div class="summary">
         <div class="card"><div class="card-label">Total Shipments</div><div class="card-value">${data.length}</div></div>
         <div class="card"><div class="card-label">Delivered</div><div class="card-value">${delivered}</div></div>
@@ -1136,27 +1141,27 @@ function Reports() {
     const badge = (text, color = "gray") => `<span class="badge badge-${color}">${text || "—"}</span>`;
     if (type === "inventory") {
       return `<table><thead><tr><th>#</th><th>Product</th><th>Category</th><th>Wood Type</th><th>Grade</th><th>Unit</th><th class="num">Qty</th><th class="num">Cost Price</th><th class="num">Total Value</th></tr></thead><tbody>
-        ${data.map((i, idx) => `<tr><td>${idx + 1}</td><td><strong>${i.product_name || i.name || "—"}</strong></td><td>${i.category || "—"}</td><td>${i.wood_type || "—"}</td><td>${i.grade || "—"}</td><td>${i.unit || "—"}</td><td class="num">${i.available_quantity || 0}</td><td class="num">₹${(i.cost_price || 0).toLocaleString("en-IN")}</td><td class="num">₹${((i.cost_price || 0) * (i.available_quantity || 0)).toLocaleString("en-IN")}</td></tr>`).join("")}
+        ${data.map((i,idx) => `<tr><td>${idx+1}</td><td><strong>${i.product_name||i.name||"—"}</strong></td><td>${i.category||"—"}</td><td>${i.wood_type||"—"}</td><td>${i.grade||"—"}</td><td>${i.unit||"—"}</td><td class="num">${i.available_quantity||0}</td><td class="num">₹${(i.cost_price||0).toLocaleString("en-IN")}</td><td class="num">₹${((i.cost_price||0)*(i.available_quantity||0)).toLocaleString("en-IN")}</td></tr>`).join("")}
       </tbody></table>`;
     }
     if (type === "sales") {
       return `<table><thead><tr><th>#</th><th>Deal No.</th><th>Customer</th><th>Product</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Total Value</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead><tbody>
-        ${data.map((d, idx) => `<tr><td>${idx + 1}</td><td>${d.deal_number || "—"}</td><td>${d.customer_name || "—"}</td><td>${d.product_name || "—"}</td><td class="num">${d.quantity || "—"}</td><td class="num">₹${(d.unit_price || 0).toLocaleString("en-IN")}</td><td class="num">₹${(d.total_value || d.value || 0).toLocaleString("en-IN")}</td><td>${badge(d.status || "draft", "blue")}</td><td>${badge(d.payment_status || "—", "orange")}</td><td>${fmtDate(d.created_at)}</td></tr>`).join("")}
+        ${data.map((d,idx) => `<tr><td>${idx+1}</td><td>${d.deal_number||"—"}</td><td>${d.customer_name||"—"}</td><td>${d.product_name||"—"}</td><td class="num">${d.quantity||"—"}</td><td class="num">₹${(d.unit_price||0).toLocaleString("en-IN")}</td><td class="num">₹${(d.total_value||d.value||0).toLocaleString("en-IN")}</td><td>${badge(d.status||"draft","blue")}</td><td>${badge(d.payment_status||"—","orange")}</td><td>${fmtDate(d.created_at)}</td></tr>`).join("")}
       </tbody></table>`;
     }
     if (type === "shipments") {
       return `<table><thead><tr><th>#</th><th>Shipment No.</th><th>Vehicle</th><th>Driver</th><th>Destination</th><th>Dispatch Date</th><th>ETA</th><th>Status</th><th class="num">Freight</th></tr></thead><tbody>
-        ${data.map((s, idx) => `<tr><td>${idx + 1}</td><td>${s.shipment_number || "—"}</td><td>${s.vehicle_number || s.vehicle_no || "—"}</td><td>${s.driver_name || "—"}</td><td>${s.destination || s.to_location || "—"}</td><td>${fmtDate(s.dispatch_date || s.dispatched_at)}</td><td>${fmtDate(s.expected_arrival || s.eta)}</td><td>${badge(s.status || "—", "blue")}</td><td class="num">₹${(s.freight_cost || s.freight_charges || 0).toLocaleString("en-IN")}</td></tr>`).join("")}
+        ${data.map((s,idx) => `<tr><td>${idx+1}</td><td>${s.shipment_number||"—"}</td><td>${s.vehicle_number||s.vehicle_no||"—"}</td><td>${s.driver_name||"—"}</td><td>${s.destination||s.to_location||"—"}</td><td>${fmtDate(s.dispatch_date||s.dispatched_at)}</td><td>${fmtDate(s.expected_arrival||s.eta)}</td><td>${badge(s.status||"—","blue")}</td><td class="num">₹${(s.freight_cost||s.freight_charges||0).toLocaleString("en-IN")}</td></tr>`).join("")}
       </tbody></table>`;
     }
     if (type === "suppliers") {
       return `<table><thead><tr><th>#</th><th>Supplier Name</th><th>City</th><th>Country</th><th>GST No.</th><th>Contact Person</th><th>Phone</th><th>Email</th><th>Products</th></tr></thead><tbody>
-        ${data.map((s, idx) => `<tr><td>${idx + 1}</td><td><strong>${s.name || "—"}</strong></td><td>${s.city || "—"}</td><td>${s.country || "—"}</td><td>${s.gst_number || "—"}</td><td>${s.contact_person || "—"}</td><td>${s.phone || "—"}</td><td>${s.email || "—"}</td><td>${s.products_supplied || "—"}</td></tr>`).join("")}
+        ${data.map((s,idx) => `<tr><td>${idx+1}</td><td><strong>${s.name||"—"}</strong></td><td>${s.city||"—"}</td><td>${s.country||"—"}</td><td>${s.gst_number||"—"}</td><td>${s.contact_person||"—"}</td><td>${s.phone||"—"}</td><td>${s.email||"—"}</td><td>${s.products_supplied||"—"}</td></tr>`).join("")}
       </tbody></table>`;
     }
     if (type === "customers") {
       return `<table><thead><tr><th>#</th><th>Customer Name</th><th>City</th><th>Country</th><th>GST No.</th><th>Phone</th><th>Email</th><th>Notes</th></tr></thead><tbody>
-        ${data.map((c, idx) => `<tr><td>${idx + 1}</td><td><strong>${c.name || "—"}</strong></td><td>${c.city || "—"}</td><td>${c.country || "—"}</td><td>${c.gst_number || "—"}</td><td>${c.phone || "—"}</td><td>${c.email || "—"}</td><td>${c.notes || "—"}</td></tr>`).join("")}
+        ${data.map((c,idx) => `<tr><td>${idx+1}</td><td><strong>${c.name||"—"}</strong></td><td>${c.city||"—"}</td><td>${c.country||"—"}</td><td>${c.gst_number||"—"}</td><td>${c.phone||"—"}</td><td>${c.email||"—"}</td><td>${c.notes||"—"}</td></tr>`).join("")}
       </tbody></table>`;
     }
     return "<p>No data</p>";
@@ -1203,15 +1208,15 @@ function Company() {
   const [showBranch, setShowBranch] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [form, setForm] = useState({
-    name: "", industry: "Timber Trade", city: "", country: "India", address: "",
-    owner_name: "", phone: "", email: "", website: "",
-    gst_number: "", pan_number: "", iec_number: "", cin_number: "",
-    bank_name: "", bank_account: "", bank_ifsc: "", bank_branch: "",
-    notes: ""
+    name:"", industry:"Timber Trade", city:"", country:"India", address:"",
+    owner_name:"", phone:"", email:"", website:"",
+    gst_number:"", pan_number:"", iec_number:"", cin_number:"",
+    bank_name:"", bank_account:"", bank_ifsc:"", bank_branch:"",
+    notes:""
   });
-  const [branchForm, setBranchForm] = useState({ name: "", city: "", address: "", manager_name: "", phone: "", gst_number: "" });
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const setB = k => e => setBranchForm(p => ({ ...p, [k]: e.target.value }));
+  const [branchForm, setBranchForm] = useState({ name:"", city:"", address:"", manager_name:"", phone:"", gst_number:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
+  const setB = k => e => setBranchForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -1221,7 +1226,7 @@ function Company() {
       setCompany(coData);
       if (coData.id) setForm(coData);
       setBranches(br.data || []);
-    } catch { }
+    } catch {}
     setLoading(false);
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -1242,17 +1247,17 @@ function Company() {
     setSavingBranch(true); setBranchErr("");
     try {
       await api.post("/api/branches", { ...branchForm, company_id: company?.id });
-      setShowBranch(false); setBranchForm({ name: "", city: "", address: "", manager_name: "", phone: "", gst_number: "" });
+      setShowBranch(false); setBranchForm({ name:"", city:"", address:"", manager_name:"", phone:"", gst_number:"" });
       fetchAll();
     } catch (e) { setBranchErr(e.response?.data?.error || e.message); }
     setSavingBranch(false);
   };
 
   const TABS = [
-    { id: "profile", label: "Company Profile", icon: "🏢" },
-    { id: "legal", label: "Legal & Tax", icon: "⚖️" },
-    { id: "banking", label: "Banking", icon: "🏦" },
-    { id: "branches", label: "Branches", icon: "📍" },
+    { id:"profile", label:"Company Profile", icon:"🏢" },
+    { id:"legal", label:"Legal & Tax", icon:"⚖️" },
+    { id:"banking", label:"Banking", icon:"🏦" },
+    { id:"branches", label:"Branches", icon:"📍" },
   ];
 
   if (loading) return <div className="p-6"><Spinner /></div>;
@@ -1477,7 +1482,7 @@ function AIInsights() {
             </div>
             <div className="p-2 bg-blue-50 rounded-lg flex justify-between">
               <span className="text-gray-700">Completed</span>
-              <span className="font-bold text-blue-700">{deals.filter(d => ["completed", "delivered"].includes(d.status)).length}</span>
+              <span className="font-bold text-blue-700">{deals.filter(d => ["completed","delivered"].includes(d.status)).length}</span>
             </div>
           </div>
         </div>
