@@ -153,24 +153,20 @@ function Login({ onLogin }) {
   const [err, setErr] = useState("");
 
   const submit = async () => {
+    if (!email || !password) { setErr("Email and password are required"); return; }
     setLoading(true); setErr("");
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      const user = { id: data.user.id, email: data.user.email, full_name: data.user.user_metadata?.full_name || email };
-      localStorage.setItem("dockside-user", JSON.stringify(user));
-      onLogin(user);
-    } catch (e) {
-      // Fallback to backend auth
-      try {
-        const { data: bdata } = await api.post("/api/auth/login", { email, password });
-        localStorage.setItem("dockside-token", bdata.token);
-        localStorage.setItem("dockside-user", JSON.stringify(bdata.user));
-        onLogin(bdata.user);
-      } catch (e2) {
-        setErr(e2.response?.data?.error || e.message || "Login failed");
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) {
+      setErr(error.message === "Invalid login credentials" ? "Wrong email or password" : error.message);
+      setLoading(false); return;
     }
+    const user = {
+      id: data.user.id,
+      email: data.user.email,
+      full_name: data.user.user_metadata?.full_name || data.user.email.split("@")[0],
+    };
+    localStorage.setItem("dockside-user", JSON.stringify(user));
+    onLogin(user);
     setLoading(false);
   };
 
