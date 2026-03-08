@@ -4,8 +4,8 @@ import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tool
 import { createClient } from "@supabase/supabase-js";
 
 // ── SUPABASE CLIENT (direct — no backend needed for CRUD) ──────────────────────
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://lnpvozxmfvhstlmvyngh.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxucHZvenhtZnZoc3RsbXZ5bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTkyMTYsImV4cCI6MjA4ODM3NTIxNn0.fvtq216KybppnfurMwbonEvOI4goBandB6tI1FAmcSY";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Keep axios-based API for reports/dashboard/auth endpoints only
