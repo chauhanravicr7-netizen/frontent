@@ -1179,7 +1179,7 @@ function Reports() {
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
-    supabase.from("company").select("*").single().then(({ data }) => { if (data) setCompany(data); });
+    supabase.from("company").select("*").limit(1).then(({ data }) => { if (data?.[0]) setCompany(data[0]); });
   }, []);
 
   const REPORTS = [
@@ -1260,19 +1260,57 @@ function Company() {
 
   useEffect(() => {
     supabase.from("company").select("*").limit(1).then(({ data }) => {
-      if (data?.[0]) { setCompany(data[0]); setForm(data[0]); }
+      if (data?.[0]) {
+        setCompany(data[0]);
+        // Only copy editable fields into form — never copy id/timestamps
+        const d = data[0];
+        setForm({
+          name: d.name || "", industry: d.industry || "Timber Trade",
+          city: d.city || "", country: d.country || "India",
+          address: d.address || "", owner_name: d.owner_name || "",
+          phone: d.phone || "", email: d.email || "", website: d.website || "",
+          gst_number: d.gst_number || "", pan_number: d.pan_number || "",
+          iec_number: d.iec_number || "", cin_number: d.cin_number || "",
+          bank_name: d.bank_name || "", bank_account: d.bank_account || "",
+          bank_ifsc: d.bank_ifsc || "", bank_branch: d.bank_branch || "",
+          notes: d.notes || "",
+        });
+      }
       setLoading(false);
     });
   }, []);
 
   const save = async () => {
+    if (!form.name.trim()) { setErr("Company name is required"); return; }
     setSaving(true); setErr("");
+    // Only send writable columns — never send id, created_at, updated_at, logo_url, currency
+    const payload = {
+      name: form.name.trim(),
+      industry: form.industry || null,
+      city: form.city || null,
+      country: form.country || null,
+      address: form.address || null,
+      owner_name: form.owner_name || null,
+      phone: form.phone || null,
+      email: form.email || null,
+      website: form.website || null,
+      gst_number: form.gst_number || null,
+      pan_number: form.pan_number || null,
+      iec_number: form.iec_number || null,
+      cin_number: form.cin_number || null,
+      bank_name: form.bank_name || null,
+      bank_account: form.bank_account || null,
+      bank_ifsc: form.bank_ifsc || null,
+      bank_branch: form.bank_branch || null,
+      notes: form.notes || null,
+      updated_at: new Date().toISOString(),
+    };
     try {
       if (company?.id) {
-        const { error } = await supabase.from("company").update(form).eq("id", company.id);
+        const { error } = await supabase.from("company").update(payload).eq("id", company.id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("company").insert(form).select().single();
+        const { data, error } = await supabase.from("company").insert(payload).select().single();
         if (error) throw error;
         setCompany(data);
       }
