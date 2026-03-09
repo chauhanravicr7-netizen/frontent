@@ -420,7 +420,15 @@ function Inventory() {
           </Field>
           <Field label="Unit">
             <Select value={form.unit} onChange={set("unit")}>
-              <option>pcs</option><option>sheets</option><option>m³</option><option>sqft</option><option>kg</option><option>CBM</option>
+              <option value="pcs">pcs</option>
+              <option value="sheet">sheet</option>
+              <option value="cft">cft</option>
+              <option value="cbm">cbm</option>
+              <option value="sqft">sqft</option>
+              <option value="kg">kg</option>
+              <option value="ton">ton</option>
+              <option value="bundle">bundle</option>
+              <option value="nos">nos</option>
             </Select>
           </Field>
         </div>
