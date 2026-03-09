@@ -163,7 +163,7 @@ function Login({ onLogin }) {
 
     // Step 2 — Get user_profile (has company_id + role)
     let { data: profile } = await supabase
-      .from("user_management")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", authUser.id)
       .single();
@@ -180,7 +180,7 @@ function Login({ onLogin }) {
         existingCo = newCo;
       }
       const { data: newProfile } = await supabase
-        .from("user_management")
+        .from("user_profiles")
         .insert({
           user_id: authUser.id,
           company_id: existingCo?.id,
@@ -1053,7 +1053,7 @@ function Team() {
 
   const fetchAll = useCallback(async () => {
     if (!companyId) return; setLoading(true);
-    const { data } = await supabase.from("user_management").select("*").eq("company_id", companyId);
+    const { data } = await supabase.from("user_profiles").select("*").eq("company_id", companyId);
     setMembers(data || []); setLoading(false);
   }, [companyId]);
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -1069,7 +1069,7 @@ function Team() {
       options: { data: { full_name: form.full_name } }
     });
     if (error) { setErr(sbErr(error)); setSaving(false); return; }
-    await supabase.from("user_management").insert({
+    await supabase.from("user_profiles").insert({
       user_id: data.user.id,
       company_id: companyId,
       full_name: form.full_name || form.email.split("@")[0],
