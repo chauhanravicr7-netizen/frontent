@@ -316,67 +316,142 @@ function Dashboard() {
 }
 
 // ── INVENTORY ──────────────────────────────────────────────────────────────────
+// ============================================================
+// PASTE THIS ENTIRE BLOCK INTO src/App.jsx
+// Replace the existing "function Inventory() { ... }" block
+// This adds live CBM/CFT calculation as user types
+// ============================================================
+
+// ── TIMBER MATH (inline — no separate file needed for App.jsx) ─
+const TM = {
+  CBM_TO_CFT: 35.3147,
+  // Sawn Timber: (thickness_mm × width_mm × length_ft) / (144 × 25.4 × 25.4)
+  sawnCFT(thickMM, widthMM, lengthFt, pieces = 1) {
+    if (!thickMM || !widthMM || !lengthFt) return null;
+    const cftPer = (thickMM * widthMM * lengthFt) / (144 * 25.4 * 25.4);
+    return { cftPer: r4(cftPer), totalCFT: r4(cftPer * pieces), totalCBM: r4(cftPer * pieces / 35.3147) };
+  },
+  // Hoppus (Round Log): (girth_in / 4)^2 × length_ft / 144
+  hoppusCFT(girthIn, lengthFt, logs = 1) {
+    if (!girthIn || !lengthFt) return null;
+    const cftPer = Math.pow(girthIn / 4, 2) * lengthFt / 144;
+    return { cftPer: r4(cftPer), totalCFT: r4(cftPer * logs), totalCBM: r4(cftPer * logs / 35.3147) };
+  },
+  // Plywood: thickness_mm/1000 × width_ft×0.3048 × length_ft×0.3048 × sheets
+  plywoodCBM(thickMM, widthFt = 4, lengthFt = 8, sheets = 1) {
+    if (!thickMM) return null;
+    const cbmPer = (thickMM / 1000) * (widthFt * 0.3048) * (lengthFt * 0.3048);
+    return { cbmPer: r4(cbmPer), totalCBM: r4(cbmPer * sheets), totalCFT: r4(cbmPer * sheets * 35.3147) };
+  },
+};
+function r4(n) { return Math.round((n || 0) * 10000) / 10000; }
+function r2(n) { return Math.round((n || 0) * 100) / 100; }
+
+// ── INVENTORY COMPONENT ────────────────────────────────────────
 function Inventory() {
-  const { companyId } = useCompany();
-  const [items, setItems] = useState([]); const [yards, setYards] = useState([]); const [suppliers, setSuppliers] = useState([]);
-  const [loading, setLoading] = useState(true); const [search, setSearch] = useState(""); const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
-  const DEFAULTS = { product_name:"", category:"Plywood", wood_type:"", quality_grade:"A", yard_id:"", supplier_id:"", unit:"pcs", cost_price:"", market_value:"", available_quantity:"", date:today(), notes:"", thickness:"", length:"", width:"" };
-  const [form, setForm] = useState(DEFAULTS);
+  const [items, setItems] = useState([]);
+  const [yards, setYards] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  // Timber type drives which calc mode shows
+  const [timberType, setTimberType] = useState("Sawn Timber");
+
+  const INV_DEFAULTS = {
+    product_name: "", category: "Plywood", wood_type: "", grade: "A",
+    yard_id: "", supplier_id: "", unit: "CFT", cost_price: "", market_value: "",
+    available_quantity: "", date: today(), notes: "",
+    // Dimension fields (used for auto-calc, stored in DB)
+    thickness_mm: "", width_mm: "", length_ft: "", pieces: "",
+    girth_in: "", log_length_ft: "", num_logs: "",
+    sheet_thickness_mm: "", sheet_width_ft: "4", sheet_length_ft: "8", num_sheets: "",
+  };
+
+  const [form, setForm] = useState(INV_DEFAULTS);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
+  // ── AUTO-CALCULATE CBM/CFT ─────────────────────────────────
+  const calc = (() => {
+    if (timberType === "Sawn Timber") {
+      return TM.sawnCFT(+form.thickness_mm, +form.width_mm, +form.length_ft, +form.pieces || 1);
+    }
+    if (timberType === "Round Log") {
+      return TM.hoppusCFT(+form.girth_in, +form.log_length_ft, +form.num_logs || 1);
+    }
+    if (timberType === "Plywood") {
+      return TM.plywoodCBM(+form.sheet_thickness_mm, +form.sheet_width_ft, +form.sheet_length_ft, +form.num_sheets || 1);
+    }
+    return null;
+  })();
+
+  // Push calculated volume into form.available_quantity automatically
+  useEffect(() => {
+    if (!calc) return;
+    const vol = timberType === "Plywood" ? calc.totalCBM : calc.totalCFT;
+    const unit = timberType === "Plywood" ? "CBM" : "CFT";
+    setForm(p => ({ ...p, available_quantity: vol || "", unit }));
+  }, [
+    calc?.totalCFT, calc?.totalCBM, timberType,
+    form.thickness_mm, form.width_mm, form.length_ft, form.pieces,
+    form.girth_in, form.log_length_ft, form.num_logs,
+    form.sheet_thickness_mm, form.sheet_width_ft, form.sheet_length_ft, form.num_sheets,
+  ]);
+
   const fetchAll = useCallback(async () => {
-    if (!companyId) return; setLoading(true);
+    setLoading(true);
     const [a, b, c] = await Promise.all([
-      supabase.from("inventory").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
-      supabase.from("yards").select("*").eq("company_id", companyId).order("name"),
-      supabase.from("suppliers").select("*").eq("company_id", companyId).order("name"),
-    ]);
-    setItems(a.data || []); setYards(b.data || []); setSuppliers(c.data || []); setLoading(false);
-  }, [companyId]);
+      api.get("/api/inventory"), api.get("/api/yards"), api.get("/api/suppliers")
+    ]).catch(() => [[], [], []]);
+    setItems(a?.data || []); setYards(b?.data || []); setSuppliers(c?.data || []);
+    setLoading(false);
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const closeInv = () => { setShowAdd(false); setForm(INV_DEFAULTS); setErr(""); setTimberType("Sawn Timber"); };
+
   const save = async () => {
-    if (!form.product_name.trim()) { setErr("Product name required"); return; }
+    if (!form.product_name) { setErr("Product name required"); return; }
     setSaving(true); setErr("");
-    const yard = yards.find(y => y.id === form.yard_id);
-    const sup = suppliers.find(s => s.id === form.supplier_id);
-    const { error } = await supabase.from("inventory").insert({
-      company_id: companyId,
-      product_name: form.product_name.trim(), category: form.category,
-      wood_type: form.wood_type || null, quality_grade: form.quality_grade || null,
-      yard_id: form.yard_id || null, yard_name: yard?.name || null,
-      supplier_id: form.supplier_id || null, supplier_name: sup?.name || null,
-      unit: form.unit, cost_price: parseFloat(form.cost_price) || 0,
-      market_value: parseFloat(form.market_value) || 0,
-      available_quantity: parseFloat(form.available_quantity) || 0,
-      total_quantity: parseFloat(form.available_quantity) || 0,
-      reserved_quantity: 0, date: form.date || today(), notes: form.notes || null,
-      thickness: form.thickness ? parseFloat(form.thickness) : null,
-      length: form.length ? parseFloat(form.length) : null,
-      width: form.width ? parseFloat(form.width) : null,
-    });
-    if (error) { setErr(sbErr(error)); setSaving(false); return; }
-    close(); fetchAll(); setSaving(false);
+    try {
+      await api.post("/api/inventory", {
+        ...form,
+        cost_price: parseFloat(form.cost_price) || 0,
+        market_value: parseFloat(form.market_value) || 0,
+        available_quantity: parseFloat(form.available_quantity) || 0,
+      });
+      closeInv(); fetchAll();
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
+    setSaving(false);
   };
+
   const filtered = items.filter(i => !search || (i.product_name || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-2xl font-black text-gray-800">Inventory</h1><p className="text-gray-400 text-sm">{items.length} products in stock</p></div>
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Inventory</h1>
+          <p className="text-gray-400 text-sm">{items.length} products</p>
+        </div>
         <div className="flex gap-3">
-          <Input placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
           <Btn onClick={() => setShowAdd(true)}>+ Add Stock</Btn>
         </div>
       </div>
+
       {loading ? <Spinner /> : (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Product", "Category", "Wood Type", "Grade", "Yard", "Available", "Cost Price", "Total Value"].map(h =>
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+              <tr>
+                {["Product", "Type", "Wood / Species", "Grade", "Yard", "Volume", "Unit", "Cost/Unit", "Total Value"].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
             </thead>
             <tbody>
               {filtered.map(i => (
@@ -384,81 +459,281 @@ function Inventory() {
                   <td className="px-4 py-3 font-semibold text-gray-800">{i.product_name || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{i.category || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{i.wood_type || "—"}</td>
-                  <td className="px-4 py-3"><Badge text={i.quality_grade || "—"} /></td>
-                  <td className="px-4 py-3 text-gray-500">{i.yard_name || "—"}</td>
-                  <td className="px-4 py-3 font-semibold">{i.available_quantity ?? 0} {i.unit || ""}</td>
+                  <td className="px-4 py-3"><Badge text={i.grade || "—"} /></td>
+                  <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === i.yard_id)?.name || "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-800">{i.available_quantity || 0}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{i.unit || "pcs"}</td>
                   <td className="px-4 py-3 font-semibold text-green-700">{fmt(i.cost_price)}</td>
                   <td className="px-4 py-3 font-bold text-blue-700">{fmt((i.cost_price || 0) * (i.available_quantity || 0))}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No inventory yet</td></tr>}
+              {filtered.length === 0 && (
+                <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No inventory found</td></tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
-      <SlidePanel title="Add Stock" open={showAdd} onClose={close}>
-        <Field label="Product Name" required><Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. Plywood 18mm" /></Field>
+
+      {/* ── ADD STOCK PANEL ─────────────────────────────────── */}
+      <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv} wide>
+        {/* Timber Type Selector */}
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Timber Type</p>
+          <div className="flex gap-2">
+            {["Sawn Timber", "Round Log", "Plywood", "Other"].map(t => (
+              <button
+                key={t}
+                onClick={() => setTimberType(t)}
+                className={cls(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                  timberType === t
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                )}
+              >{t}</button>
+            ))}
+          </div>
+        </div>
+
+        <Field label="Product Name" required>
+          <Input value={form.product_name} onChange={set("product_name")} placeholder={
+            timberType === "Sawn Timber" ? "e.g. Gurjan Sawn 18mm" :
+            timberType === "Round Log" ? "e.g. Teak Round Log" :
+            timberType === "Plywood" ? "e.g. BWR Plywood 18mm" : "Product name"
+          } />
+        </Field>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
             <Select value={form.category} onChange={set("category")}>
               <option>Plywood</option><option>Hardwood</option><option>Softwood</option>
-              <option>Veneer</option><option>MDF</option><option>Logs</option><option>Particle Board</option>
+              <option>Veneer</option><option>MDF</option><option>Particle Board</option><option>Round Log</option>
             </Select>
           </Field>
-          <Field label="Wood Type"><Input value={form.wood_type} onChange={set("wood_type")} placeholder="Teak, Pine, BWR…" /></Field>
+          <Field label="Wood / Species">
+            <Select value={form.wood_type} onChange={set("wood_type")}>
+              <option value="">— Select —</option>
+              {["Teak (Sagwan)","Gurjan","Pine","Eucalyptus","Rubber Wood","Burma Teak",
+                "Hardwood (Mixed)","Softwood (Mixed)","Merbau","Oak","Sal","Shisham"].map(s =>
+                <option key={s}>{s}</option>
+              )}
+            </Select>
+          </Field>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Thickness (mm)"><Input type="number" value={form.thickness} onChange={set("thickness")} placeholder="18" /></Field>
-          <Field label="Length (ft)"><Input type="number" value={form.length} onChange={set("length")} placeholder="8" /></Field>
-          <Field label="Width (ft)"><Input type="number" value={form.width} onChange={set("width")} placeholder="4" /></Field>
-        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Grade">
-            <Select value={form.quality_grade} onChange={set("quality_grade")}>
-              <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="Premium">Premium</option>
+            <Select value={form.grade} onChange={set("grade")}>
+              <option>A Grade</option><option>B Grade</option><option>C Grade</option>
+              <option>FAS</option><option>Select</option><option>Common</option><option>Industrial</option>
             </Select>
           </Field>
-          <Field label="Unit">
-            <Select value={form.unit} onChange={set("unit")}>
-              <option value="pcs">pcs</option>
-              <option value="sheet">sheet</option>
-              <option value="cft">cft</option>
-              <option value="cbm">cbm</option>
-              <option value="sqft">sqft</option>
-              <option value="kg">kg</option>
-              <option value="ton">ton</option>
-              <option value="bundle">bundle</option>
-              <option value="nos">nos</option>
-            </Select>
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
           <Field label="Yard">
             <Select value={form.yard_id} onChange={set("yard_id")}>
               <option value="">— Select Yard —</option>
               {yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
             </Select>
           </Field>
+        </div>
+
+        {/* ── DIMENSION FIELDS (change per timber type) ─────── */}
+        {timberType === "Sawn Timber" && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-3">
+              📐 Dimensions → Auto-calculates CFT
+            </p>
+            <p className="text-xs text-blue-400 mb-3">
+              Formula: (Thickness × Width × Length) ÷ 144 × pieces
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Field label="Thickness (mm)">
+                <Select value={form.thickness_mm} onChange={set("thickness_mm")}>
+                  <option value="">— Select —</option>
+                  {[3,4,6,9,12,15,18,19,25,32,38,50,75,100].map(t => <option key={t} value={t}>{t} mm</option>)}
+                </Select>
+              </Field>
+              <Field label="Width (mm)">
+                <Input type="number" value={form.width_mm} onChange={set("width_mm")} placeholder="e.g. 150" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Length (ft)">
+                <Input type="number" value={form.length_ft} onChange={set("length_ft")} placeholder="e.g. 8" />
+              </Field>
+              <Field label="No. of Pieces">
+                <Input type="number" value={form.pieces} onChange={set("pieces")} placeholder="e.g. 100" />
+              </Field>
+            </div>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100">
+                  <p className="text-xs text-blue-400">Per Piece</p>
+                  <p className="font-bold text-blue-700 text-sm">{calc.cftPer} CFT</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100">
+                  <p className="text-xs text-blue-400">Total CFT</p>
+                  <p className="font-bold text-blue-700 text-sm">{calc.totalCFT} CFT</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100">
+                  <p className="text-xs text-blue-400">Total CBM</p>
+                  <p className="font-bold text-blue-700 text-sm">{calc.totalCBM} m³</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {timberType === "Round Log" && (
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-green-600 uppercase tracking-wide mb-3">
+              🪵 Hoppus CFT Calculator (Round Log)
+            </p>
+            <p className="text-xs text-green-400 mb-3">
+              Formula: (Girth ÷ 4)² × Length ÷ 144
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Field label="Mid-point Girth (inches)">
+                <Input type="number" value={form.girth_in} onChange={set("girth_in")} placeholder="e.g. 36" />
+              </Field>
+              <Field label="Log Length (ft)">
+                <Input type="number" value={form.log_length_ft} onChange={set("log_length_ft")} placeholder="e.g. 12" />
+              </Field>
+            </div>
+            <Field label="No. of Logs">
+              <Input type="number" value={form.num_logs} onChange={set("num_logs")} placeholder="e.g. 20" />
+            </Field>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100">
+                  <p className="text-xs text-green-400">Per Log</p>
+                  <p className="font-bold text-green-700 text-sm">{calc.cftPer} CFT</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100">
+                  <p className="text-xs text-green-400">Total Hoppus</p>
+                  <p className="font-bold text-green-700 text-sm">{calc.totalCFT} CFT</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100">
+                  <p className="text-xs text-green-400">Total CBM</p>
+                  <p className="font-bold text-green-700 text-sm">{calc.totalCBM} m³</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {timberType === "Plywood" && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">
+              📋 Plywood CBM Calculator
+            </p>
+            <p className="text-xs text-amber-400 mb-3">
+              Standard sheet: 8ft × 4ft. Formula: thickness(m) × width(m) × length(m) × sheets
+            </p>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <Field label="Thickness (mm)">
+                <Select value={form.sheet_thickness_mm} onChange={set("sheet_thickness_mm")}>
+                  <option value="">— Select —</option>
+                  {[3,4,6,9,12,15,18,19,25].map(t => <option key={t} value={t}>{t} mm</option>)}
+                </Select>
+              </Field>
+              <Field label="Width (ft)">
+                <Input type="number" value={form.sheet_width_ft} onChange={set("sheet_width_ft")} placeholder="4" />
+              </Field>
+              <Field label="Length (ft)">
+                <Input type="number" value={form.sheet_length_ft} onChange={set("sheet_length_ft")} placeholder="8" />
+              </Field>
+            </div>
+            <Field label="No. of Sheets">
+              <Input type="number" value={form.num_sheets} onChange={set("num_sheets")} placeholder="e.g. 500" />
+            </Field>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100">
+                  <p className="text-xs text-amber-400">Per Sheet</p>
+                  <p className="font-bold text-amber-700 text-sm">{calc.cbmPer} m³</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100">
+                  <p className="text-xs text-amber-400">Total CBM</p>
+                  <p className="font-bold text-amber-700 text-sm">{calc.totalCBM} m³</p>
+                </div>
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100">
+                  <p className="text-xs text-amber-400">Total CFT</p>
+                  <p className="font-bold text-amber-700 text-sm">{calc.totalCFT} CFT</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── VOLUME RESULT (auto-filled) ──────────────────── */}
+        <div className={cls(
+          "rounded-xl p-4 border-2",
+          calc ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-100"
+        )}>
+          <p className={cls("text-xs font-bold uppercase tracking-wide mb-2", calc ? "text-gray-400" : "text-gray-400")}>
+            {calc ? "✅ Volume Auto-Calculated" : "Volume / Quantity"}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={<span className={calc ? "text-gray-300" : "text-gray-600"}>
+              {timberType === "Other" ? "Quantity" : "Calculated Volume"}
+            </span>}>
+              <Input
+                type="number"
+                value={form.available_quantity}
+                onChange={set("available_quantity")}
+                placeholder="0"
+                className={calc ? "bg-gray-800 text-white border-gray-700 font-bold text-lg" : ""}
+                readOnly={timberType !== "Other" && !!calc}
+              />
+            </Field>
+            <Field label={<span className={calc ? "text-gray-300" : "text-gray-600"}>Unit</span>}>
+              <Select value={form.unit} onChange={set("unit")} className={calc ? "bg-gray-800 text-white border-gray-700" : ""}>
+                <option>CFT</option><option>CBM</option><option>Pieces</option>
+                <option>Sheets</option><option>MT</option><option>Bundles</option>
+              </Select>
+            </Field>
+          </div>
+        </div>
+
+        {/* ── PRICING ─────────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cost Price (₹ per unit)">
+            <Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" />
+          </Field>
+          <Field label="Market Value (₹ per unit)">
+            <Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" />
+          </Field>
+        </div>
+
+        {/* Total value preview */}
+        {form.cost_price && form.available_quantity && (
+          <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 flex justify-between items-center">
+            <span className="text-sm text-green-700 font-medium">Total Stock Value</span>
+            <span className="text-lg font-black text-green-700">
+              {fmt(parseFloat(form.cost_price) * parseFloat(form.available_quantity))}
+            </span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Supplier">
             <Select value={form.supplier_id} onChange={set("supplier_id")}>
               <option value="">— Select Supplier —</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           </Field>
+          <Field label="Date">
+            <Input type="date" value={form.date} onChange={set("date")} />
+          </Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Cost Price (₹)"><Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" /></Field>
-          <Field label="Market Value (₹)"><Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" /></Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity" required><Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0" /></Field>
-          <Field label="Date"><Input type="date" value={form.date} onChange={set("date")} /></Field>
-        </div>
+
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add to Inventory"}</Btn>
-          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+          <Btn variant="secondary" onClick={closeInv}>Cancel</Btn>
         </div>
       </SlidePanel>
     </div>
