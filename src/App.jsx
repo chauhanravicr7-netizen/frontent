@@ -664,7 +664,7 @@ function Yards() {
   );
 }
 
-// ── DEALS ──────────────────────────────────────────────────────────────────────
+// ── DEALS (UPGRADED WITH GST & INVOICING) ──────────────────────────────────────
 function Deals() {
   const { companyId } = useAuth();
   const [deals, setDeals] = useState([]);
@@ -676,60 +676,131 @@ function Deals() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [custName, setCustName] = useState("");
-  const [form, setForm] = useState({ customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" });
-  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
+  
+  // Added gst_rate to defaults
+  const DEAL_DEFAULTS = { customer_id: "", product_id: "", quantity: "", unit_price: "", gst_rate: "18", status: "draft", payment_status: "Pending", notes: "" };
+  const [form, setForm] = useState(DEAL_DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const [a, b, c] = await Promise.all([
-        sb.from("deals").select("*").order("created_at",{ascending:false}),
+        sb.from("deals").select("*").order("created_at", { ascending: false }),
         sb.from("customers").select("*"),
-        sb.from("inventory").select("*").order("created_at",{ascending:false}),
+        sb.from("inventory").select("*").order("created_at", { ascending: false }),
       ]);
       setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
     } finally { setLoading(false); }
   }, []);
+  
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
-  const filtered = tab === "All" ? deals : deals.filter(d => (d.status||"").toLowerCase() === tab.toLowerCase());
+  const TABS = ["All", "Draft", "Confirmed", "Dispatched", "Delivered", "Completed"];
+  const filtered = tab === "All" ? deals : deals.filter(d => (d.status || "").toLowerCase() === tab.toLowerCase());
 
-  const DEAL_DEFAULTS = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
   const closeDeal = () => { setShowAdd(false); setForm(DEAL_DEFAULTS); setCustName(""); setErr(""); };
+  
   const save = async () => {
     if (!form.customer_id && !custName) { setErr("Customer required"); return; }
     setSaving(true); setErr("");
     try {
       const qty = parseFloat(form.quantity) || 0;
       const price = parseFloat(form.unit_price) || 0;
+      const gstRate = parseFloat(form.gst_rate) || 18;
+      
+      // Advanced Financial Math
+      const baseValue = qty * price;
+      const gstAmount = baseValue * (gstRate / 100);
+      const totalValue = baseValue + gstAmount;
+
       const selProd = inventory.find(i => i.id === form.product_id);
+      
       const { error } = await db.deals.insert({
         company_id: companyId,
-        deal_number: `DEAL-${Date.now()}`,
+        deal_number: `INV-${Date.now().toString().slice(-6)}`, // Formatted as Invoice Number
         customer_id: form.customer_id || undefined,
         customer_name: custName,
         inventory_id: form.product_id || undefined,
         product_name: selProd?.product_name || undefined,
         quantity: qty,
         negotiated_price: price,
-        total_value: qty * price,
+        base_value: baseValue, // Saved for ledger
+        gst_amount: gstAmount, // Saved for tax filing
+        total_value: totalValue,
         payment_status: form.payment_status,
         stage: form.status,
         notes: form.notes || undefined,
       });
+      
       if (error) throw error;
       closeDeal(); fetchAll();
     } catch (e) { setErr(e.message); }
     setSaving(false);
   };
 
+  // ── PDF INVOICE GENERATOR ──────────────────────────────────────────
+  const printInvoice = async (deal) => {
+    // Fetch company profile dynamically for the invoice header
+    const { data: co } = await sb.from("company").select("*").eq("id", companyId).single();
+    const cust = customers.find(c => c.id === deal.customer_id) || { name: deal.customer_name };
+    const date = new Date(deal.created_at).toLocaleDateString("en-IN");
+    
+    // Fallbacks for older deals that might not have base_value saved
+    const base = deal.base_value || (deal.quantity * deal.negotiated_price);
+    const tax = deal.gst_amount || (base * 0.18);
+    const total = deal.total_value;
+
+    const html = `<!DOCTYPE html><html><head><title>Tax Invoice ${deal.deal_number}</title>
+    <style>
+      body{font-family:Arial,sans-serif; padding:40px; color:#333;}
+      .header{display:flex; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:20px; margin-bottom:30px;}
+      .tax-label{font-size:24px; font-weight:bold; color:#1e3a8a;}
+      .boxes{display:flex; justify-content:space-between; margin-bottom:30px;}
+      .box{border:1px solid #ccc; padding:15px; width:48%; border-radius:8px;}
+      table{width:100%; border-collapse:collapse; margin-bottom:30px;}
+      th,td{border:1px solid #ccc; padding:12px; text-align:left;}
+      th{background:#f8fafc;}
+      .totals{width:40%; float:right; border-collapse:collapse;}
+      .totals td{padding:10px; border:1px solid #ccc;}
+      .totals .grand{font-weight:bold; font-size:16px; background:#f1f5f9;}
+    </style></head><body>
+      <div class="header">
+        <div><h1 style="margin:0;">${co?.name || "Dockside Timber Co."}</h1><p>GSTIN: ${co?.gst_number || "Not Provided"}</p><p>${co?.address || "Gandhidham, Gujarat"}</p></div>
+        <div style="text-align:right;"><span class="tax-label">TAX INVOICE</span><br><br><b>Invoice No:</b> ${deal.deal_number}<br><b>Date:</b> ${date}</div>
+      </div>
+      <div class="boxes">
+        <div class="box"><b>Billed To:</b><br>${cust.name}<br>GSTIN: ${cust.gst_number || "Unregistered"}<br>${cust.city || ""}</div>
+      </div>
+      <table>
+        <tr><th>Product Description</th><th>Qty</th><th>Rate (₹)</th><th>Taxable Value (₹)</th></tr>
+        <tr><td>${deal.product_name}</td><td>${deal.quantity}</td><td>${deal.negotiated_price.toLocaleString("en-IN")}</td><td>${base.toLocaleString("en-IN")}</td></tr>
+      </table>
+      <table class="totals">
+        <tr><td>Taxable Amount</td><td style="text-align:right;">₹${base.toLocaleString("en-IN")}</td></tr>
+        <tr><td>CGST (9%)</td><td style="text-align:right;">₹${(tax/2).toLocaleString("en-IN")}</td></tr>
+        <tr><td>SGST (9%)</td><td style="text-align:right;">₹${(tax/2).toLocaleString("en-IN")}</td></tr>
+        <tr class="grand"><td>Grand Total</td><td style="text-align:right;">₹${total.toLocaleString("en-IN")}</td></tr>
+      </table>
+      <div style="clear:both; margin-top:50px; border-top:1px solid #ccc; padding-top:20px;">
+        <p><b>Bank Details:</b> ${co?.bank_name || ""} | A/C: ${co?.bank_account || ""} | IFSC: ${co?.bank_ifsc || ""}</p>
+        <p style="text-align:right; margin-top:40px;"><b>Authorized Signatory</b></p>
+      </div>
+    </body></html>`;
+    
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <div><h1 className="text-2xl font-black text-gray-800">Deals</h1><p className="text-gray-400 text-sm">{deals.length} total deals</p></div>
-        <Btn onClick={() => setShowAdd(true)}>+ Create Deal</Btn>
+        <div><h1 className="text-2xl font-black text-gray-800">Deals & Invoices</h1><p className="text-gray-400 text-sm">{deals.length} total transactions</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Create Deal / Invoice</Btn>
       </div>
+      
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
@@ -737,11 +808,12 @@ function Deals() {
           </button>
         ))}
       </div>
+
       {loading ? <Spinner /> : (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Deal #","Customer","Product","Qty","Value","Stage","Payment","Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Inv #", "Customer", "Product", "Qty", "Total (Inc. GST)", "Stage", "Payment", "Date", "Action"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(d => (
@@ -754,14 +826,18 @@ function Deals() {
                   <td className="px-4 py-3"><Badge text={d.stage || d.status || "draft"} /></td>
                   <td className="px-4 py-3"><Badge text={d.payment_status || "—"} color={d.payment_status === "Paid" ? "green" : "orange"} /></td>
                   <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => printInvoice(d)} className="text-blue-600 hover:text-blue-800 font-semibold text-xs border border-blue-200 px-2 py-1 rounded">🖨️ Print</button>
+                  </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
             </tbody>
           </table>
         </div>
       )}
-      <SlidePanel title="Create Deal" open={showAdd} onClose={closeDeal}>
+
+      <SlidePanel title="Create Deal / Invoice" open={showAdd} onClose={closeDeal}>
         <Field label="Customer Name"><Input value={custName} onChange={e => setCustName(e.target.value)} placeholder="Customer name" /></Field>
         <Field label="Customer (from records)">
           <Select value={form.customer_id} onChange={set("customer_id")}>
@@ -775,17 +851,26 @@ function Deals() {
             {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name}</option>)}
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        
+        <div className="grid grid-cols-3 gap-2">
           <Field label="Quantity"><Input type="number" value={form.quantity} onChange={set("quantity")} placeholder="0" /></Field>
           <Field label="Unit Price (₹)"><Input type="number" value={form.unit_price} onChange={set("unit_price")} placeholder="0" /></Field>
+          <Field label="GST %">
+            <Select value={form.gst_rate} onChange={set("gst_rate")}>
+              <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
+            </Select>
+          </Field>
         </div>
+
         {form.quantity && form.unit_price && (
-          <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 flex justify-between">
-            <span className="text-sm text-green-700">Deal Value</span>
-            <span className="font-black text-green-700">{fmt(parseFloat(form.quantity) * parseFloat(form.unit_price))}</span>
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-2">
+            <div className="flex justify-between text-gray-400 text-sm mb-1"><span>Base Value:</span><span>{fmt(parseFloat(form.quantity) * parseFloat(form.unit_price))}</span></div>
+            <div className="flex justify-between text-gray-400 text-sm mb-2 border-b border-gray-700 pb-2"><span>GST Amount ({form.gst_rate}%):</span><span>{fmt((parseFloat(form.quantity) * parseFloat(form.unit_price)) * (parseFloat(form.gst_rate) / 100))}</span></div>
+            <div className="flex justify-between text-white font-black text-lg"><span>Total Bill Value:</span><span className="text-green-400">{fmt((parseFloat(form.quantity) * parseFloat(form.unit_price)) * (1 + parseFloat(form.gst_rate)/100))}</span></div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3">
+
+        <div className="grid grid-cols-2 gap-3 mt-2">
           <Field label="Stage">
             <Select value={form.status} onChange={set("status")}>
               <option value="draft">Draft</option><option value="confirmed">Confirmed</option>
@@ -798,14 +883,18 @@ function Deals() {
             </Select>
           </Field>
         </div>
+        
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={closeDeal}>Cancel</Btn></div>
+        
+        <div className="flex gap-3 mt-4">
+          <Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Save & Generate Invoice"}</Btn>
+          <Btn variant="secondary" onClick={closeDeal}>Cancel</Btn>
+        </div>
       </SlidePanel>
     </div>
   );
 }
-
 // ── TRANSIT ────────────────────────────────────────────────────────────────────
 function Transit() {
   const { companyId } = useAuth();
