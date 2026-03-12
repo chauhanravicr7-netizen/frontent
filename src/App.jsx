@@ -160,6 +160,7 @@ function Login({ onLogin }) {
 // ── APP ROOT ───────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [companyId, setCompanyId] = useState(null);
 
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
@@ -171,9 +172,23 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleSignOut = async () => { await signOut(); setUser(null); };
+  // Resolve companyId: try user_metadata first, then user_profiles table
+  useEffect(() => {
+    if (!user) { setCompanyId(null); return; }
+    const metaCid = user.user_metadata?.company_id;
+    if (metaCid) { setCompanyId(metaCid); return; }
+    // Fallback: look up user_profiles
+    sb.from("user_profiles").select("company_id").eq("user_id", user.id).single()
+      .then(({ data }) => {
+        if (data?.company_id) setCompanyId(data.company_id);
+        else setCompanyId("__none__"); // Mark as resolved but empty
+      })
+      .catch(() => setCompanyId("__none__"));
+  }, [user]);
 
-  if (user === undefined) return (
+  const handleSignOut = async () => { await signOut(); setUser(null); setCompanyId(null); };
+
+  if (user === undefined || (user && companyId === null)) return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
       <div className="text-center">
         <div className="text-4xl mb-3">⚓</div>
@@ -184,10 +199,8 @@ export default function App() {
 
   if (!user) return <Login onLogin={setUser} />;
 
-  const companyId = user.user_metadata?.company_id;
-
   return (
-    <AuthCtx.Provider value={{ user, companyId }}>
+    <AuthCtx.Provider value={{ user, companyId: companyId === "__none__" ? null : companyId }}>
       <BrowserRouter>
         <div className="flex min-h-screen bg-gray-50">
           <Sidebar onSignOut={handleSignOut} />
@@ -242,12 +255,11 @@ function Dashboard() {
   const [yards, setYards] = useState([]);
 
   useEffect(() => {
-    if (!companyId) return;
-    db.inventory.list(companyId).then(r => setInv(r.data || []));
-    db.deals.list(companyId).then(r => setDeals(r.data || []));
-    db.shipments.list(companyId).then(r => setShips(r.data || []));
-    db.yards.list(companyId).then(r => setYards(r.data || []));
-  }, [companyId]);
+    sb.from("inventory").select("*").order("created_at",{ascending:false}).then(r => setInv(r.data || []));
+    sb.from("deals").select("*").order("created_at",{ascending:false}).then(r => setDeals(r.data || []));
+    sb.from("shipments").select("*").order("created_at",{ascending:false}).then(r => setShips(r.data || []));
+    sb.from("yards").select("*").then(r => setYards(r.data || []));
+  }, []);
 
   const totalValue = inv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
   const totalVolume = inv.reduce((s, i) => s + (i.available_quantity || 0), 0);
@@ -345,16 +357,16 @@ function Inventory() {
   }, [calc?.totalCFT, calc?.totalCBM, timberType]);
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b, c] = await Promise.all([
-      db.inventory.list(companyId),
-      db.yards.list(companyId),
-      db.suppliers.list(companyId),
-    ]);
-    setItems(a.data || []); setYards(b.data || []); setSuppliers(c.data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const [a, b, c] = await Promise.all([
+        sb.from("inventory").select("*").order("created_at",{ascending:false}),
+        sb.from("yards").select("*"),
+        sb.from("suppliers").select("*"),
+      ]);
+      setItems(a.data || []); setYards(b.data || []); setSuppliers(c.data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const closeInv = () => { setShowAdd(false); setForm(INV_DEFAULTS); setErr(""); setTimberType("Sawn Timber"); };
@@ -584,12 +596,12 @@ function Yards() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b] = await Promise.all([db.yards.list(companyId), db.inventory.list(companyId)]);
-    setYards(a.data || []); setInv(b.data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const [a, b] = await Promise.all([sb.from("yards").select("*"), sb.from("inventory").select("*").order("created_at",{ascending:false})]);
+      setYards(a.data || []); setInv(b.data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const YARD_DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
@@ -668,12 +680,16 @@ function Deals() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b, c] = await Promise.all([db.deals.list(companyId), db.customers.list(companyId), db.inventory.list(companyId)]);
-    setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const [a, b, c] = await Promise.all([
+        sb.from("deals").select("*").order("created_at",{ascending:false}),
+        sb.from("customers").select("*"),
+        sb.from("inventory").select("*").order("created_at",{ascending:false}),
+      ]);
+      setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
@@ -804,12 +820,15 @@ function Transit() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b] = await Promise.all([db.shipments.list(companyId), db.yards.list(companyId)]);
-    setShips(a.data || []); setYards(b.data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const [a, b] = await Promise.all([
+        sb.from("shipments").select("*").order("created_at",{ascending:false}),
+        sb.from("yards").select("*"),
+      ]);
+      setShips(a.data || []); setYards(b.data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const TABS = ["All","Created","Loaded","Dispatched","In Transit","Arrived","Delivered"];
@@ -927,12 +946,15 @@ function Suppliers() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b] = await Promise.all([db.suppliers.list(companyId), db.inventory.list(companyId)]);
-    setSuppliers(a.data || []); setInv(b.data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const [a, b] = await Promise.all([
+        sb.from("suppliers").select("*"),
+        sb.from("inventory").select("*").order("created_at",{ascending:false}),
+      ]);
+      setSuppliers(a.data || []); setInv(b.data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const SUPPLIER_DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" };
@@ -1012,12 +1034,12 @@ function Customers() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const { data } = await db.customers.list(companyId);
-    setCustomers(data || []);
-    setLoading(false);
-  }, [companyId]);
+    try {
+      const { data } = await sb.from("customers").select("*");
+      setCustomers(data || []);
+    } finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const CUST_DEFAULTS = { name:"", city:"", state:"", country:"India", gst_number:"", pan_number:"", phone:"", email:"", notes:"" };
@@ -1090,12 +1112,11 @@ function Financials() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!companyId) return;
-    Promise.all([db.inventory.list(companyId), db.deals.list(companyId)]).then(([a, b]) => {
+    Promise.all([sb.from("inventory").select("*"), sb.from("deals").select("*")]).then(([a, b]) => {
       setInv(a.data || []); setDeals(b.data || []);
       setLoading(false);
-    });
-  }, [companyId]);
+    }).catch(() => setLoading(false));
+  }, []);
 
   const totalCost = inv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
   const marketVal = inv.reduce((s, i) => s + (i.market_value || i.cost_price || 0) * (i.available_quantity || 0), 0);
@@ -1145,10 +1166,9 @@ function AIInsights() {
   const [deals, setDeals] = useState([]);
 
   useEffect(() => {
-    if (!companyId) return;
-    db.inventory.list(companyId).then(r => setInv(r.data || []));
-    db.deals.list(companyId).then(r => setDeals(r.data || []));
-  }, [companyId]);
+    sb.from("inventory").select("*").then(r => setInv(r.data || []));
+    sb.from("deals").select("*").then(r => setDeals(r.data || []));
+  }, []);
 
   const lowStock = inv.filter(i => (i.available_quantity || 0) < 10);
   const topProducts = Object.entries(inv.reduce((m, i) => { const k = i.category || "Other"; m[k] = (m[k] || 0) + (i.available_quantity || 0); return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -1212,9 +1232,9 @@ function Reports() {
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
-    if (!companyId) return;
-    db.company.get(companyId).then(r => setCompany(r.data || {})).catch(() => {});
-  }, [companyId]);
+    sb.from("company").select("*").limit(1).single()
+      .then(r => setCompany(r.data || {})).catch(() => {});
+  }, []);
 
   const REPORTS = [
     { key:"inventory", label:"Inventory Report", icon:"📦", desc:"All stock with valuation" },
@@ -1228,11 +1248,11 @@ function Reports() {
     setLoading(p => ({...p, [type]: true}));
     try {
       let data = [];
-      if (type === "inventory") { const r = await db.inventory.list(companyId); data = r.data || []; }
-      else if (type === "sales") { const r = await db.deals.list(companyId); data = r.data || []; }
-      else if (type === "shipments") { const r = await db.shipments.list(companyId); data = r.data || []; }
-      else if (type === "suppliers") { const r = await db.suppliers.list(companyId); data = r.data || []; }
-      else if (type === "customers") { const r = await db.customers.list(companyId); data = r.data || []; }
+      if (type === "inventory") { const r = await sb.from("inventory").select("*"); data = r.data || []; }
+      else if (type === "sales") { const r = await sb.from("deals").select("*"); data = r.data || []; }
+      else if (type === "shipments") { const r = await sb.from("shipments").select("*"); data = r.data || []; }
+      else if (type === "suppliers") { const r = await sb.from("suppliers").select("*"); data = r.data || []; }
+      else if (type === "customers") { const r = await sb.from("customers").select("*"); data = r.data || []; }
       generatePDF(type, label, data, company);
     } catch (e) { alert("Failed: " + e.message); }
     setLoading(p => ({...p, [type]: false}));
@@ -1306,20 +1326,26 @@ function Company() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
     try {
-      const { data } = await db.company.get(companyId);
+      const { data } = await sb.from("company").select("*").limit(1).single();
       if (data) { setCompany(data); setForm(f => ({...f, ...data})); }
     } catch {}
     setLoading(false);
-  }, [companyId]);
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const save = async () => {
     setSaving(true); setErr("");
     try {
-      const { error } = await db.company.update(companyId, form);
+      let error;
+      if (company?.id) {
+        const r = await sb.from("company").update(form).eq("id", company.id).select().single();
+        error = r.error;
+      } else {
+        const r = await sb.from("company").insert([form]).select().single();
+        error = r.error;
+      }
       if (error) throw error;
       alert("✅ Company profile saved!");
       fetchAll();
