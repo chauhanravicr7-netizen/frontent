@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { sb, signIn, signOut, db } from "./lib/supabase";
+import { sb, signIn, signUp, signOut, db } from "./lib/supabase";
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
 const fmt = (n) => {
@@ -126,15 +126,19 @@ const Sidebar = ({ onSignOut }) => (
   </div>
 );
 
-// ── LOGIN (REDESIGNED) ─────────────────────────────────────────────────────────
+// ── AUTH (LOGIN + SIGNUP) ─────────────────────────────────────────────────────
 function Login({ onLogin }) {
+  const [mode, setMode] = useState("signin"); // "signin" | "signup" | "success"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [showPass, setShowPass] = useState(false);
 
-  const submit = async () => {
+  const switchMode = (m) => { setMode(m); setErr(""); setPassword(""); setConfirmPass(""); };
+
+  const handleSignIn = async () => {
     if (!email || !password) { setErr("Please enter your email and password"); return; }
     setLoading(true); setErr("");
     try {
@@ -142,22 +146,59 @@ function Login({ onLogin }) {
       if (error) throw error;
       onLogin(data.user);
     } catch (e) {
-      setErr(e.message || "Login failed. Check your credentials.");
+      setErr(e.message === "Invalid login credentials" ? "Incorrect email or password. Please try again." : e.message);
     } finally { setLoading(false); }
   };
 
+  const handleSignUp = async () => {
+    if (!email || !password) { setErr("Email and password are required"); return; }
+    if (password.length < 6) { setErr("Password must be at least 6 characters"); return; }
+    if (password !== confirmPass) { setErr("Passwords do not match"); return; }
+    setLoading(true); setErr("");
+    try {
+      const { data, error } = await signUp(email, password);
+      if (error) throw error;
+      // If email confirmation is disabled in Supabase → user is live immediately
+      if (data.user && data.session) {
+        onLogin(data.user);
+      } else {
+        // Email confirmation is enabled in Supabase dashboard
+        setMode("success");
+      }
+    } catch (e) {
+      setErr(e.message || "Sign up failed. Please try again.");
+    } finally { setLoading(false); }
+  };
+
+  const FEATURES = [
+    { icon:"📦", label:"Inventory Tracking", desc:"CFT, CBM, Hoppus math" },
+    { icon:"🤝", label:"GST Invoicing", desc:"Tax-ready bills" },
+    { icon:"🚛", label:"Transit Tracking", desc:"Live shipment status" },
+    { icon:"📊", label:"P&L Reports", desc:"Real-time financials" },
+  ];
+
   return (
     <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
+      {/* ── LEFT BRAND PANEL ── */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-black">⚓</div>
-          <div><div className="text-white font-black text-lg tracking-tight">Dockside</div><div className="text-blue-400 text-xs">Trade Operating System</div></div>
+          <div>
+            <div className="text-white font-black text-lg tracking-tight">Dockside</div>
+            <div className="text-blue-400 text-xs">Trade Operating System</div>
+          </div>
         </div>
         <div>
-          <h1 className="text-4xl font-black text-white leading-tight mb-4">Run your timber<br />business smarter.</h1>
-          <p className="text-blue-300 text-base leading-relaxed mb-8">Inventory, yards, deals, transit, and invoicing — all in one place. Built for Gandhidham's timber market.</p>
+          <h1 className="text-4xl font-black text-white leading-tight mb-4">
+            {mode === "signup" ? "Join thousands of
+timber traders." : "Run your timber
+business smarter."}
+          </h1>
+          <p className="text-blue-300 text-base leading-relaxed mb-8">
+            Inventory, yards, deals, transit, and invoicing — all in one place. Built for Gandhidham's timber market.
+          </p>
           <div className="grid grid-cols-2 gap-4">
-            {[{icon:"📦",label:"Inventory Tracking",desc:"CFT, CBM, Hoppus"},{icon:"🤝",label:"GST Invoicing",desc:"Tax-ready bills"},{icon:"🚛",label:"Transit Tracking",desc:"Live shipment status"},{icon:"📊",label:"P&L Reports",desc:"Real-time financials"}].map(f => (
+            {FEATURES.map(f => (
               <div key={f.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="text-2xl mb-2">{f.icon}</div>
                 <div className="text-white text-sm font-semibold">{f.label}</div>
@@ -168,47 +209,141 @@ function Login({ onLogin }) {
         </div>
         <div className="text-blue-400 text-xs">© 2025 Dockside Trade OS · Built for timber traders</div>
       </div>
+
+      {/* ── RIGHT FORM PANEL ── */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl">⚓</div>
             <div className="text-white font-black text-lg">Dockside ERP</div>
           </div>
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
-            <div className="mb-7">
-              <h2 className="text-2xl font-black text-gray-900">Welcome back</h2>
-              <p className="text-gray-400 text-sm mt-1">Sign in to your workspace</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email Address</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">✉</span>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com"
-                    className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔒</span>
-                  <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••"
-                    className="w-full border border-gray-200 rounded-xl pl-9 pr-16 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                  <button onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-semibold">{showPass ? "Hide" : "Show"}</button>
-                </div>
-              </div>
-              {err && <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2"><span className="text-red-500 text-sm">⚠</span><span className="text-red-600 text-sm">{err}</span></div>}
-              <button onClick={submit} disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm tracking-wide">
-                {loading ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Signing in…</span> : "Sign In to Dockside"}
+
+          {/* ── SUCCESS STATE (email verification needed) ── */}
+          {mode === "success" ? (
+            <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✉️</div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Check your email</h2>
+              <p className="text-gray-500 text-sm mb-6">
+                We sent a confirmation link to<br />
+                <span className="font-bold text-gray-700">{email}</span>
+              </p>
+              <p className="text-gray-400 text-xs mb-6">Click the link in the email to activate your account, then come back here to sign in.</p>
+              <button onClick={() => switchMode("signin")}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all text-sm">
+                Back to Sign In
               </button>
             </div>
-            <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400"></div>
-              <span className="text-xs text-gray-400">Secured by Supabase · Data stored in India</span>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-2xl p-8">
+              {/* ── TAB SWITCHER ── */}
+              <div className="flex bg-gray-100 rounded-xl p-1 mb-7">
+                <button onClick={() => switchMode("signin")}
+                  className={\`flex-1 py-2 text-sm font-bold rounded-lg transition-all \${mode === "signin" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"}\`}>
+                  Sign In
+                </button>
+                <button onClick={() => switchMode("signup")}
+                  className={\`flex-1 py-2 text-sm font-bold rounded-lg transition-all \${mode === "signup" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"}\`}>
+                  Create Account
+                </button>
+              </div>
+
+              {/* ── HEADING ── */}
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-gray-900">
+                  {mode === "signin" ? "Welcome back" : "Get started free"}
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  {mode === "signin" ? "Sign in to your workspace" : "Create your Dockside account"}
+                </p>
+              </div>
+
+              {/* ── FORM FIELDS ── */}
+              <div className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">✉</span>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      onKeyDown={e => e.key === "Enter" && (mode === "signin" ? handleSignIn() : handleSignUp())}
+                      className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔒</span>
+                    <input type={showPass ? "text" : "password"} value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && mode === "signin" && handleSignIn()}
+                      placeholder={mode === "signup" ? "Min. 6 characters" : "••••••••"}
+                      className="w-full border border-gray-200 rounded-xl pl-9 pr-16 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <button onClick={() => setShowPass(p => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-semibold">
+                      {showPass ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password (signup only) */}
+                {mode === "signup" && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Confirm Password</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔒</span>
+                      <input type={showPass ? "text" : "password"} value={confirmPass}
+                        onChange={e => setConfirmPass(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleSignUp()}
+                        placeholder="Repeat your password"
+                        className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    {/* Password match indicator */}
+                    {confirmPass && (
+                      <p className={\`text-xs mt-1.5 font-medium \${password === confirmPass ? "text-green-600" : "text-red-500"}\`}>
+                        {password === confirmPass ? "✓ Passwords match" : "✗ Passwords do not match"}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Error */}
+                {err && (
+                  <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2">
+                    <span className="text-red-500 text-sm shrink-0">⚠</span>
+                    <span className="text-red-600 text-sm">{err}</span>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  onClick={mode === "signin" ? handleSignIn : handleSignUp}
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm tracking-wide mt-1">
+                  {loading
+                    ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />{mode === "signin" ? "Signing in…" : "Creating account…"}</span>
+                    : mode === "signin" ? "Sign In to Dockside" : "Create My Account"
+                  }
+                </button>
+
+                {/* Terms (signup only) */}
+                {mode === "signup" && (
+                  <p className="text-xs text-gray-400 text-center leading-relaxed">
+                    By creating an account you agree to use this platform responsibly. Your data is stored securely.
+                  </p>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                <span className="text-xs text-gray-400">Secured by Supabase · Data stored in India</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
