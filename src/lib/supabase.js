@@ -11,6 +11,7 @@ export const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── AUTH ─────────────────────────────────────────────────────────
 export const signIn  = (email, password) => sb.auth.signInWithPassword({ email, password });
+export const signUp  = (email, password) => sb.auth.signUp({ email, password });
 export const signOut = () => sb.auth.signOut();
 
 // ── DATA HELPERS (always scoped to company_id) ───────────────────
