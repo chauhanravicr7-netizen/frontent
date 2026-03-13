@@ -357,6 +357,108 @@ function Login({ onLogin }) {
   );
 }
 
+// ── NEW USER SETUP ────────────────────────────────────────────────────────────
+// Shown to users who signed up but have no company yet.
+// Creates a company record + user_profile row, then lets them into the app.
+function NewUserSetup({ user, onDone, onSignOut }) {
+  const [companyName, setCompanyName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [city, setCity] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const setup = async () => {
+    if (!companyName.trim()) { setErr("Company name is required"); return; }
+    setSaving(true); setErr("");
+    try {
+      // 1. Create company record
+      const { data: co, error: coErr } = await sb.from("company").insert([{
+        name: companyName.trim(),
+        owner_name: ownerName.trim() || null,
+        city: city.trim() || null,
+        industry: "Timber Trade",
+      }]).select().single();
+      if (coErr) throw coErr;
+
+      // 2. Create user_profile linking this user to the new company
+      const { error: upErr } = await sb.from("user_profiles").insert([{
+        user_id: user.id,
+        company_id: co.id,
+        full_name: ownerName.trim() || user.email,
+        role: "owner",
+      }]);
+      if (upErr) throw upErr;
+
+      // 3. Done — pass companyId back to App root
+      onDone(co.id);
+    } catch (e) {
+      setErr(e.message || "Setup failed. Please try again.");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6"
+      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-3xl mx-auto mb-4">⚓</div>
+          <h1 className="text-2xl font-black text-white">Welcome to Dockside</h1>
+          <p className="text-blue-300 text-sm mt-1">Set up your company to get started</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
+          <div>
+            <p className="text-xs text-gray-400 mb-4">
+              Signed in as <span className="font-semibold text-gray-600">{user.email}</span>
+            </p>
+          </div>
+          <Field label="Company / Business Name" required>
+            <Input
+              value={companyName}
+              onChange={e => setCompanyName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && setup()}
+              placeholder="e.g. Chauhan Timber Pvt Ltd"
+              autoFocus
+            />
+          </Field>
+          <Field label="Your Name">
+            <Input
+              value={ownerName}
+              onChange={e => setOwnerName(e.target.value)}
+              placeholder="e.g. Ravi Chauhan"
+            />
+          </Field>
+          <Field label="City">
+            <Input
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              placeholder="e.g. Gandhidham"
+            />
+          </Field>
+
+          {err && (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2">
+              <span className="text-red-500 text-sm">⚠</span>
+              <span className="text-red-600 text-sm">{err}</span>
+            </div>
+          )}
+
+          <button onClick={setup} disabled={saving}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm">
+            {saving
+              ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Creating your workspace…</span>
+              : "Create My Workspace →"
+            }
+          </button>
+
+          <button onClick={onSignOut} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1">
+            Sign out and use a different account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── APP ROOT ───────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(undefined);
@@ -396,7 +498,10 @@ export default function App() {
 
   if (!user || companyId === "__resolved__") return <Login onLogin={setUser} />;
 
-  const resolvedCompanyId = companyId === "__none__" ? null : companyId;
+  // New user: signed up but has no company assigned yet
+  if (companyId === "__none__") return <NewUserSetup user={user} onDone={(cid) => setCompanyId(cid)} onSignOut={async () => { await signOut(); setUser(null); setCompanyId(null); }} />;
+
+  const resolvedCompanyId = companyId;
 
   return (
     <AuthCtx.Provider value={{ user, companyId: resolvedCompanyId }}>
@@ -454,11 +559,12 @@ function Dashboard() {
   const [yards, setYards] = useState([]);
 
   useEffect(() => {
-    sb.from("inventory").select("*").order("created_at",{ascending:false}).then(r => setInv(r.data || []));
-    sb.from("deals").select("*").order("created_at",{ascending:false}).then(r => setDeals(r.data || []));
-    sb.from("shipments").select("*").order("created_at",{ascending:false}).then(r => setShips(r.data || []));
-    sb.from("yards").select("*").then(r => setYards(r.data || []));
-  }, []);
+    if (!companyId) return;
+    sb.from("inventory").select("*").eq("company_id", companyId).order("created_at",{ascending:false}).then(r => setInv(r.data || []));
+    sb.from("deals").select("*").eq("company_id", companyId).order("created_at",{ascending:false}).then(r => setDeals(r.data || []));
+    sb.from("shipments").select("*").eq("company_id", companyId).order("created_at",{ascending:false}).then(r => setShips(r.data || []));
+    sb.from("yards").select("*").eq("company_id", companyId).then(r => setYards(r.data || []));
+  }, [companyId]);
 
   const totalValue = inv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
   const totalVolume = inv.reduce((s, i) => s + (i.available_quantity || 0), 0);
@@ -559,9 +665,9 @@ function Inventory() {
     setLoading(true);
     try {
       const [a, b, c] = await Promise.all([
-        sb.from("inventory").select("*").order("created_at", { ascending: false }),
-        sb.from("yards").select("*").order("name"),
-        sb.from("suppliers").select("*").order("name"),
+        sb.from("inventory").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+        sb.from("yards").select("*").eq("company_id", companyId).order("name"),
+        sb.from("suppliers").select("*").eq("company_id", companyId).order("name"),
       ]);
       setItems(a.data || []); setYards(b.data || []); setSuppliers(c.data || []);
     } catch(e) { console.error("Inventory fetch:", e); }
@@ -825,7 +931,7 @@ function Yards() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([sb.from("yards").select("*"), sb.from("inventory").select("*")]);
+      const [a, b] = await Promise.all([sb.from("yards").select("*").eq("company_id", companyId), sb.from("inventory").select("*").eq("company_id", companyId)]);
       setYards(a.data || []); setInv(b.data || []);
     } finally { setLoading(false); }
   }, []);
@@ -949,9 +1055,9 @@ function Deals() {
     setLoading(true);
     try {
       const [a, b, c] = await Promise.all([
-        sb.from("deals").select("*").order("created_at",{ascending:false}),
-        sb.from("customers").select("*"),
-        sb.from("inventory").select("*").order("created_at",{ascending:false}),
+        sb.from("deals").select("*").eq("company_id", companyId).order("created_at",{ascending:false}),
+        sb.from("customers").select("*").eq("company_id", companyId),
+        sb.from("inventory").select("*").eq("company_id", companyId).order("created_at",{ascending:false}),
       ]);
       setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
     } finally { setLoading(false); }
@@ -1091,8 +1197,8 @@ function Transit() {
     setLoading(true);
     try {
       const [a, b] = await Promise.all([
-        sb.from("shipments").select("*").order("created_at", { ascending: false }),
-        sb.from("yards").select("*"),
+        sb.from("shipments").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+        sb.from("yards").select("*").eq("company_id", companyId),
       ]);
       setShips(a.data || []); setYards(b.data || []);
     } finally { setLoading(false); }
@@ -1253,7 +1359,7 @@ function Suppliers() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([sb.from("suppliers").select("*"), sb.from("inventory").select("*")]);
+      const [a, b] = await Promise.all([sb.from("suppliers").select("*").eq("company_id", companyId), sb.from("inventory").select("*").eq("company_id", companyId)]);
       setSuppliers(a.data || []); setInv(b.data || []);
     } finally { setLoading(false); }
   }, []);
@@ -1382,7 +1488,7 @@ function Customers() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([sb.from("customers").select("*"), sb.from("deals").select("*")]);
+      const [a, b] = await Promise.all([sb.from("customers").select("*").eq("company_id", companyId), sb.from("deals").select("*").eq("company_id", companyId)]);
       setCustomers(a.data || []); setDeals(b.data || []);
     } finally { setLoading(false); }
   }, []);
@@ -1501,7 +1607,7 @@ function Financials() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([sb.from("inventory").select("*"), sb.from("deals").select("*")]).then(([a, b]) => {
+    Promise.all([sb.from("inventory").select("*").eq("company_id", companyId), sb.from("deals").select("*").eq("company_id", companyId)]).then(([a, b]) => {
       setInv(a.data || []); setDeals(b.data || []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -1555,8 +1661,8 @@ function AIInsights() {
   const [deals, setDeals] = useState([]);
 
   useEffect(() => {
-    sb.from("inventory").select("*").then(r => setInv(r.data || []));
-    sb.from("deals").select("*").then(r => setDeals(r.data || []));
+    sb.from("inventory").select("*").eq("company_id", companyId).then(r => setInv(r.data || []));
+    sb.from("deals").select("*").eq("company_id", companyId).then(r => setDeals(r.data || []));
   }, []);
 
   const lowStock = inv.filter(i => (i.available_quantity || 0) < 10);
@@ -1637,11 +1743,11 @@ function Reports() {
     setLoading(p => ({...p, [type]: true}));
     try {
       let data = [];
-      if (type === "inventory") { const r = await sb.from("inventory").select("*"); data = r.data || []; }
-      else if (type === "sales") { const r = await sb.from("deals").select("*"); data = r.data || []; }
-      else if (type === "shipments") { const r = await sb.from("shipments").select("*"); data = r.data || []; }
-      else if (type === "suppliers") { const r = await sb.from("suppliers").select("*"); data = r.data || []; }
-      else if (type === "customers") { const r = await sb.from("customers").select("*"); data = r.data || []; }
+      if (type === "inventory") { const r = await sb.from("inventory").select("*").eq("company_id", companyId); data = r.data || []; }
+      else if (type === "sales") { const r = await sb.from("deals").select("*").eq("company_id", companyId); data = r.data || []; }
+      else if (type === "shipments") { const r = await sb.from("shipments").select("*").eq("company_id", companyId); data = r.data || []; }
+      else if (type === "suppliers") { const r = await sb.from("suppliers").select("*").eq("company_id", companyId); data = r.data || []; }
+      else if (type === "customers") { const r = await sb.from("customers").select("*").eq("company_id", companyId); data = r.data || []; }
       generatePDF(type, label, data, company);
     } catch (e) { alert("Failed: " + e.message); }
     setLoading(p => ({...p, [type]: false}));
