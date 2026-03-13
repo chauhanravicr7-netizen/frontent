@@ -237,11 +237,11 @@ function Login({ onLogin }) {
               {/* ── TAB SWITCHER ── */}
               <div className="flex bg-gray-100 rounded-xl p-1 mb-7">
                 <button onClick={() => switchMode("signin")}
-                  className={\`flex-1 py-2 text-sm font-bold rounded-lg transition-all \${mode === "signin" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"}\`}>
+                  className={cls("flex-1 py-2 text-sm font-bold rounded-lg transition-all", mode === "signin" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600")}>
                   Sign In
                 </button>
                 <button onClick={() => switchMode("signup")}
-                  className={\`flex-1 py-2 text-sm font-bold rounded-lg transition-all \${mode === "signup" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"}\`}>
+                  className={cls("flex-1 py-2 text-sm font-bold rounded-lg transition-all", mode === "signup" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600")}>
                   Create Account
                 </button>
               </div>
@@ -301,7 +301,7 @@ function Login({ onLogin }) {
                     </div>
                     {/* Password match indicator */}
                     {confirmPass && (
-                      <p className={\`text-xs mt-1.5 font-medium \${password === confirmPass ? "text-green-600" : "text-red-500"}\`}>
+                      <p className={cls("text-xs mt-1.5 font-medium", password === confirmPass ? "text-green-600" : "text-red-500")}>
                         {password === confirmPass ? "✓ Passwords match" : "✗ Passwords do not match"}
                       </p>
                     )}
