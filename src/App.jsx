@@ -75,7 +75,17 @@ const StatCard = ({ label, value, icon, color = "blue" }) => {
     </div>
   );
 };
-const Spinner = () => <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
+const Spinner = () => (
+  <div className="flex items-center justify-center py-20">
+    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+const DetailRow = ({ label, value }) => (
+  <div className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0">
+    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-36 shrink-0">{label}</span>
+    <span className="text-sm text-gray-800 font-medium text-right">{value || "—"}</span>
+  </div>
+);
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────────
 const NAV = [
@@ -116,15 +126,16 @@ const Sidebar = ({ onSignOut }) => (
   </div>
 );
 
-// ── LOGIN ──────────────────────────────────────────────────────────────────────
+// ── LOGIN (REDESIGNED) ─────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   const submit = async () => {
-    if (!email || !password) { setErr("Email and password required"); return; }
+    if (!email || !password) { setErr("Please enter your email and password"); return; }
     setLoading(true); setErr("");
     try {
       const { data, error } = await signIn(email, password);
@@ -136,21 +147,68 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">⚓</div>
-          <h1 className="text-2xl font-black text-gray-800">Dockside ERP</h1>
-          <p className="text-gray-400 text-sm mt-1">Timber Trade Operating System</p>
+    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-black">⚓</div>
+          <div><div className="text-white font-black text-lg tracking-tight">Dockside</div><div className="text-blue-400 text-xs">Trade Operating System</div></div>
         </div>
-        <div className="space-y-4">
-          <Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></Field>
-          <Field label="Password"><Input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••" /></Field>
-          {err && <ErrBanner msg={err} />}
-          <button onClick={submit} disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50">
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
+        <div>
+          <h1 className="text-4xl font-black text-white leading-tight mb-4">Run your timber<br />business smarter.</h1>
+          <p className="text-blue-300 text-base leading-relaxed mb-8">Inventory, yards, deals, transit, and invoicing — all in one place. Built for Gandhidham's timber market.</p>
+          <div className="grid grid-cols-2 gap-4">
+            {[{icon:"📦",label:"Inventory Tracking",desc:"CFT, CBM, Hoppus"},{icon:"🤝",label:"GST Invoicing",desc:"Tax-ready bills"},{icon:"🚛",label:"Transit Tracking",desc:"Live shipment status"},{icon:"📊",label:"P&L Reports",desc:"Real-time financials"}].map(f => (
+              <div key={f.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="text-2xl mb-2">{f.icon}</div>
+                <div className="text-white text-sm font-semibold">{f.label}</div>
+                <div className="text-blue-300 text-xs mt-0.5">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="text-blue-400 text-xs">© 2025 Dockside Trade OS · Built for timber traders</div>
+      </div>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl">⚓</div>
+            <div className="text-white font-black text-lg">Dockside ERP</div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <div className="mb-7">
+              <h2 className="text-2xl font-black text-gray-900">Welcome back</h2>
+              <p className="text-gray-400 text-sm mt-1">Sign in to your workspace</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">✉</span>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com"
+                    className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔒</span>
+                  <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••"
+                    className="w-full border border-gray-200 rounded-xl pl-9 pr-16 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <button onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-semibold">{showPass ? "Hide" : "Show"}</button>
+                </div>
+              </div>
+              {err && <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2"><span className="text-red-500 text-sm">⚠</span><span className="text-red-600 text-sm">{err}</span></div>}
+              <button onClick={submit} disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm tracking-wide">
+                {loading ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Signing in…</span> : "Sign In to Dockside"}
+              </button>
+            </div>
+            <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              <span className="text-xs text-gray-400">Secured by Supabase · Data stored in India</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -174,33 +232,32 @@ export default function App() {
 
   // Resolve companyId: try user_metadata first, then user_profiles table
   useEffect(() => {
-    if (!user) { setCompanyId(null); return; }
+    if (user === undefined) return;
+    if (!user) { setCompanyId("__resolved__"); return; }
     const metaCid = user.user_metadata?.company_id;
     if (metaCid) { setCompanyId(metaCid); return; }
-    // Fallback: look up user_profiles
-    sb.from("user_profiles").select("company_id").eq("user_id", user.id).single()
-      .then(({ data }) => {
-        if (data?.company_id) setCompanyId(data.company_id);
-        else setCompanyId("__none__"); // Mark as resolved but empty
-      })
+    sb.from("user_profiles").select("company_id").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setCompanyId(data?.company_id || "__none__"))
       .catch(() => setCompanyId("__none__"));
   }, [user]);
 
   const handleSignOut = async () => { await signOut(); setUser(null); setCompanyId(null); };
 
-  if (user === undefined || (user && companyId === null)) return (
+  if (user === undefined || companyId === null) return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
       <div className="text-center">
         <div className="text-4xl mb-3">⚓</div>
-        <div className="text-white text-sm">Loading Dockside…</div>
+        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mt-3" />
       </div>
     </div>
   );
 
-  if (!user) return <Login onLogin={setUser} />;
+  if (!user || companyId === "__resolved__") return <Login onLogin={setUser} />;
+
+  const resolvedCompanyId = companyId === "__none__" ? null : companyId;
 
   return (
-    <AuthCtx.Provider value={{ user, companyId: companyId === "__none__" ? null : companyId }}>
+    <AuthCtx.Provider value={{ user, companyId: resolvedCompanyId }}>
       <BrowserRouter>
         <div className="flex min-h-screen bg-gray-50">
           <Sidebar onSignOut={handleSignOut} />
@@ -321,7 +378,7 @@ function Dashboard() {
 
 // ── INVENTORY ──────────────────────────────────────────────────────────────────
 function Inventory() {
-  const { companyId } = useCompany();
+  const { companyId } = useAuth();
   const [items, setItems] = useState([]);
   const [yards, setYards] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -330,63 +387,64 @@ function Inventory() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  
-  // ALL new Timber Math fields added here so they initialize safely
-  const DEFAULTS = {
-    product_name:"", category:"Plywood", wood_type:"", quality_grade:"A", grade: "",
-    yard_id:"", supplier_id:"", unit:"pcs", cost_price:"", market_value:"",
-    available_quantity:"", date:today(), notes:"",
-    thickness:"", length:"", width:"",
+  const [timberType, setTimberType] = useState("Sawn Timber");
+  const INV_DEFAULTS = {
+    product_name:"", category:"Plywood", wood_type:"", grade:"A Grade",
+    yard_id:"", supplier_id:"", unit:"CFT", cost_price:"", market_value:"",
+    available_quantity:"", date: today(), notes:"",
     thickness_mm:"", width_mm:"", length_ft:"", pieces:"",
     girth_in:"", log_length_ft:"", num_logs:"",
-    sheet_thickness_mm:"", sheet_width_ft:"", sheet_length_ft:"", num_sheets:""
+    sheet_thickness_mm:"", sheet_width_ft:"4", sheet_length_ft:"8", num_sheets:"",
   };
-  
-  const [form, setForm] = useState(DEFAULTS);
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState(INV_DEFAULTS);
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
+
+  const calc = (() => {
+    if (timberType === "Sawn Timber") return TM.sawnCFT(+form.thickness_mm, +form.width_mm, +form.length_ft, +form.pieces || 1);
+    if (timberType === "Round Log") return TM.hoppusCFT(+form.girth_in, +form.log_length_ft, +form.num_logs || 1);
+    if (timberType === "Plywood") return TM.plywoodCBM(+form.sheet_thickness_mm, +form.sheet_width_ft, +form.sheet_length_ft, +form.num_sheets || 1);
+    return null;
+  })();
+
+  useEffect(() => {
+    if (!calc) return;
+    const vol = timberType === "Plywood" ? calc.totalCBM : calc.totalCFT;
+    const unit = timberType === "Plywood" ? "CBM" : "CFT";
+    setForm(p => ({...p, available_quantity: vol || "", unit}));
+  }, [calc?.totalCFT, calc?.totalCBM, timberType]);
 
   const fetchAll = useCallback(async () => {
-    if (!companyId) return;
     setLoading(true);
-    const [a, b, c] = await Promise.all([
-      supabase.from("inventory").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
-      supabase.from("yards").select("*").eq("company_id", companyId).order("name"),
-      supabase.from("suppliers").select("*").eq("company_id", companyId).order("name"),
-    ]);
-    setItems(a.data || []);
-    setYards(b.data || []);
-    setSuppliers(c.data || []);
-    setLoading(false);
-  }, [companyId]);
-  
+    try {
+      const [a, b, c] = await Promise.all([
+        sb.from("inventory").select("*").order("created_at", { ascending: false }),
+        sb.from("yards").select("*").order("name"),
+        sb.from("suppliers").select("*").order("name"),
+      ]);
+      setItems(a.data || []); setYards(b.data || []); setSuppliers(c.data || []);
+    } catch(e) { console.error("Inventory fetch:", e); }
+    finally { setLoading(false); }
+  }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
-  
-  // THE FIXED SAVE FUNCTION
+  const closeInv = () => { setShowAdd(false); setForm(INV_DEFAULTS); setErr(""); setTimberType("Sawn Timber"); };
   const save = async () => {
     if (!form.product_name.trim()) { setErr("Product name required"); return; }
     setSaving(true); setErr("");
-    
-    // Helper function: converts empty strings "" to database-friendly 'null'
-    const parseNum = (val) => (val === "" || val === undefined || val === null) ? null : parseFloat(val);
-
     const yard = yards.find(y => y.id === form.yard_id);
     const sup = suppliers.find(s => s.id === form.supplier_id);
-    
     try {
-      const { error } = await supabase.from("inventory").insert({
+      const { error } = await sb.from("inventory").insert([{
         company_id: companyId,
         product_name: form.product_name.trim(),
-        category: form.category,
+        category: form.category || null,
         wood_type: form.wood_type || null,
-        quality_grade: form.quality_grade || null,
-        grade: form.grade || null,
+        quality_grade: form.grade || form.quality_grade || null,
         yard_id: form.yard_id || null,
         yard_name: yard?.name || null,
         supplier_id: form.supplier_id || null,
         supplier_name: sup?.name || null,
-        unit: form.unit,
+        unit: form.unit || "pcs",
         cost_price: parseNum(form.cost_price) || 0,
         market_value: parseNum(form.market_value) || 0,
         available_quantity: parseNum(form.available_quantity) || 0,
@@ -394,11 +452,6 @@ function Inventory() {
         reserved_quantity: 0,
         date: form.date || today(),
         notes: form.notes || null,
-        
-        // Timber Math fields safely parsing empty inputs to avoid the Numeric error
-        thickness: parseNum(form.thickness),
-        length: parseNum(form.length),
-        width: parseNum(form.width),
         thickness_mm: parseNum(form.thickness_mm),
         width_mm: parseNum(form.width_mm),
         length_ft: parseNum(form.length_ft),
@@ -409,26 +462,22 @@ function Inventory() {
         sheet_thickness_mm: parseNum(form.sheet_thickness_mm),
         sheet_width_ft: parseNum(form.sheet_width_ft),
         sheet_length_ft: parseNum(form.sheet_length_ft),
-        num_sheets: parseNum(form.num_sheets)
-      });
-      
+        num_sheets: parseNum(form.num_sheets),
+      }]);
       if (error) throw error;
-      close(); 
-      fetchAll();
-    } catch (e) {
-      setErr(e.message || e.details || JSON.stringify(e));
-    }
-    setSaving(false);
+      closeInv(); fetchAll();
+    } catch (e) { setErr(e.message || JSON.stringify(e)); }
+    finally { setSaving(false); }
   };
-  
+
   const filtered = items.filter(i => !search || (i.product_name || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-2xl font-black text-gray-800">Inventory</h1><p className="text-gray-400 text-sm">{items.length} products in stock</p></div>
+        <div><h1 className="text-2xl font-black text-gray-800">Inventory</h1><p className="text-gray-400 text-sm">{items.length} products</p></div>
         <div className="flex gap-3">
-          <Input placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
           <Btn onClick={() => setShowAdd(true)}>+ Add Stock</Btn>
         </div>
       </div>
@@ -436,7 +485,9 @@ function Inventory() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Product", "Category", "Wood Type", "Grade", "Yard", "Available", "Cost Price", "Total Value"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+              <tr>{["Product","Type","Wood / Species","Grade","Yard","Volume","Unit","Cost/Unit","Total Value"].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+              ))}</tr>
             </thead>
             <tbody>
               {filtered.map(i => (
@@ -444,75 +495,171 @@ function Inventory() {
                   <td className="px-4 py-3 font-semibold text-gray-800">{i.product_name || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{i.category || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{i.wood_type || "—"}</td>
-                  <td className="px-4 py-3"><Badge text={i.quality_grade || "—"} /></td>
-                  <td className="px-4 py-3 text-gray-500">{i.yard_name || "—"}</td>
-                  <td className="px-4 py-3 font-semibold">{i.available_quantity ?? 0} {i.unit || ""}</td>
+                  <td className="px-4 py-3"><Badge text={i.grade || "—"} /></td>
+                  <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === i.yard_id)?.name || "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-800">{i.available_quantity || 0}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{i.unit || "pcs"}</td>
                   <td className="px-4 py-3 font-semibold text-green-700">{fmt(i.cost_price)}</td>
                   <td className="px-4 py-3 font-bold text-blue-700">{fmt((i.cost_price || 0) * (i.available_quantity || 0))}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No inventory yet</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No inventory found</td></tr>}
             </tbody>
           </table>
         </div>
       )}
-      <SlidePanel title="Add Stock" open={showAdd} onClose={close}>
-        <Field label="Product Name" required><Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. Plywood 18mm" /></Field>
+      <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv} wide>
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Timber Type</p>
+          <div className="flex gap-2">
+            {["Sawn Timber","Round Log","Plywood","Other"].map(t => (
+              <button key={t} onClick={() => setTimberType(t)} className={cls(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                timberType === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+              )}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <Field label="Product Name" required>
+          <Input value={form.product_name} onChange={set("product_name")} placeholder={
+            timberType === "Sawn Timber" ? "e.g. Gurjan Sawn 18mm" :
+            timberType === "Round Log" ? "e.g. Teak Round Log" :
+            timberType === "Plywood" ? "e.g. BWR Plywood 18mm" : "Product name"
+          } />
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
             <Select value={form.category} onChange={set("category")}>
               <option>Plywood</option><option>Hardwood</option><option>Softwood</option>
-              <option>Veneer</option><option>MDF</option><option>Logs</option><option>Particle Board</option>
+              <option>Veneer</option><option>MDF</option><option>Particle Board</option><option>Round Log</option>
             </Select>
           </Field>
-          <Field label="Wood Type"><Input value={form.wood_type} onChange={set("wood_type")} placeholder="Teak, Pine, BWR…" /></Field>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Thickness (mm)"><Input type="number" value={form.thickness} onChange={set("thickness")} placeholder="18" /></Field>
-          <Field label="Length (ft)"><Input type="number" value={form.length} onChange={set("length")} placeholder="8" /></Field>
-          <Field label="Width (ft)"><Input type="number" value={form.width} onChange={set("width")} placeholder="4" /></Field>
+          <Field label="Wood / Species">
+            <Select value={form.wood_type} onChange={set("wood_type")}>
+              <option value="">— Select —</option>
+              {["Teak (Sagwan)","Gurjan","Pine","Eucalyptus","Rubber Wood","Burma Teak","Hardwood (Mixed)","Softwood (Mixed)","Merbau","Oak","Sal","Shisham"].map(s => <option key={s}>{s}</option>)}
+            </Select>
+          </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Grade">
-            <Select value={form.quality_grade} onChange={set("quality_grade")}>
-              <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="Premium">Premium</option>
+            <Select value={form.grade} onChange={set("grade")}>
+              <option>A Grade</option><option>B Grade</option><option>C Grade</option>
+              <option>FAS</option><option>Select</option><option>Common</option><option>Industrial</option>
             </Select>
           </Field>
-          <Field label="Unit">
-            <Select value={form.unit} onChange={set("unit")}>
-              <option value="pcs">pcs</option><option value="sheet">sheet</option><option value="cft">cft</option>
-              <option value="cbm">cbm</option><option value="sqft">sqft</option><option value="kg">kg</option>
-              <option value="ton">ton</option><option value="bundle">bundle</option><option value="nos">nos</option>
-            </Select>
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
           <Field label="Yard">
             <Select value={form.yard_id} onChange={set("yard_id")}>
               <option value="">— Select Yard —</option>
               {yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
             </Select>
           </Field>
+        </div>
+        {timberType === "Sawn Timber" && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">📐 Auto-calculates CFT</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Field label="Thickness (mm)">
+                <Select value={form.thickness_mm} onChange={set("thickness_mm")}>
+                  <option value="">— Select —</option>
+                  {[3,4,6,9,12,15,18,19,25,32,38,50,75,100].map(t => <option key={t} value={t}>{t} mm</option>)}
+                </Select>
+              </Field>
+              <Field label="Width (mm)"><Input type="number" value={form.width_mm} onChange={set("width_mm")} placeholder="e.g. 150" /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Length (ft)"><Input type="number" value={form.length_ft} onChange={set("length_ft")} placeholder="e.g. 8" /></Field>
+              <Field label="No. of Pieces"><Input type="number" value={form.pieces} onChange={set("pieces")} placeholder="e.g. 100" /></Field>
+            </div>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100"><p className="text-xs text-blue-400">Per Piece</p><p className="font-bold text-blue-700 text-sm">{calc.cftPer} CFT</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100"><p className="text-xs text-blue-400">Total CFT</p><p className="font-bold text-blue-700 text-sm">{calc.totalCFT} CFT</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-blue-100"><p className="text-xs text-blue-400">Total CBM</p><p className="font-bold text-blue-700 text-sm">{calc.totalCBM} m³</p></div>
+              </div>
+            )}
+          </div>
+        )}
+        {timberType === "Round Log" && (
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-green-600 uppercase tracking-wide mb-2">🪵 Hoppus CFT Calculator</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Field label="Mid-point Girth (inches)"><Input type="number" value={form.girth_in} onChange={set("girth_in")} placeholder="e.g. 36" /></Field>
+              <Field label="Log Length (ft)"><Input type="number" value={form.log_length_ft} onChange={set("log_length_ft")} placeholder="e.g. 12" /></Field>
+            </div>
+            <Field label="No. of Logs"><Input type="number" value={form.num_logs} onChange={set("num_logs")} placeholder="e.g. 20" /></Field>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100"><p className="text-xs text-green-400">Per Log</p><p className="font-bold text-green-700 text-sm">{calc.cftPer} CFT</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100"><p className="text-xs text-green-400">Total Hoppus</p><p className="font-bold text-green-700 text-sm">{calc.totalCFT} CFT</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-green-100"><p className="text-xs text-green-400">Total CBM</p><p className="font-bold text-green-700 text-sm">{calc.totalCBM} m³</p></div>
+              </div>
+            )}
+          </div>
+        )}
+        {timberType === "Plywood" && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">📋 Plywood CBM Calculator</p>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <Field label="Thickness (mm)">
+                <Select value={form.sheet_thickness_mm} onChange={set("sheet_thickness_mm")}>
+                  <option value="">— Select —</option>
+                  {[3,4,6,9,12,15,18,19,25].map(t => <option key={t} value={t}>{t} mm</option>)}
+                </Select>
+              </Field>
+              <Field label="Width (ft)"><Input type="number" value={form.sheet_width_ft} onChange={set("sheet_width_ft")} placeholder="4" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.sheet_length_ft} onChange={set("sheet_length_ft")} placeholder="8" /></Field>
+            </div>
+            <Field label="No. of Sheets"><Input type="number" value={form.num_sheets} onChange={set("num_sheets")} placeholder="e.g. 500" /></Field>
+            {calc && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100"><p className="text-xs text-amber-400">Per Sheet</p><p className="font-bold text-amber-700 text-sm">{calc.cbmPer} m³</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100"><p className="text-xs text-amber-400">Total CBM</p><p className="font-bold text-amber-700 text-sm">{calc.totalCBM} m³</p></div>
+                <div className="bg-white rounded-lg p-2 text-center border border-amber-100"><p className="text-xs text-amber-400">Total CFT</p><p className="font-bold text-amber-700 text-sm">{calc.totalCFT} CFT</p></div>
+              </div>
+            )}
+          </div>
+        )}
+        <div className={cls("rounded-xl p-4 border-2", calc ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-100")}>
+          <p className={cls("text-xs font-bold uppercase tracking-wide mb-2", calc ? "text-gray-400" : "text-gray-400")}>
+            {calc ? "✅ Volume Auto-Calculated" : "Volume / Quantity"}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Calculated Volume">
+              <Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0"
+                readOnly={timberType !== "Other" && !!calc} />
+            </Field>
+            <Field label="Unit">
+              <Select value={form.unit} onChange={set("unit")}>
+                <option>CFT</option><option>CBM</option><option>Pieces</option><option>Sheets</option><option>MT</option><option>Bundles</option>
+              </Select>
+            </Field>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cost Price (₹ per unit)"><Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" /></Field>
+          <Field label="Market Value (₹ per unit)"><Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" /></Field>
+        </div>
+        {form.cost_price && form.available_quantity && (
+          <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 flex justify-between items-center">
+            <span className="text-sm text-green-700 font-medium">Total Stock Value</span>
+            <span className="text-lg font-black text-green-700">{fmt(parseFloat(form.cost_price) * parseFloat(form.available_quantity))}</span>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Supplier">
             <Select value={form.supplier_id} onChange={set("supplier_id")}>
               <option value="">— Select Supplier —</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
           </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Cost Price (₹)"><Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" /></Field>
-          <Field label="Market Value (₹)"><Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" /></Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity" required><Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0" /></Field>
           <Field label="Date"><Input type="date" value={form.date} onChange={set("date")} /></Field>
         </div>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add to Inventory"}</Btn>
-          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+          <Btn variant="secondary" onClick={closeInv}>Cancel</Btn>
         </div>
       </SlidePanel>
     </div>
@@ -528,29 +675,30 @@ function Yards() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" });
+  const [selected, setSelected] = useState(null);
+  const DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([sb.from("yards").select("*"), sb.from("inventory").select("*").order("created_at",{ascending:false})]);
+      const [a, b] = await Promise.all([sb.from("yards").select("*"), sb.from("inventory").select("*")]);
       setYards(a.data || []); setInv(b.data || []);
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const YARD_DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
-  const closeYard = () => { setShowAdd(false); setForm(YARD_DEFAULTS); setErr(""); };
+  const closeYard = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Yard name required"); return; }
     setSaving(true); setErr("");
     try {
-      const { error } = await db.yards.insert({ ...form, company_id: companyId });
+      const { error } = await sb.from("yards").insert([{ ...form, company_id: companyId }]);
       if (error) throw error;
       closeYard(); fetchAll();
     } catch (e) { setErr(e.message); }
-    setSaving(false);
+    finally { setSaving(false); }
   };
 
   return (
@@ -566,7 +714,7 @@ function Yards() {
             const val = yInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
             const units = yInv.reduce((s, i) => s + (i.available_quantity || 0), 0);
             return (
-              <div key={y.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div key={y.id} onClick={() => setSelected(y)} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div><h3 className="font-bold text-gray-800 text-lg">{y.name}</h3><p className="text-gray-400 text-sm">{y.city}</p></div>
                   <Badge text={y.is_active !== false ? "Active" : "Inactive"} color={y.is_active !== false ? "green" : "gray"} />
@@ -577,13 +725,53 @@ function Yards() {
                   <div className="bg-purple-50 rounded-lg p-2 text-center"><p className="text-xs text-purple-400">Value</p><p className="font-bold text-purple-700 text-xs">{fmt(val)}</p></div>
                 </div>
                 {y.manager_name && <p className="text-xs text-gray-400">👤 {y.manager_name} {y.manager_phone && `· ${y.manager_phone}`}</p>}
-                {y.address && <p className="text-xs text-gray-300 mt-1">📍 {y.address}</p>}
+                {y.address && <p className="text-xs text-gray-300 mt-1 truncate">📍 {y.address}</p>}
+                <p className="text-xs text-blue-400 mt-2 font-medium">Click to view details →</p>
               </div>
             );
           })}
           {yards.length === 0 && <div className="col-span-3 text-center py-20 text-gray-300">No yards added yet</div>}
         </div>
       )}
+      {/* Yard Detail Panel */}
+      <SlidePanel title={selected?.name || "Yard Details"} open={!!selected} onClose={() => setSelected(null)} wide>
+        {selected && (() => {
+          const yInv = inv.filter(i => i.yard_id === selected.id);
+          const val = yInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+          return (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-2">
+                <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-xs text-blue-400">Products</p><p className="text-2xl font-black text-blue-700">{yInv.length}</p></div>
+                <div className="bg-green-50 rounded-xl p-3 text-center"><p className="text-xs text-green-400">Total Value</p><p className="text-lg font-black text-green-700">{fmt(val)}</p></div>
+                <div className="bg-purple-50 rounded-xl p-3 text-center"><p className="text-xs text-purple-400">Status</p><p className="text-sm font-black text-purple-700 mt-1">{selected.is_active !== false ? "Active" : "Inactive"}</p></div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Yard Information</p>
+                <DetailRow label="Yard Name" value={selected.name} />
+                <DetailRow label="City" value={selected.city} />
+                <DetailRow label="Address" value={selected.address} />
+                <DetailRow label="Manager" value={selected.manager_name} />
+                <DetailRow label="Phone" value={selected.manager_phone} />
+                <DetailRow label="Notes" value={selected.notes} />
+              </div>
+              {yInv.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Inventory at this Yard</p>
+                  <div className="space-y-2">
+                    {yInv.map(i => (
+                      <div key={i.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-4 py-2.5">
+                        <div><p className="font-semibold text-gray-800 text-sm">{i.product_name}</p><p className="text-xs text-gray-400">{i.category} · {i.wood_type || "—"}</p></div>
+                        <div className="text-right"><p className="font-bold text-blue-700 text-sm">{i.available_quantity} {i.unit}</p><p className="text-xs text-gray-400">{fmt(i.cost_price)}/unit</p></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </SlidePanel>
+
       <SlidePanel title="Add Yard" open={showAdd} onClose={closeYard}>
         <Field label="Yard Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
@@ -600,7 +788,7 @@ function Yards() {
   );
 }
 
-// ── DEALS (UPGRADED WITH GST & INVOICING) ──────────────────────────────────────
+// ── DEALS ──────────────────────────────────────────────────────────────────────
 function Deals() {
   const { companyId } = useAuth();
   const [deals, setDeals] = useState([]);
@@ -612,131 +800,60 @@ function Deals() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [custName, setCustName] = useState("");
-  
-  // Added gst_rate to defaults
-  const DEAL_DEFAULTS = { customer_id: "", product_id: "", quantity: "", unit_price: "", gst_rate: "18", status: "draft", payment_status: "Pending", notes: "" };
-  const [form, setForm] = useState(DEAL_DEFAULTS);
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const [form, setForm] = useState({ customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" });
+  const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const [a, b, c] = await Promise.all([
-        sb.from("deals").select("*").order("created_at", { ascending: false }),
+        sb.from("deals").select("*").order("created_at",{ascending:false}),
         sb.from("customers").select("*"),
-        sb.from("inventory").select("*").order("created_at", { ascending: false }),
+        sb.from("inventory").select("*").order("created_at",{ascending:false}),
       ]);
       setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
     } finally { setLoading(false); }
   }, []);
-  
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const TABS = ["All", "Draft", "Confirmed", "Dispatched", "Delivered", "Completed"];
-  const filtered = tab === "All" ? deals : deals.filter(d => (d.status || "").toLowerCase() === tab.toLowerCase());
+  const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
+  const filtered = tab === "All" ? deals : deals.filter(d => (d.status||"").toLowerCase() === tab.toLowerCase());
 
+  const DEAL_DEFAULTS = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
   const closeDeal = () => { setShowAdd(false); setForm(DEAL_DEFAULTS); setCustName(""); setErr(""); };
-  
   const save = async () => {
     if (!form.customer_id && !custName) { setErr("Customer required"); return; }
     setSaving(true); setErr("");
     try {
       const qty = parseFloat(form.quantity) || 0;
       const price = parseFloat(form.unit_price) || 0;
-      const gstRate = parseFloat(form.gst_rate) || 18;
-      
-      // Advanced Financial Math
-      const baseValue = qty * price;
-      const gstAmount = baseValue * (gstRate / 100);
-      const totalValue = baseValue + gstAmount;
-
       const selProd = inventory.find(i => i.id === form.product_id);
-      
       const { error } = await db.deals.insert({
         company_id: companyId,
-        deal_number: `INV-${Date.now().toString().slice(-6)}`, // Formatted as Invoice Number
+        deal_number: `DEAL-${Date.now()}`,
         customer_id: form.customer_id || undefined,
         customer_name: custName,
         inventory_id: form.product_id || undefined,
         product_name: selProd?.product_name || undefined,
         quantity: qty,
         negotiated_price: price,
-        base_value: baseValue, // Saved for ledger
-        gst_amount: gstAmount, // Saved for tax filing
-        total_value: totalValue,
+        total_value: qty * price,
         payment_status: form.payment_status,
         stage: form.status,
         notes: form.notes || undefined,
       });
-      
       if (error) throw error;
       closeDeal(); fetchAll();
     } catch (e) { setErr(e.message); }
     setSaving(false);
   };
 
-  // ── PDF INVOICE GENERATOR ──────────────────────────────────────────
-  const printInvoice = async (deal) => {
-    // Fetch company profile dynamically for the invoice header
-    const { data: co } = await sb.from("company").select("*").eq("id", companyId).single();
-    const cust = customers.find(c => c.id === deal.customer_id) || { name: deal.customer_name };
-    const date = new Date(deal.created_at).toLocaleDateString("en-IN");
-    
-    // Fallbacks for older deals that might not have base_value saved
-    const base = deal.base_value || (deal.quantity * deal.negotiated_price);
-    const tax = deal.gst_amount || (base * 0.18);
-    const total = deal.total_value;
-
-    const html = `<!DOCTYPE html><html><head><title>Tax Invoice ${deal.deal_number}</title>
-    <style>
-      body{font-family:Arial,sans-serif; padding:40px; color:#333;}
-      .header{display:flex; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:20px; margin-bottom:30px;}
-      .tax-label{font-size:24px; font-weight:bold; color:#1e3a8a;}
-      .boxes{display:flex; justify-content:space-between; margin-bottom:30px;}
-      .box{border:1px solid #ccc; padding:15px; width:48%; border-radius:8px;}
-      table{width:100%; border-collapse:collapse; margin-bottom:30px;}
-      th,td{border:1px solid #ccc; padding:12px; text-align:left;}
-      th{background:#f8fafc;}
-      .totals{width:40%; float:right; border-collapse:collapse;}
-      .totals td{padding:10px; border:1px solid #ccc;}
-      .totals .grand{font-weight:bold; font-size:16px; background:#f1f5f9;}
-    </style></head><body>
-      <div class="header">
-        <div><h1 style="margin:0;">${co?.name || "Dockside Timber Co."}</h1><p>GSTIN: ${co?.gst_number || "Not Provided"}</p><p>${co?.address || "Gandhidham, Gujarat"}</p></div>
-        <div style="text-align:right;"><span class="tax-label">TAX INVOICE</span><br><br><b>Invoice No:</b> ${deal.deal_number}<br><b>Date:</b> ${date}</div>
-      </div>
-      <div class="boxes">
-        <div class="box"><b>Billed To:</b><br>${cust.name}<br>GSTIN: ${cust.gst_number || "Unregistered"}<br>${cust.city || ""}</div>
-      </div>
-      <table>
-        <tr><th>Product Description</th><th>Qty</th><th>Rate (₹)</th><th>Taxable Value (₹)</th></tr>
-        <tr><td>${deal.product_name}</td><td>${deal.quantity}</td><td>${deal.negotiated_price.toLocaleString("en-IN")}</td><td>${base.toLocaleString("en-IN")}</td></tr>
-      </table>
-      <table class="totals">
-        <tr><td>Taxable Amount</td><td style="text-align:right;">₹${base.toLocaleString("en-IN")}</td></tr>
-        <tr><td>CGST (9%)</td><td style="text-align:right;">₹${(tax/2).toLocaleString("en-IN")}</td></tr>
-        <tr><td>SGST (9%)</td><td style="text-align:right;">₹${(tax/2).toLocaleString("en-IN")}</td></tr>
-        <tr class="grand"><td>Grand Total</td><td style="text-align:right;">₹${total.toLocaleString("en-IN")}</td></tr>
-      </table>
-      <div style="clear:both; margin-top:50px; border-top:1px solid #ccc; padding-top:20px;">
-        <p><b>Bank Details:</b> ${co?.bank_name || ""} | A/C: ${co?.bank_account || ""} | IFSC: ${co?.bank_ifsc || ""}</p>
-        <p style="text-align:right; margin-top:40px;"><b>Authorized Signatory</b></p>
-      </div>
-    </body></html>`;
-    
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
-    setTimeout(() => w.print(), 500);
-  };
-
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <div><h1 className="text-2xl font-black text-gray-800">Deals & Invoices</h1><p className="text-gray-400 text-sm">{deals.length} total transactions</p></div>
-        <Btn onClick={() => setShowAdd(true)}>+ Create Deal / Invoice</Btn>
+        <div><h1 className="text-2xl font-black text-gray-800">Deals</h1><p className="text-gray-400 text-sm">{deals.length} total deals</p></div>
+        <Btn onClick={() => setShowAdd(true)}>+ Create Deal</Btn>
       </div>
-      
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
@@ -744,12 +861,11 @@ function Deals() {
           </button>
         ))}
       </div>
-
       {loading ? <Spinner /> : (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Inv #", "Customer", "Product", "Qty", "Total (Inc. GST)", "Stage", "Payment", "Date", "Action"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Deal #","Customer","Product","Qty","Value","Stage","Payment","Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(d => (
@@ -762,18 +878,14 @@ function Deals() {
                   <td className="px-4 py-3"><Badge text={d.stage || d.status || "draft"} /></td>
                   <td className="px-4 py-3"><Badge text={d.payment_status || "—"} color={d.payment_status === "Paid" ? "green" : "orange"} /></td>
                   <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => printInvoice(d)} className="text-blue-600 hover:text-blue-800 font-semibold text-xs border border-blue-200 px-2 py-1 rounded">🖨️ Print</button>
-                  </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
             </tbody>
           </table>
         </div>
       )}
-
-      <SlidePanel title="Create Deal / Invoice" open={showAdd} onClose={closeDeal}>
+      <SlidePanel title="Create Deal" open={showAdd} onClose={closeDeal}>
         <Field label="Customer Name"><Input value={custName} onChange={e => setCustName(e.target.value)} placeholder="Customer name" /></Field>
         <Field label="Customer (from records)">
           <Select value={form.customer_id} onChange={set("customer_id")}>
@@ -787,26 +899,17 @@ function Deals() {
             {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name}</option>)}
           </Select>
         </Field>
-        
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Quantity"><Input type="number" value={form.quantity} onChange={set("quantity")} placeholder="0" /></Field>
           <Field label="Unit Price (₹)"><Input type="number" value={form.unit_price} onChange={set("unit_price")} placeholder="0" /></Field>
-          <Field label="GST %">
-            <Select value={form.gst_rate} onChange={set("gst_rate")}>
-              <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
-            </Select>
-          </Field>
         </div>
-
         {form.quantity && form.unit_price && (
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-2">
-            <div className="flex justify-between text-gray-400 text-sm mb-1"><span>Base Value:</span><span>{fmt(parseFloat(form.quantity) * parseFloat(form.unit_price))}</span></div>
-            <div className="flex justify-between text-gray-400 text-sm mb-2 border-b border-gray-700 pb-2"><span>GST Amount ({form.gst_rate}%):</span><span>{fmt((parseFloat(form.quantity) * parseFloat(form.unit_price)) * (parseFloat(form.gst_rate) / 100))}</span></div>
-            <div className="flex justify-between text-white font-black text-lg"><span>Total Bill Value:</span><span className="text-green-400">{fmt((parseFloat(form.quantity) * parseFloat(form.unit_price)) * (1 + parseFloat(form.gst_rate)/100))}</span></div>
+          <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 flex justify-between">
+            <span className="text-sm text-green-700">Deal Value</span>
+            <span className="font-black text-green-700">{fmt(parseFloat(form.quantity) * parseFloat(form.unit_price))}</span>
           </div>
         )}
-
-        <div className="grid grid-cols-2 gap-3 mt-2">
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Stage">
             <Select value={form.status} onChange={set("status")}>
               <option value="draft">Draft</option><option value="confirmed">Confirmed</option>
@@ -819,18 +922,14 @@ function Deals() {
             </Select>
           </Field>
         </div>
-        
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        
-        <div className="flex gap-3 mt-4">
-          <Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Save & Generate Invoice"}</Btn>
-          <Btn variant="secondary" onClick={closeDeal}>Cancel</Btn>
-        </div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={closeDeal}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
 }
+
 // ── TRANSIT ────────────────────────────────────────────────────────────────────
 function Transit() {
   const { companyId } = useAuth();
@@ -839,16 +938,18 @@ function Transit() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date: today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" });
+  const DEFAULTS = { vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date:today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" };
+  const [form, setForm] = useState(DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const [a, b] = await Promise.all([
-        sb.from("shipments").select("*").order("created_at",{ascending:false}),
+        sb.from("shipments").select("*").order("created_at", { ascending: false }),
         sb.from("yards").select("*"),
       ]);
       setShips(a.data || []); setYards(b.data || []);
@@ -859,31 +960,31 @@ function Transit() {
   const TABS = ["All","Created","Loaded","Dispatched","In Transit","Arrived","Delivered"];
   const filtered = tab === "All" ? ships : ships.filter(s => (s.status||"").toLowerCase() === tab.toLowerCase());
 
-  const TRANSIT_DEFAULTS = { vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date: today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" };
-  const closeTransit = () => { setShowAdd(false); setForm(TRANSIT_DEFAULTS); setErr(""); };
+  const closeTransit = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.destination) { setErr("Destination required"); return; }
     setSaving(true); setErr("");
     try {
-      const { error } = await db.shipments.insert({
+      const { error } = await sb.from("shipments").insert([{
         company_id: companyId,
-        shipment_number: `SHIP-${Date.now()}`,
-        vehicle_number: form.vehicle_number,
-        driver_name: form.driver_name,
-        driver_phone: form.driver_phone,
+        shipment_number: `SHIP-${Date.now().toString().slice(-7)}`,
+        vehicle_number: form.vehicle_number || null,
+        driver_name: form.driver_name || null,
+        driver_phone: form.driver_phone || null,
         origin_yard_id: form.origin_yard_id || null,
         destination: form.destination,
-        dispatch_date: form.dispatch_date,
-        expected_arrival: form.expected_arrival,
-        freight_cost: parseFloat(form.freight_cost) || 0,
+        dispatch_date: form.dispatch_date || null,
+        expected_arrival: form.expected_arrival || null,
+        freight_cost: parseNum(form.freight_cost) || 0,
         status: form.status,
-        cargo_details: form.cargo_details,
-      });
+        cargo_details: form.cargo_details || null,
+      }]);
       if (error) throw error;
       closeTransit(); fetchAll();
     } catch (e) { setErr(e.message); }
-    setSaving(false);
+    finally { setSaving(false); }
   };
+  const statusColor = (s) => { const m = { "delivered":"green","dispatched":"blue","in transit":"blue","loaded":"orange","arrived":"purple" }; return m[(s||"").toLowerCase()] || "gray"; };
 
   return (
     <div className="p-6">
@@ -902,19 +1003,18 @@ function Transit() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Shipment #","Vehicle","Driver","Origin","Destination","Dispatch","ETA","Status","Freight"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Shipment #","Vehicle","Driver","Origin → Dest","Dispatch","ETA","Status","Freight"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(s => (
-                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={s.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(s)}>
                   <td className="px-4 py-3 font-mono text-xs text-blue-600">{s.shipment_number || `#${s.id?.toString().slice(-6)}`}</td>
                   <td className="px-4 py-3 font-semibold">{s.vehicle_number || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{s.driver_name || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === s.origin_yard_id)?.name || "—"}</td>
-                  <td className="px-4 py-3">{s.destination || "—"}</td>
+                  <td className="px-4 py-3 text-gray-600">{yards.find(y => y.id === s.origin_yard_id)?.name || "—"} → {s.destination || "—"}</td>
                   <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(s.dispatch_date)}</td>
                   <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(s.expected_arrival)}</td>
-                  <td className="px-4 py-3"><Badge text={s.status || "—"} /></td>
+                  <td className="px-4 py-3"><Badge text={s.status || "—"} color={statusColor(s.status)} /></td>
                   <td className="px-4 py-3 font-semibold text-gray-700">{fmt(s.freight_cost)}</td>
                 </tr>
               ))}
@@ -923,6 +1023,42 @@ function Transit() {
           </table>
         </div>
       )}
+      {/* Shipment Detail Panel */}
+      <SlidePanel title="Shipment Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🚛</div>
+              <div>
+                <p className="font-black text-gray-800 text-lg">{selected.shipment_number}</p>
+                <Badge text={selected.status || "—"} color={statusColor(selected.status)} />
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Vehicle & Driver</p>
+              <DetailRow label="Vehicle No." value={selected.vehicle_number} />
+              <DetailRow label="Driver Name" value={selected.driver_name} />
+              <DetailRow label="Driver Phone" value={selected.driver_phone} />
+              <DetailRow label="Freight Cost" value={fmt(selected.freight_cost)} />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Route & Timeline</p>
+              <DetailRow label="Origin Yard" value={yards.find(y => y.id === selected.origin_yard_id)?.name} />
+              <DetailRow label="Destination" value={selected.destination} />
+              <DetailRow label="Dispatch Date" value={fmtDate(selected.dispatch_date)} />
+              <DetailRow label="Expected Arrival" value={fmtDate(selected.expected_arrival)} />
+              <DetailRow label="Status" value={selected.status} />
+            </div>
+            {selected.cargo_details && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Cargo Details</p>
+                <p className="text-sm text-gray-700">{selected.cargo_details}</p>
+              </div>
+            )}
+          </>
+        )}
+      </SlidePanel>
+
       <SlidePanel title="Add Shipment" open={showAdd} onClose={closeTransit}>
         <Field label="Vehicle Number"><Input value={form.vehicle_number} onChange={set("vehicle_number")} placeholder="MH-12-AB-1234" /></Field>
         <div className="grid grid-cols-2 gap-3">
@@ -965,34 +1101,32 @@ function Suppliers() {
   const [inv, setInv] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" });
+  const DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([
-        sb.from("suppliers").select("*"),
-        sb.from("inventory").select("*").order("created_at",{ascending:false}),
-      ]);
+      const [a, b] = await Promise.all([sb.from("suppliers").select("*"), sb.from("inventory").select("*")]);
       setSuppliers(a.data || []); setInv(b.data || []);
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const SUPPLIER_DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", pan_number:"", products_supplied:"", notes:"" };
-  const closeSupplier = () => { setShowAdd(false); setForm(SUPPLIER_DEFAULTS); setErr(""); };
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
     try {
-      const { error } = await db.suppliers.insert({ ...form, company_id: companyId });
+      const { error } = await sb.from("suppliers").insert([{ ...form, company_id: companyId }]);
       if (error) throw error;
-      closeSupplier(); fetchAll();
+      close(); fetchAll();
     } catch (e) { setErr(e.message); }
-    setSaving(false);
+    finally { setSaving(false); }
   };
 
   return (
@@ -1009,7 +1143,7 @@ function Suppliers() {
             </thead>
             <tbody>
               {suppliers.map(s => (
-                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={s.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(s)}>
                   <td className="px-4 py-3"><p className="font-semibold text-gray-800">{s.name}</p><p className="text-xs text-gray-400">{s.contact_person}</p></td>
                   <td className="px-4 py-3 text-gray-500">{s.city}{s.country && s.country !== "India" ? `, ${s.country}` : ""}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.gst_number || "—"}</td>
@@ -1023,7 +1157,49 @@ function Suppliers() {
           </table>
         </div>
       )}
-      <SlidePanel title="Add Supplier" open={showAdd} onClose={closeSupplier}>
+      {/* Supplier Detail Panel */}
+      <SlidePanel title="Supplier Details" open={!!selected} onClose={() => setSelected(null)} wide>
+        {selected && (() => {
+          const sInv = inv.filter(i => i.supplier_id === selected.id);
+          const val = sInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+          return (
+            <>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-xs text-blue-400">Items Supplied</p><p className="text-2xl font-black text-blue-700">{sInv.length}</p></div>
+                <div className="bg-green-50 rounded-xl p-3 text-center"><p className="text-xs text-green-400">Stock Value</p><p className="text-lg font-black text-green-700">{fmt(val)}</p></div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Supplier Info</p>
+                <DetailRow label="Company" value={selected.name} />
+                <DetailRow label="City" value={selected.city} />
+                <DetailRow label="Country" value={selected.country} />
+                <DetailRow label="Contact" value={selected.contact_person} />
+                <DetailRow label="Phone" value={selected.phone} />
+                <DetailRow label="Email" value={selected.email} />
+                <DetailRow label="GST" value={selected.gst_number} />
+                <DetailRow label="PAN" value={selected.pan_number} />
+                <DetailRow label="Products" value={selected.products_supplied} />
+              </div>
+              {sInv.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Inventory from Supplier</p>
+                  <div className="space-y-2">
+                    {sInv.map(i => (
+                      <div key={i.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-4 py-2.5">
+                        <div><p className="font-semibold text-gray-800 text-sm">{i.product_name}</p><p className="text-xs text-gray-400">{i.category}</p></div>
+                        <div className="text-right"><p className="font-bold text-blue-700 text-sm">{i.available_quantity} {i.unit}</p><p className="text-xs text-gray-400">{fmt(i.cost_price)}/unit</p></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selected.notes && <div className="bg-amber-50 border border-amber-100 rounded-xl p-4"><p className="text-xs font-bold text-amber-600 mb-1">Notes</p><p className="text-sm text-gray-700">{selected.notes}</p></div>}
+            </>
+          );
+        })()}
+      </SlidePanel>
+
+      <SlidePanel title="Add Supplier" open={showAdd} onClose={close}>
         <Field label="Supplier Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
@@ -1041,7 +1217,7 @@ function Suppliers() {
         <Field label="Products Supplied"><Input value={form.products_supplied} onChange={set("products_supplied")} placeholder="e.g. Plywood, Teak" /></Field>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={closeSupplier}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={close}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -1058,26 +1234,29 @@ function Customers() {
   const [form, setForm] = useState({ name:"", city:"", state:"", country:"India", gst_number:"", pan_number:"", phone:"", email:"", notes:"" });
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
+  const [deals, setDeals] = useState([]);
+  const [selected, setSelected] = useState(null);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await sb.from("customers").select("*");
-      setCustomers(data || []);
+      const [a, b] = await Promise.all([sb.from("customers").select("*"), sb.from("deals").select("*")]);
+      setCustomers(a.data || []); setDeals(b.data || []);
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const CUST_DEFAULTS = { name:"", city:"", state:"", country:"India", gst_number:"", pan_number:"", phone:"", email:"", notes:"" };
-  const closeCustomer = () => { setShowAdd(false); setForm(CUST_DEFAULTS); setErr(""); };
+  const DEFAULTS = { name:"", city:"", state:"", country:"India", gst_number:"", pan_number:"", phone:"", email:"", notes:"" };
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
     try {
-      const { error } = await db.customers.insert({ ...form, company_id: companyId });
+      const { error } = await sb.from("customers").insert([{ ...form, company_id: companyId }]);
       if (error) throw error;
-      closeCustomer(); fetchAll();
+      close(); fetchAll();
     } catch (e) { setErr(e.message); }
-    setSaving(false);
+    finally { setSaving(false); }
   };
 
   return (
@@ -1090,16 +1269,17 @@ function Customers() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Customer","Location","GST","Phone","Email"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+              <tr>{["Customer","Location","GST","Phone","Email","Deals"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
             </thead>
             <tbody>
               {customers.map(c => (
-                <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(c)}>
                   <td className="px-4 py-3 font-semibold text-gray-800">{c.name}</td>
                   <td className="px-4 py-3 text-gray-500">{[c.city, c.state].filter(Boolean).join(", ") || "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500">{c.gst_number || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{c.phone || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{c.email || "—"}</td>
+                  <td className="px-4 py-3"><Badge text={deals.filter(d => d.customer_id === c.id).length} color="blue" /></td>
                 </tr>
               ))}
               {customers.length === 0 && <tr><td colSpan={5} className="px-4 py-16 text-center text-gray-300">No customers added</td></tr>}
@@ -1107,7 +1287,49 @@ function Customers() {
           </table>
         </div>
       )}
-      <SlidePanel title="Add Customer" open={showAdd} onClose={closeCustomer}>
+      {/* Customer Detail Panel */}
+      <SlidePanel title="Customer Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (() => {
+          const cDeals = deals.filter(d => d.customer_id === selected.id);
+          const revenue = cDeals.reduce((s, d) => s + (d.total_value || 0), 0);
+          const paid = cDeals.filter(d => d.payment_status === "Paid").length;
+          return (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-2">
+                <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-xs text-blue-400">Total Deals</p><p className="text-2xl font-black text-blue-700">{cDeals.length}</p></div>
+                <div className="bg-green-50 rounded-xl p-3 text-center"><p className="text-xs text-green-400">Revenue</p><p className="text-base font-black text-green-700">{fmt(revenue)}</p></div>
+                <div className="bg-purple-50 rounded-xl p-3 text-center"><p className="text-xs text-purple-400">Paid</p><p className="text-2xl font-black text-purple-700">{paid}</p></div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Customer Info</p>
+                <DetailRow label="Name" value={selected.name} />
+                <DetailRow label="City" value={selected.city} />
+                <DetailRow label="State" value={selected.state} />
+                <DetailRow label="Phone" value={selected.phone} />
+                <DetailRow label="Email" value={selected.email} />
+                <DetailRow label="GST Number" value={selected.gst_number} />
+                <DetailRow label="PAN Number" value={selected.pan_number} />
+              </div>
+              {cDeals.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Transaction History</p>
+                  <div className="space-y-2">
+                    {cDeals.slice(0, 6).map(d => (
+                      <div key={d.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-4 py-2.5">
+                        <div><p className="font-semibold text-gray-800 text-sm">{d.deal_number || `#${d.id?.toString().slice(-6)}`}</p><p className="text-xs text-gray-400">{d.product_name || "—"} · {fmtDate(d.created_at)}</p></div>
+                        <div className="text-right"><p className="font-bold text-green-700 text-sm">{fmt(d.total_value)}</p><Badge text={d.payment_status || "—"} color={d.payment_status === "Paid" ? "green" : "orange"} /></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selected.notes && <div className="bg-amber-50 border border-amber-100 rounded-xl p-4"><p className="text-xs font-bold text-amber-600 mb-1">Notes</p><p className="text-sm text-gray-700">{selected.notes}</p></div>}
+            </>
+          );
+        })()}
+      </SlidePanel>
+
+      <SlidePanel title="Add Customer" open={showAdd} onClose={close}>
         <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="City"><Input value={form.city} onChange={set("city")} /></Field>
@@ -1123,7 +1345,7 @@ function Customers() {
         </div>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Customer"}</Btn><Btn variant="secondary" onClick={closeCustomer}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Customer"}</Btn><Btn variant="secondary" onClick={close}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
