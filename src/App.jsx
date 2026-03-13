@@ -157,12 +157,21 @@ function Login({ onLogin }) {
     setLoading(true); setErr("");
     try {
       const { data, error } = await signUp(email, password);
+
+      // Supabase silently returns existing user when email already registered.
+      // Detect this: identities array is empty on duplicate signup.
+      if (data?.user && data.user.identities && data.user.identities.length === 0) {
+        throw new Error("An account with this email already exists. Please sign in instead.");
+      }
+
       if (error) throw error;
-      // If email confirmation is disabled in Supabase → user is live immediately
+
+      // New user created successfully
       if (data.user && data.session) {
+        // Email confirmation OFF → straight into app
         onLogin(data.user);
       } else {
-        // Email confirmation is enabled in Supabase dashboard
+        // Email confirmation ON → show check email screen
         setMode("success");
       }
     } catch (e) {
