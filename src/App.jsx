@@ -190,9 +190,7 @@ function Login({ onLogin }) {
         </div>
         <div>
           <h1 className="text-4xl font-black text-white leading-tight mb-4">
-            {mode === "signup" ? "Join thousands of
-timber traders." : "Run your timber
-business smarter."}
+            {mode === "signup" ? "Join Dockside today." : "Run your timber business smarter."}
           </h1>
           <p className="text-blue-300 text-base leading-relaxed mb-8">
             Inventory, yards, deals, transit, and invoicing — all in one place. Built for Gandhidham's timber market.
