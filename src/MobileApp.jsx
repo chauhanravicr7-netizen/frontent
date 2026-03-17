@@ -255,31 +255,16 @@ function SwipeDealCard({ deal: d, customers }) {
   const sendWhatsApp = () => {
     const name = d.customer_name || customers.find(c => c.id === d.customer_id)?.name || "Customer";
     const total = (d.total_value || d.negotiated_price || 0).toLocaleString("en-IN");
-    const msg =
-      "Namaste *" + name + "* 🙏
-
-" +
-      "Deal Confirmation:
-" +
-      "━━━━━━━━━━━━━━━
-" +
-      "📦 Product: " + (d.product_name || "—") + "
-" +
-      "🔢 Quantity: " + (d.quantity || "—") + " units
-" +
-      "💰 Total: *₹" + total + "*
-" +
-      "📋 Status: " + (d.stage || d.status || "—") + "
-" +
-      "━━━━━━━━━━━━━━━
-" +
-      "Deal Ref: " + (d.deal_number || d.id?.toString().slice(-6)) + "
-
-" +
-      "Dockside Trade OS 🚢";
-    const url = "https://wa.me/?text=" + encodeURIComponent(msg);
-    window.open(url, "_blank");
-  };
+    const msg = "Namaste " + name + "\n\n" +
+      "Deal Confirmation:\n" +
+      "Product: " + (d.product_name || "-") + "\n" +
+      "Quantity: " + (d.quantity || "-") + " units\n" +
+      "Total: Rs " + total + "\n" +
+      "Status: " + (d.stage || d.status || "-") + "\n" +
+      "Ref: " + (d.deal_number || d.id?.toString().slice(-6)) + "\n\n" +
+      "Dockside Trade OS";
+    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+  };;
 
   const stageColor = s => {
     const m = { completed:"green", delivered:"green", dispatched:"blue", confirmed:"blue" };
