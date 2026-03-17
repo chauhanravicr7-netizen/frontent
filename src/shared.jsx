@@ -20,9 +20,16 @@ const fmt = (n) => {
   if (n >= 1e5) return `₹${(n / 1e5).toFixed(2)}L`;
   return `₹${Number(n).toLocaleString("en-IN")}`;
 };
+
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
 const cls = (...a) => a.filter(Boolean).join(" ");
 const today = () => new Date().toISOString().split("T")[0];
+
+// FIX: Added parseNum function which was causing the build error
+const parseNum = (val) => {
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+};
 
 // ── AUTH CONTEXT ───────────────────────────────────────────────────────────────
 const AuthCtx = createContext(null);
@@ -55,9 +62,13 @@ const Field = ({ label, required, children }) => (
     {children}
   </div>
 );
+
 const Input = ({ ...p }) => <input {...p} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />;
+
 const Select = ({ children, ...p }) => <select {...p} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 bg-white transition-all">{children}</select>;
+
 const Textarea = ({ ...p }) => <textarea {...p} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />;
+
 const Btn = ({ children, onClick, disabled, variant = "primary", small }) => (
   <button onClick={onClick} disabled={disabled}
     className={cls(
@@ -70,18 +81,20 @@ const Btn = ({ children, onClick, disabled, variant = "primary", small }) => (
     {children}
   </button>
 );
+
 const Badge = ({ text, color = "gray" }) => {
   const c = { gray:"bg-gray-100 text-gray-600 border border-gray-200", blue:"bg-blue-50 text-blue-700 border border-blue-200", green:"bg-emerald-50 text-emerald-700 border border-emerald-200", orange:"bg-orange-50 text-orange-700 border border-orange-200", red:"bg-red-50 text-red-600 border border-red-200", purple:"bg-purple-50 text-purple-700 border border-purple-200" };
   return <span className={cls("px-2.5 py-0.5 rounded-full text-xs font-bold", c[color] || c.gray)}>{text}</span>;
 };
+
 const ErrBanner = ({ msg }) => msg ? (
   <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-start gap-2">
     <span className="mt-0.5">⚠</span><span>{msg}</span>
   </div>
 ) : null;
+
 const StatCard = ({ label, value, icon, color = "blue" }) => {
   const bg = { blue:"from-blue-500 to-blue-600", green:"from-emerald-500 to-green-600", orange:"from-orange-400 to-orange-500", purple:"from-purple-500 to-purple-600", red:"from-red-500 to-red-600" };
-  const light = { blue:"bg-blue-50 text-blue-600", green:"bg-emerald-50 text-emerald-600", orange:"bg-orange-50 text-orange-600", purple:"bg-purple-50 text-purple-600", red:"bg-red-50 text-red-600" };
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div className={cls("w-11 h-11 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br text-white shadow-sm", bg[color])}>{icon}</div>
@@ -89,11 +102,13 @@ const StatCard = ({ label, value, icon, color = "blue" }) => {
     </div>
   );
 };
+
 const Spinner = () => (
   <div className="flex items-center justify-center py-20">
     <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
   </div>
 );
+
 const DetailRow = ({ label, value }) => (
   <div className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0">
     <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-36 shrink-0">{label}</span>
@@ -161,10 +176,10 @@ function Login({ onLogin }) {
             ))}
           </div>
         </div>
-        <div className="text-blue-400 text-xs">© 2025 Dockside Trade OS</div>
+        <div className="text-blue-400 text-xs">© 2026 Dockside Trade OS</div>
       </div>
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-md">
           <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl">⚓</div>
             <div className="text-white font-black text-lg">Dockside ERP</div>
@@ -209,8 +224,6 @@ function Login({ onLogin }) {
 }
 
 // ── NEW USER SETUP ────────────────────────────────────────────────────────────
-// Shown to users who signed up but have no company yet.
-// Creates a company record + user_profile row, then lets them into the app.
 function NewUserSetup({ user, onDone, onSignOut }) {
   const [companyName, setCompanyName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -222,7 +235,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
     if (!companyName.trim()) { setErr("Company name is required"); return; }
     setSaving(true); setErr("");
     try {
-      // 1. Create company record
       const { data: co, error: coErr } = await sb.from("company").insert([{
         name: companyName.trim(),
         owner_name: ownerName.trim() || null,
@@ -231,7 +243,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
       }]).select().single();
       if (coErr) throw coErr;
 
-      // 2. Create user_profile linking this user to the new company
       const { error: upErr } = await sb.from("user_profiles").insert([{
         user_id: user.id,
         company_id: co.id,
@@ -240,7 +251,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
       }]);
       if (upErr) throw upErr;
 
-      // 3. Done — pass companyId back to App root
       onDone(co.id);
     } catch (e) {
       setErr(e.message || "Setup failed. Please try again.");
@@ -257,59 +267,26 @@ function NewUserSetup({ user, onDone, onSignOut }) {
           <p className="text-blue-300 text-sm mt-1">Set up your company to get started</p>
         </div>
         <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
-          <div>
-            <p className="text-xs text-gray-400 mb-4">
-              Signed in as <span className="font-semibold text-gray-600">{user.email}</span>
-            </p>
-          </div>
+          <p className="text-xs text-gray-400 mb-4">Signed in as <span className="font-semibold text-gray-600">{user.email}</span></p>
           <Field label="Company / Business Name" required>
-            <Input
-              value={companyName}
-              onChange={e => setCompanyName(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && setup()}
-              placeholder="e.g. Chauhan Timber Pvt Ltd"
-              autoFocus
-            />
+            <Input value={companyName} onChange={e => setCompanyName(e.target.value)} onKeyDown={e => e.key === "Enter" && setup()} placeholder="e.g. Chauhan Timber Pvt Ltd" autoFocus />
           </Field>
           <Field label="Your Name">
-            <Input
-              value={ownerName}
-              onChange={e => setOwnerName(e.target.value)}
-              placeholder="e.g. Ravi Chauhan"
-            />
+            <Input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="e.g. Ravi Chauhan" />
           </Field>
           <Field label="City">
-            <Input
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              placeholder="e.g. Gandhidham"
-            />
+            <Input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Gandhidham" />
           </Field>
-
-          {err && (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2">
-              <span className="text-red-500 text-sm">⚠</span>
-              <span className="text-red-600 text-sm">{err}</span>
-            </div>
-          )}
-
-          <button onClick={setup} disabled={saving}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm">
-            {saving
-              ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Creating your workspace…</span>
-              : "Create My Workspace →"
-            }
+          {err && <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-red-600 text-sm">⚠ {err}</div>}
+          <button onClick={setup} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-sm">
+            {saving ? "Creating your workspace…" : "Create My Workspace →"}
           </button>
-
-          <button onClick={onSignOut} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1">
-            Sign out and use a different account
-          </button>
+          <button onClick={onSignOut} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1">Sign out</button>
         </div>
       </div>
     </div>
   );
 }
-
 
 export { GlobalStyles, useAuth, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum };
 export { SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner };
