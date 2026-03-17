@@ -264,7 +264,7 @@ function SwipeDealCard({ deal: d, customers }) {
       "Ref: " + (d.deal_number || d.id?.toString().slice(-6)) + "\n\n" +
       "Dockside Trade OS";
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
-  };;
+  };
 
   const stageColor = s => {
     const m = { completed:"green", delivered:"green", dispatched:"blue", confirmed:"blue" };
@@ -444,7 +444,8 @@ function Inventory() {
     const vol = timberType === "Plywood" ? calc.totalCBM : calc.totalCFT;
     const unit = timberType === "Plywood" ? "CBM" : "CFT";
     setForm(p => ({...p, available_quantity: vol || "", unit}));
-  }, [calc?.totalCFT, calc?.totalCBM, timberType]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timberType, form.thickness_mm, form.width_mm, form.length_ft, form.pieces, form.girth_in, form.log_length_ft, form.num_logs, form.sheet_thickness_mm, form.sheet_width_ft, form.sheet_length_ft, form.num_sheets]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
