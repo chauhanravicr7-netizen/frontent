@@ -23,26 +23,6 @@ const NAV = [
 ];
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────────
-const NAV = [
-  { to: "/", label: "Dashboard", icon: "⬛" },
-  { to: "/inventory", label: "Inventory", icon: "📦" },
-  { to: "/yards", label: "Yards", icon: "🏗️" },
-  { to: "/deals", label: "Deals", icon: "🤝" },
-  { to: "/transit", label: "Transit", icon: "🚛" },
-  { to: "/suppliers", label: "Suppliers", icon: "🏭" },
-  { to: "/customers", label: "Customers", icon: "👥" },
-  { to: "/financials", label: "Financials", icon: "📊" },
-  { to: "/reports", label: "Reports", icon: "📄" },
-  { to: "/company", label: "Company", icon: "🏢" },
-  { to: "/settings", label: "Settings", icon: "⚙️" },
-];
-const MOBILE_NAV = [
-  { to: "/", label: "Home", icon: "⬛" },
-  { to: "/inventory", label: "Stock", icon: "📦" },
-  { to: "/deals", label: "Deals", icon: "🤝" },
-  { to: "/transit", label: "Transit", icon: "🚛" },
-  { to: "/ai-insights", label: "Insights", icon: "📊" },
-];
 
 const Sidebar = ({ onSignOut }) => (
   <div className="w-52 bg-gray-900 text-white flex-col min-h-screen fixed top-0 left-0 hidden md:flex">
