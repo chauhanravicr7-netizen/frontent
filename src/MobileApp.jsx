@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Routes, Route, NavLink, useNavigate } from "react-router-dom";
+import { Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { sb, db } from "./lib/supabase";
 import {
-  useAuth, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum,
+  useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum,
   SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner
 } from "./shared";
 
-// ── BOTTOM NAV ITEMS ───────────────────────────────────────────────────────────
-const TABS = [
+// ── RBAC: ROLE-BASED TABS ─────────────────────────────────────────────────────
+// Admin sees everything. Worker sees only Inventory + Transit.
+const ADMIN_TABS = [
   { to: "/",            label: "Home",     icon: "🏠" },
   { to: "/inventory",   label: "Stock",    icon: "📦" },
   { to: "/deals",       label: "Deals",    icon: "🤝" },
@@ -15,8 +16,12 @@ const TABS = [
   { to: "/ai-insights", label: "Insights", icon: "📊" },
 ];
 
-// ── NAV FULL LIST (for drawer) ────────────────────────────────────────────────
-const ALL_PAGES = [
+const WORKER_TABS = [
+  { to: "/inventory",   label: "Stock",    icon: "📦" },
+  { to: "/transit",     label: "Transit",  icon: "🚛" },
+];
+
+const ADMIN_PAGES = [
   { to: "/",            label: "Dashboard",  icon: "🏠" },
   { to: "/inventory",   label: "Inventory",  icon: "📦" },
   { to: "/deals",       label: "Deals",      icon: "🤝" },
@@ -29,19 +34,177 @@ const ALL_PAGES = [
   { to: "/settings",    label: "Settings",   icon: "⚙️" },
 ];
 
+const WORKER_PAGES = [
+  { to: "/inventory",   label: "Inventory",  icon: "📦" },
+  { to: "/transit",     label: "Transit",    icon: "🚛" },
+];
+
+// ── QR CODE GENERATOR (inline SVG, no package needed) ─────────────────────────
+// Generates a simple QR code using a URL-based approach
+function QRCode({ value, size = 120 }) {
+  // Use Google Charts API to generate QR as img (works offline after first load via cache)
+  const url = "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "x" + size + "&data=" + encodeURIComponent(value);
+  return (
+    <img src={url} alt="QR Code" width={size} height={size}
+      style={{ imageRendering: "pixelated" }}
+      onError={e => { e.target.style.display = "none"; }} />
+  );
+}
+
+function printQRLabel(item) {
+  const value = JSON.stringify({ id: item.id, wood: item.wood_type || "-", vol: item.available_quantity, unit: item.unit || "CFT" });
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(value);
+  const html = "<!DOCTYPE html><html><head><title>QR Label</title>"
+    + "<style>@page{size:50mm 25mm;margin:1mm}body{font-family:monospace;margin:0;padding:2mm;display:flex;align-items:center;gap:2mm}"
+    + "img{width:20mm;height:20mm}.info{font-size:6px;line-height:1.4}</style></head><body>"
+    + "<img src='" + qrUrl + "' />"
+    + "<div class='info'><b>" + (item.product_name || "-") + "</b><br>"
+    + (item.wood_type || "-") + "<br>"
+    + item.available_quantity + " " + (item.unit || "CFT") + "<br>"
+    + "ID: " + item.id.slice(-8) + "</div>"
+    + "</body></html>";
+  const w = window.open("", "_blank", "width=400,height=300");
+  if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+}
+
+// ── BLUETOOTH THERMAL PRINTER ─────────────────────────────────────────────────
+// ESC/POS commands for 58mm/80mm Bluetooth thermal printers
+async function printBluetooth(deal) {
+  if (!navigator.bluetooth) {
+    alert("Bluetooth not supported in this browser. Use Chrome on Android.");
+    return;
+  }
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ["000018f0-0000-1000-8000-00805f9b34fb"] }],
+      optionalServices: ["000018f0-0000-1000-8000-00805f9b34fb"],
+    });
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb");
+    const char    = await service.getCharacteristic("00002af1-0000-1000-8000-00805f9b34fb");
+
+    const ESC = 0x1B; const GS = 0x1D; const LF = 0x0A;
+    const enc = new TextEncoder();
+
+    // Build receipt bytes
+    const lines = [
+      [ESC, 0x40],                          // Initialize
+      [ESC, 0x61, 0x01],                    // Center align
+      [GS,  0x21, 0x11],                    // Double size
+      ...enc.encode("DOCKSIDE OS\n"),
+      [GS,  0x21, 0x00],                    // Normal size
+      ...enc.encode("========================\n"),
+      [ESC, 0x61, 0x00],                    // Left align
+      ...enc.encode("Customer: " + (deal.customer_name || "-") + "\n"),
+      ...enc.encode("Product:  " + (deal.product_name  || "-") + "\n"),
+      ...enc.encode("Qty:      " + (deal.quantity || 0) + " units\n"),
+      ...enc.encode("Rate:     Rs " + (deal.negotiated_price || 0).toLocaleString("en-IN") + "\n"),
+      ...enc.encode("------------------------\n"),
+      [GS, 0x21, 0x01],                     // Bold total
+      ...enc.encode("TOTAL: Rs " + (deal.total_value || 0).toLocaleString("en-IN") + "\n"),
+      [GS, 0x21, 0x00],
+      ...enc.encode("========================\n"),
+      [ESC, 0x61, 0x01],
+      ...enc.encode("Dockside Trade OS\n"),
+      ...enc.encode(new Date().toLocaleDateString("en-IN") + "\n\n\n"),
+      [GS, 0x56, 0x42, 0x00],              // Cut paper
+    ];
+
+    const bytes = new Uint8Array(lines.flat());
+    // Write in 20-byte chunks (BLE MTU limit)
+    for (let i = 0; i < bytes.length; i += 20) {
+      await char.writeValue(bytes.slice(i, i + 20));
+    }
+    alert("Printed successfully!");
+  } catch (e) {
+    if (e.name !== "NotFoundError") alert("Print failed: " + e.message);
+  }
+}
+
+// ── EWAYBILL JSON GENERATOR ───────────────────────────────────────────────────
+function generateEWayBill(shipment, yards) {
+  const yard = yards.find(y => y.id === shipment.origin_yard_id) || {};
+  // Indian govt E-Way Bill portal JSON schema
+  const ewb = {
+    "supplyType": "O",                        // Outward supply
+    "subSupplyType": "1",                     // Supply
+    "docType": "INV",
+    "docNo": shipment.shipment_number || "SHIP-" + Date.now(),
+    "docDate": fmtDate(shipment.dispatch_date || new Date().toISOString()),
+    "fromGstin": "FILL_YOUR_GSTIN_HERE",
+    "fromTrdName": yard.name || "Dockside Yard",
+    "fromAddr1": yard.address || yard.city || "Gandhidham",
+    "fromPlace": yard.city || "Gandhidham",
+    "fromPincode": "370201",
+    "fromStateCode": "24",                   // Gujarat
+    "toGstin": "URP",                        // Unregistered party (change if customer has GSTIN)
+    "toTrdName": "Buyer",
+    "toAddr1": shipment.destination || "",
+    "toPlace": shipment.destination || "",
+    "toPincode": "000000",
+    "toStateCode": "24",
+    "vehicleNo": shipment.vehicle_number || "",
+    "vehicleType": "R",                      // Regular
+    "transDocNo": "",
+    "transDocDate": "",
+    "transMode": "1",                        // Road
+    "transDistance": "0",
+    "itemList": [{
+      "productName": shipment.cargo_details || "Timber",
+      "hsnCode": "4407",                     // HSN for sawn timber
+      "productDesc": shipment.cargo_details || "Timber products",
+      "quantity": 0,
+      "qtyUnit": "CBM",
+      "cgstRate": 9,
+      "sgstRate": 9,
+      "igstRate": 0,
+      "cessRate": 0,
+      "taxableAmount": 0,
+      "cessNonAdvolAmount": 0,
+      "cessAdvolRate": 0,
+    }],
+    "totalValue": 0,
+    "cgstValue": 0,
+    "sgstValue": 0,
+    "igstValue": 0,
+    "cessValue": 0,
+    "cessNonAdvolValue": 0,
+    "otherValue": 0,
+    "totInvValue": 0,
+  };
+  return ewb;
+}
+
+function downloadEWayBill(shipment, yards) {
+  const ewb = generateEWayBill(shipment, yards);
+  const blob = new Blob([JSON.stringify(ewb, null, 2)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = (shipment.shipment_number || "shipment") + "_ewb.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── MOBILE NAV ────────────────────────────────────────────────────────────────
-function MobileNav({ onSignOut }) {
-  const [menuOpen,   setMenuOpen]   = useState(false);
-  const [calcOpen,   setCalcOpen]   = useState(false);
-  const [calcType,   setCalcType]   = useState("Sawn");
+function MobileNav({ onSignOut, role }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcType, setCalcType] = useState("Sawn");
   const [cf, setCF] = useState({ thick:"", width:"", len:"", pcs:"1", girth:"", logLen:"", logs:"1" });
   const sc = k => e => setCF(p => ({ ...p, [k]: e.target.value }));
 
+  const isAdmin = role !== "worker";
+  const tabs  = isAdmin ? ADMIN_TABS  : WORKER_TABS;
+  const pages = isAdmin ? ADMIN_PAGES : WORKER_PAGES;
+
   const calcResult = (() => {
     try {
-      if (calcType === "Sawn")  return TM.sawnCFT(+cf.thick,  +cf.width,  +cf.len,    +cf.pcs    || 1);
-      if (calcType === "Log")   return TM.hoppusCFT(+cf.girth, +cf.logLen, +cf.logs   || 1);
-      if (calcType === "Ply")   return TM.plywoodCBM(+cf.thick, +cf.width || 4, +cf.len || 8, +cf.pcs || 1);
+      if (calcType === "Sawn") return TM.sawnCFT(+cf.thick, +cf.width, +cf.len, +cf.pcs || 1);
+      if (calcType === "Log")  return TM.hoppusCFT(+cf.girth, +cf.logLen, +cf.logs || 1);
+      if (calcType === "Ply")  return TM.plywoodCBM(+cf.thick, +cf.width || 4, +cf.len || 8, +cf.pcs || 1);
       return null;
     } catch { return null; }
   })();
@@ -54,6 +217,7 @@ function MobileNav({ onSignOut }) {
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-black text-white">⚓</div>
           <span className="font-black text-base text-white">Dockside</span>
+          {!isAdmin && <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold ml-1">Worker</span>}
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setCalcOpen(p => !p); setMenuOpen(false); }}
@@ -69,8 +233,7 @@ function MobileNav({ onSignOut }) {
 
       {/* Quick Calc Dropdown */}
       {calcOpen && (
-        <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white shadow-2xl border-b-2 border-blue-100 px-4 py-4"
-          style={{ animation: "slideDown 0.2s ease-out" }}>
+        <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white shadow-2xl border-b-2 border-blue-100 px-4 py-4">
           <div className="flex justify-between items-center mb-3">
             <p className="font-black text-gray-900">Quick Calculator</p>
             <button onClick={() => setCalcOpen(false)} className="text-gray-400 text-2xl font-bold">x</button>
@@ -78,8 +241,7 @@ function MobileNav({ onSignOut }) {
           <div className="flex gap-2 mb-3">
             {[["Sawn","Sawn Timber"],["Log","Round Log"],["Ply","Plywood"]].map(([v,l]) => (
               <button key={v} onClick={() => setCalcType(v)}
-                className={cls("flex-1 py-2 rounded-xl text-xs font-bold",
-                  calcType === v ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600")}>
+                className={cls("flex-1 py-2 rounded-xl text-xs font-bold", calcType === v ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600")}>
                 {l}
               </button>
             ))}
@@ -136,11 +298,14 @@ function MobileNav({ onSignOut }) {
           <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setMenuOpen(false)} />
           <div className="fixed top-0 right-0 h-full w-72 bg-gray-900 z-50 md:hidden flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-              <span className="text-white font-black text-lg">Dockside</span>
+              <div>
+                <span className="text-white font-black text-lg">Dockside</span>
+                <span className="ml-2 text-xs text-gray-400 capitalize">{role} account</span>
+              </div>
               <button onClick={() => setMenuOpen(false)} className="text-gray-400 text-2xl">x</button>
             </div>
             <nav className="flex-1 py-3 px-3 overflow-y-auto">
-              {ALL_PAGES.map(n => (
+              {pages.map(n => (
                 <NavLink key={n.to} to={n.to} end={n.to === "/"}
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) => cls(
@@ -165,7 +330,7 @@ function MobileNav({ onSignOut }) {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-xl"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="flex h-16">
-          {TABS.map(tab => (
+          {tabs.map(tab => (
             <NavLink key={tab.to} to={tab.to} end={tab.to === "/"}
               className={({ isActive }) => cls(
                 "flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-colors",
@@ -282,11 +447,18 @@ function DealCard({ deal: d, customers }) {
           <Badge text={d.payment_status || "-"} color={d.payment_status === "Paid" ? "green" : "orange"} />
         </div>
       </div>
-      <button onClick={sendWhatsApp}
-        className="w-full bg-green-500 active:bg-green-600 flex items-center justify-center gap-2 py-2.5">
-        <span className="text-white text-lg">W</span>
-        <span className="text-white font-bold text-sm">Send on WhatsApp</span>
-      </button>
+      <div className="grid grid-cols-2 gap-0">
+        <button onClick={sendWhatsApp}
+          className="bg-green-500 active:bg-green-600 flex items-center justify-center gap-2 py-2.5">
+          <span className="text-white text-lg">W</span>
+          <span className="text-white font-bold text-sm">WhatsApp</span>
+        </button>
+        <button onClick={() => printBluetooth(d)}
+          className="bg-gray-800 active:bg-gray-900 flex items-center justify-center gap-2 py-2.5">
+          <span className="text-white text-lg">🖨</span>
+          <span className="text-white font-bold text-sm">BT Print</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -576,6 +748,12 @@ function Inventory() {
                 <div className="text-center"><p className="text-xs text-gray-400">Rate</p><p className="font-bold text-green-700 text-sm">{fmt(i.cost_price)}</p><p className="text-xs text-gray-400">per {i.unit}</p></div>
                 <div className="text-center"><p className="text-xs text-gray-400">Yard</p><p className="font-semibold text-gray-700 text-xs">{(yards.find(y => y.id === i.yard_id) || {}).name || "-"}</p></div>
               </div>
+              {(i.category === "Round Log" || (i.girth_in && i.girth_in > 0)) && (
+                <button onClick={() => printQRLabel(i)}
+                  className="mt-2 w-full bg-gray-800 active:bg-gray-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1">
+                  Print QR Label (50x25mm)
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -926,6 +1104,11 @@ function Transit() {
                 </div>
                 <p className="text-xs text-blue-500 mt-2 font-semibold">Tap for full details</p>
               </div>
+              <button onClick={() => downloadEWayBill(s, yards)}
+                className="flex items-center justify-center gap-2 bg-orange-50 active:bg-orange-100 py-2.5 border-t border-orange-100 w-full">
+                <span className="text-orange-600 text-sm font-bold">E-Way Bill JSON</span>
+                <span className="text-orange-500 text-xs">tap to download</span>
+              </button>
               {s.driver_phone && (
                 <a href={"tel:" + s.driver_phone}
                   className="flex items-center justify-center gap-2 bg-blue-50 active:bg-blue-100 py-3 border-t border-blue-100">
@@ -1147,19 +1330,27 @@ function AIInsights() {
   );
 }
 
+
 // ── MOBILE APP SHELL ──────────────────────────────────────────────────────────
-export default function MobileApp({ user, companyId, onSignOut }) {
+export default function MobileApp({ user, companyId, role, onSignOut }) {
+  const isAdmin = role !== "worker";
+
   return (
-    <AuthCtx.Provider value={{ user, companyId }}>
-      <MobileNav onSignOut={onSignOut} />
+    <AuthCtx.Provider value={{ user, companyId, role }}>
+      <MobileNav onSignOut={onSignOut} role={role} />
       <div className="min-h-screen pt-14 pb-16 bg-gray-50">
         <Routes>
-          <Route path="/"            element={<Dashboard />} />
+          {/* Always accessible */}
           <Route path="/inventory"   element={<Inventory />} />
-          <Route path="/deals"       element={<Deals />} />
           <Route path="/transit"     element={<Transit />} />
-          <Route path="/ai-insights" element={<AIInsights />} />
-          <Route path="*"            element={<Dashboard />} />
+
+          {/* Admin only - redirect workers to inventory */}
+          <Route path="/"            element={isAdmin ? <Dashboard />   : <Navigate to="/inventory" />} />
+          <Route path="/deals"       element={isAdmin ? <Deals />       : <Navigate to="/inventory" />} />
+          <Route path="/ai-insights" element={isAdmin ? <AIInsights />  : <Navigate to="/inventory" />} />
+
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to={isAdmin ? "/" : "/inventory"} />} />
         </Routes>
       </div>
     </AuthCtx.Provider>

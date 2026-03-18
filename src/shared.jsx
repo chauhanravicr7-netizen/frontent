@@ -28,6 +28,7 @@ const parseNum = (v) => (v === "" || v === undefined || v === null) ? null : par
 // ── AUTH CONTEXT ───────────────────────────────────────────────────────────────
 const AuthCtx = createContext(null);
 const useAuth = () => useContext(AuthCtx);
+const useRole = () => (useContext(AuthCtx)?.role || "admin");
 
 // ── SHARED UI ──────────────────────────────────────────────────────────────────
 const SlidePanel = ({ title, open, onClose, children, wide }) => (
@@ -312,6 +313,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
 }
 
 
-export { GlobalStyles, useAuth, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum };
+export { GlobalStyles, useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum };
 export { SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner };
 export { Login, NewUserSetup };

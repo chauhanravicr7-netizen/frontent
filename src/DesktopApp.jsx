@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { sb, signOut, db } from "./lib/supabase";
 import {
-  useAuth, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum,
+  useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum,
   SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner
 } from "./shared";
 
@@ -24,7 +24,7 @@ const NAV = [
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────────
 
-const Sidebar = ({ onSignOut }) => (
+const Sidebar = ({ onSignOut, role = "admin" }) => (
   <div className="w-52 bg-gray-900 text-white flex-col min-h-screen fixed top-0 left-0 hidden md:flex">
     <div className="px-4 py-5 border-b border-gray-700/50">
       <div className="flex items-center gap-2.5">
@@ -36,7 +36,10 @@ const Sidebar = ({ onSignOut }) => (
       </div>
     </div>
     <nav className="flex-1 py-3 px-2">
-      {NAV.map(n => (
+      {NAV.filter(n => {
+        if (role === "worker") return ["/inventory","/transit"].includes(n.to);
+        return true;
+      }).map(n => (
         <NavLink key={n.to} to={n.to} end={n.to === "/"}
           className={({ isActive }) => cls(
             "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium mb-0.5 transition-all",
@@ -45,6 +48,12 @@ const Sidebar = ({ onSignOut }) => (
           <span className="text-base">{n.icon}</span>{n.label}
         </NavLink>
       ))}
+      {role === "worker" && (
+        <div className="mt-3 px-3 py-2 bg-orange-900/30 rounded-lg">
+          <p className="text-xs text-orange-400 font-semibold">Worker Account</p>
+          <p className="text-xs text-gray-500">Limited access</p>
+        </div>
+      )}
     </nav>
     <div className="p-3 border-t border-gray-700">
       <button onClick={onSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
@@ -1799,25 +1808,27 @@ function Settings() {
 
 
 // ── DESKTOP APP SHELL ──────────────────────────────────────────────────────────
-export default function DesktopApp({ user, companyId, onSignOut }) {
+export default function DesktopApp({ user, companyId, role, onSignOut }) {
+  const isAdmin = role !== "worker";
   return (
-    <AuthCtx.Provider value={{ user, companyId }}>
+    <AuthCtx.Provider value={{ user, companyId, role }}>
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar onSignOut={onSignOut} />
+        <Sidebar onSignOut={onSignOut} role={role} />
         <div className="flex-1 ml-52 min-h-screen">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/inventory" element={<Inventory />} />
-            <Route path="/yards" element={<Yards />} />
-            <Route path="/deals" element={<Deals />} />
-            <Route path="/transit" element={<Transit />} />
-            <Route path="/suppliers" element={<Suppliers />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/financials" element={<Financials />} />
-            <Route path="/ai-insights" element={<AIInsights />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/company" element={<Company />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/transit"   element={<Transit />} />
+            <Route path="/"          element={isAdmin ? <Dashboard />  : <Navigate to="/inventory" />} />
+            <Route path="/yards"     element={isAdmin ? <Yards />      : <Navigate to="/inventory" />} />
+            <Route path="/deals"     element={isAdmin ? <Deals />      : <Navigate to="/inventory" />} />
+            <Route path="/suppliers" element={isAdmin ? <Suppliers />  : <Navigate to="/inventory" />} />
+            <Route path="/customers" element={isAdmin ? <Customers />  : <Navigate to="/inventory" />} />
+            <Route path="/financials"  element={isAdmin ? <Financials />  : <Navigate to="/inventory" />} />
+            <Route path="/ai-insights" element={isAdmin ? <AIInsights />  : <Navigate to="/inventory" />} />
+            <Route path="/reports"   element={isAdmin ? <Reports />    : <Navigate to="/inventory" />} />
+            <Route path="/company"   element={isAdmin ? <Company />    : <Navigate to="/inventory" />} />
+            <Route path="/settings"  element={isAdmin ? <Settings />   : <Navigate to="/inventory" />} />
+            <Route path="*"          element={<Navigate to={isAdmin ? "/" : "/inventory"} />} />
           </Routes>
         </div>
       </div>

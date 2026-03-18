@@ -102,14 +102,16 @@ export default function App() {
   );
 
   const resolvedCompanyId = companyId;
+  // Role: read from user_metadata. Default to "admin" if not set (backwards compatible)
+  const userRole = (user.user_metadata?.role || "admin").toLowerCase();
 
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <GlobalStyles />
         {isMobile
-          ? <MobileApp user={user} companyId={resolvedCompanyId} onSignOut={handleSignOut} />
-          : <DesktopApp user={user} companyId={resolvedCompanyId} onSignOut={handleSignOut} />
+          ? <MobileApp user={user} companyId={resolvedCompanyId} role={userRole} onSignOut={handleSignOut} />
+          : <DesktopApp user={user} companyId={resolvedCompanyId} role={userRole} onSignOut={handleSignOut} />
         }
       </BrowserRouter>
     </ErrorBoundary>
