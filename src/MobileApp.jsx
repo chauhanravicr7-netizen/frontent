@@ -1331,6 +1331,620 @@ function AIInsights() {
 }
 
 
+// ── YARDS (MOBILE) ────────────────────────────────────────────────────────────
+function Yards() {
+  const { companyId } = useAuth();
+  const [yards, setYards]   = useState([]);
+  const [inv, setInv]       = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState("");
+  const [selected, setSelected] = useState(null);
+  const DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [a, b] = await Promise.all([
+        sb.from("yards").select("*").eq("company_id", companyId),
+        sb.from("inventory").select("*").eq("company_id", companyId),
+      ]);
+      setYards(a.data || []); setInv(b.data || []);
+    } finally { setLoading(false); }
+  }, [companyId]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const closeYard = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const save = async () => {
+    if (!form.name) { setErr("Yard name required"); return; }
+    setSaving(true); setErr("");
+    try {
+      const { error } = await sb.from("yards").insert([{ ...form, company_id: companyId }]);
+      if (error) throw error;
+      closeYard(); fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-gray-900">Yards</h1>
+            <p className="text-xs text-gray-400">{yards.length} locations</p>
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            className="bg-blue-600 active:bg-blue-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl">
+            + Add Yard
+          </button>
+        </div>
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div className="px-4 mt-3 space-y-3 pb-4">
+          {yards.length === 0 ? (
+            <div className="text-center py-16 text-gray-300">
+              <p className="text-4xl mb-3">🏗️</p>
+              <p className="font-semibold">No yards yet</p>
+              <p className="text-sm mt-1">Tap + Add Yard to create one</p>
+            </div>
+          ) : yards.map(y => {
+            const yardInv  = inv.filter(i => i.yard_id === y.id);
+            const yardVal  = yardInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+            const yardUnits= yardInv.reduce((s, i) => s + (i.available_quantity || 0), 0);
+            return (
+              <div key={y.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                onClick={() => setSelected(y)}>
+                <div className="px-4 pt-4 pb-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-black text-gray-900 text-base">{y.name}</p>
+                      <p className="text-xs text-gray-400">{y.city || "—"}</p>
+                    </div>
+                    <Badge text={y.is_active !== false ? "Active" : "Inactive"} color={y.is_active !== false ? "green" : "gray"} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-50">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Products</p>
+                      <p className="font-black text-gray-800">{yardInv.length}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Stock Value</p>
+                      <p className="font-black text-blue-700 text-sm">{fmt(yardVal)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Units</p>
+                      <p className="font-black text-gray-800">{Math.round(yardUnits)}</p>
+                    </div>
+                  </div>
+                  {y.manager_name && (
+                    <p className="text-xs text-gray-400 mt-2">Manager: {y.manager_name}</p>
+                  )}
+                </div>
+                {y.manager_phone && (
+                  <a href={"tel:" + y.manager_phone}
+                    className="flex items-center justify-center gap-2 bg-blue-50 active:bg-blue-100 py-2.5 border-t border-blue-100">
+                    <span className="text-blue-700 font-bold text-sm">Call Manager: {y.manager_phone}</span>
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <SlidePanel title="Yard Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🏗️</div>
+              <div>
+                <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+                <Badge text={selected.is_active !== false ? "Active" : "Inactive"} color={selected.is_active !== false ? "green" : "gray"} />
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <DetailRow label="City" value={selected.city} />
+              <DetailRow label="Address" value={selected.address} />
+              <DetailRow label="Manager" value={selected.manager_name} />
+              <DetailRow label="Phone" value={selected.manager_phone} />
+              <DetailRow label="Notes" value={selected.notes} />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Stock Summary</p>
+              {(() => {
+                const yardInv = inv.filter(i => i.yard_id === selected.id);
+                const val = yardInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+                return (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white rounded-xl p-3 text-center">
+                      <p className="text-2xl font-black text-gray-900">{yardInv.length}</p>
+                      <p className="text-xs text-gray-400">Products</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-3 text-center">
+                      <p className="text-lg font-black text-blue-700">{fmt(val)}</p>
+                      <p className="text-xs text-gray-400">Total Value</p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </>
+        )}
+      </SlidePanel>
+
+      <SlidePanel title="Add Yard" open={showAdd} onClose={closeYard}>
+        <Field label="Yard Name" required><Input value={form.name} onChange={set("name")} placeholder="e.g. Main Yard Gandhidham" /></Field>
+        <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="e.g. Gandhidham" /></Field>
+        <Field label="Address"><Textarea value={form.address} onChange={set("address")} /></Field>
+        <Field label="Manager Name"><Input value={form.manager_name} onChange={set("manager_name")} /></Field>
+        <Field label="Manager Phone"><Input value={form.manager_phone} onChange={set("manager_phone")} placeholder="+91 98765 43210" /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3">
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Yard"}</Btn>
+          <Btn variant="secondary" onClick={closeYard}>Cancel</Btn>
+        </div>
+      </SlidePanel>
+    </div>
+  );
+}
+
+// ── SUPPLIERS (MOBILE) ────────────────────────────────────────────────────────
+function Suppliers() {
+  const { companyId } = useAuth();
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showAdd, setShowAdd]   = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [err, setErr]           = useState("");
+  const DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", products_supplied:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("suppliers").select("*").eq("company_id", companyId).order("name");
+      setSuppliers(data || []);
+    } finally { setLoading(false); }
+  }, [companyId]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try {
+      const { error } = await sb.from("suppliers").insert([{ ...form, company_id: companyId }]);
+      if (error) throw error;
+      close(); fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-gray-900">Suppliers</h1>
+            <p className="text-xs text-gray-400">{suppliers.length} suppliers</p>
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            className="bg-blue-600 active:bg-blue-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl">
+            + Add
+          </button>
+        </div>
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div className="px-4 mt-3 space-y-3 pb-4">
+          {suppliers.length === 0 ? (
+            <div className="text-center py-16 text-gray-300">
+              <p className="text-4xl mb-3">🏭</p>
+              <p className="font-semibold">No suppliers yet</p>
+            </div>
+          ) : suppliers.map(s => (
+            <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-4 pt-4 pb-3" onClick={() => setSelected(s)}>
+                <div className="flex items-start justify-between mb-1">
+                  <div>
+                    <p className="font-black text-gray-900 text-base">{s.name}</p>
+                    <p className="text-xs text-gray-400">{s.city ? s.city + ", " : ""}{s.country || ""}</p>
+                  </div>
+                  {s.gst_number && <Badge text="GST" color="green" />}
+                </div>
+                {s.products_supplied && (
+                  <p className="text-xs text-gray-500 mt-1">{s.products_supplied}</p>
+                )}
+                {s.contact_person && (
+                  <p className="text-xs text-gray-400 mt-1">Contact: {s.contact_person}</p>
+                )}
+              </div>
+              {s.phone && (
+                <a href={"tel:" + s.phone}
+                  className="flex items-center justify-center gap-2 bg-blue-50 active:bg-blue-100 py-2.5 border-t border-blue-100">
+                  <span className="text-blue-700 font-bold text-sm">Call: {s.phone}</span>
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <SlidePanel title="Supplier Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🏭</div>
+              <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <DetailRow label="City" value={selected.city} />
+              <DetailRow label="Country" value={selected.country} />
+              <DetailRow label="Contact" value={selected.contact_person} />
+              <DetailRow label="Phone" value={selected.phone} />
+              <DetailRow label="Email" value={selected.email} />
+              <DetailRow label="GST No." value={selected.gst_number} />
+              <DetailRow label="Products" value={selected.products_supplied} />
+              <DetailRow label="Notes" value={selected.notes} />
+            </div>
+            {selected.phone && (
+              <a href={"tel:" + selected.phone}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl">
+                Call Supplier
+              </a>
+            )}
+          </>
+        )}
+      </SlidePanel>
+
+      <SlidePanel title="Add Supplier" open={showAdd} onClose={close}>
+        <Field label="Supplier Name" required><Input value={form.name} onChange={set("name")} placeholder="Company or trader name" /></Field>
+        <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="e.g. Myanmar / Chennai" /></Field>
+        <Field label="Country"><Input value={form.country} onChange={set("country")} placeholder="India" /></Field>
+        <Field label="Contact Person"><Input value={form.contact_person} onChange={set("contact_person")} /></Field>
+        <Field label="Phone"><Input value={form.phone} onChange={set("phone")} placeholder="+91 98765 43210" /></Field>
+        <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+        <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="22AAAAA0000A1Z5" /></Field>
+        <Field label="Products Supplied"><Textarea value={form.products_supplied} onChange={set("products_supplied")} placeholder="e.g. Teak logs, Gurjan sawn timber" /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3">
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Supplier"}</Btn>
+          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+        </div>
+      </SlidePanel>
+    </div>
+  );
+}
+
+// ── CUSTOMERS (MOBILE) ────────────────────────────────────────────────────────
+function Customers() {
+  const { companyId } = useAuth();
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showAdd, setShowAdd]   = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [err, setErr]           = useState("");
+  const DEFAULTS = { name:"", city:"", contact_person:"", phone:"", email:"", gst_number:"", credit_limit:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("customers").select("*").eq("company_id", companyId).order("name");
+      setCustomers(data || []);
+    } finally { setLoading(false); }
+  }, [companyId]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try {
+      const { error } = await sb.from("customers").insert([{
+        ...form,
+        company_id: companyId,
+        credit_limit: parseNum(form.credit_limit) || 0,
+      }]);
+      if (error) throw error;
+      close(); fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const sendWhatsAppBroadcast = (customer) => {
+    const msg = "Namaste " + customer.name + "\n\nHope you are doing well!\nContact us for your timber requirements.\n\nDockside Trade OS";
+    window.open("https://wa.me/" + (customer.phone || "") + "?text=" + encodeURIComponent(msg), "_blank");
+  };
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-gray-900">Customers</h1>
+            <p className="text-xs text-gray-400">{customers.length} customers</p>
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            className="bg-blue-600 active:bg-blue-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl">
+            + Add
+          </button>
+        </div>
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div className="px-4 mt-3 space-y-3 pb-4">
+          {customers.length === 0 ? (
+            <div className="text-center py-16 text-gray-300">
+              <p className="text-4xl mb-3">👥</p>
+              <p className="font-semibold">No customers yet</p>
+            </div>
+          ) : customers.map(c => (
+            <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-4 pt-4 pb-3" onClick={() => setSelected(c)}>
+                <div className="flex items-start justify-between mb-1">
+                  <div>
+                    <p className="font-black text-gray-900 text-base">{c.name}</p>
+                    <p className="text-xs text-gray-400">{c.city || ""}</p>
+                  </div>
+                  <div className="flex flex-col gap-1 items-end">
+                    {c.gst_number && <Badge text="GST" color="green" />}
+                    {c.credit_limit > 0 && (
+                      <span className="text-xs text-gray-400">Limit: {fmt(c.credit_limit)}</span>
+                    )}
+                  </div>
+                </div>
+                {c.contact_person && (
+                  <p className="text-xs text-gray-400 mt-1">Contact: {c.contact_person}</p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-0 border-t border-gray-100">
+                {c.phone && (
+                  <a href={"tel:" + c.phone}
+                    className="flex items-center justify-center gap-1 bg-blue-50 active:bg-blue-100 py-2.5">
+                    <span className="text-blue-700 font-bold text-xs">Call</span>
+                  </a>
+                )}
+                <button onClick={() => sendWhatsAppBroadcast(c)}
+                  className="flex items-center justify-center gap-1 bg-green-50 active:bg-green-100 py-2.5">
+                  <span className="text-green-700 font-bold text-xs">WhatsApp</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <SlidePanel title="Customer Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-700">
+                {(selected.name || "C")[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+                <p className="text-xs text-gray-400">{selected.city || ""}</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <DetailRow label="Contact Person" value={selected.contact_person} />
+              <DetailRow label="Phone" value={selected.phone} />
+              <DetailRow label="Email" value={selected.email} />
+              <DetailRow label="GST No." value={selected.gst_number} />
+              <DetailRow label="Credit Limit" value={selected.credit_limit > 0 ? fmt(selected.credit_limit) : "Not set"} />
+              <DetailRow label="Notes" value={selected.notes} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {selected.phone && (
+                <a href={"tel:" + selected.phone}
+                  className="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl text-sm">
+                  Call Customer
+                </a>
+              )}
+              <button onClick={() => sendWhatsAppBroadcast(selected)}
+                className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 rounded-xl text-sm">
+                WhatsApp
+              </button>
+            </div>
+          </>
+        )}
+      </SlidePanel>
+
+      <SlidePanel title="Add Customer" open={showAdd} onClose={close}>
+        <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} placeholder="Company or person name" /></Field>
+        <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="e.g. Ahmedabad" /></Field>
+        <Field label="Contact Person"><Input value={form.contact_person} onChange={set("contact_person")} /></Field>
+        <Field label="Phone"><Input value={form.phone} onChange={set("phone")} placeholder="+91 98765 43210" /></Field>
+        <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+        <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} /></Field>
+        <Field label="Credit Limit (Rs)"><Input type="number" value={form.credit_limit} onChange={set("credit_limit")} placeholder="0 = no limit" /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3">
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Customer"}</Btn>
+          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+        </div>
+      </SlidePanel>
+    </div>
+  );
+}
+
+// ── COMPANY (MOBILE) ──────────────────────────────────────────────────────────
+function Company() {
+  const { companyId } = useAuth();
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [err, setErr]         = useState("");
+  const [tab, setTab]         = useState("profile");
+  const [form, setForm] = useState({
+    name:"", industry:"Timber Trade", city:"", country:"India", address:"",
+    owner_name:"", phone:"", email:"", website:"",
+    gst_number:"", pan_number:"", iec_number:"",
+    bank_name:"", bank_account:"", bank_ifsc:"", bank_branch:"", notes:""
+  });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("company").select("*").limit(1).single();
+      if (data) { setCompany(data); setForm(f => ({ ...f, ...data })); }
+    } catch {}
+    setLoading(false);
+  }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const save = async () => {
+    setSaving(true); setErr("");
+    try {
+      let error;
+      if (company?.id) {
+        const r = await sb.from("company").update(form).eq("id", company.id);
+        error = r.error;
+      } else {
+        const r = await sb.from("company").insert([form]);
+        error = r.error;
+      }
+      if (error) throw error;
+      alert("Company profile saved!");
+      fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-gray-900">Company</h1>
+            <p className="text-xs text-gray-400">Business profile & compliance</p>
+          </div>
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
+        </div>
+        <div className="flex gap-2 mt-2">
+          {[["profile","Profile"],["legal","Legal"],["bank","Bank"]].map(([v,l]) => (
+            <button key={v} onClick={() => setTab(v)}
+              className={cls("px-3 py-1 rounded-full text-xs font-bold",
+                tab === v ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500")}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4 mt-3 pb-4 space-y-3">
+        {tab === "profile" && (
+          <>
+            <Field label="Company Name"><Input value={form.name} onChange={set("name")} placeholder="Your company name" /></Field>
+            <Field label="Industry"><Input value={form.industry} onChange={set("industry")} /></Field>
+            <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="Gandhidham" /></Field>
+            <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
+            <Field label="Address"><Textarea value={form.address} onChange={set("address")} /></Field>
+            <Field label="Owner Name"><Input value={form.owner_name} onChange={set("owner_name")} /></Field>
+            <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+            <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+            <Field label="Website"><Input value={form.website} onChange={set("website")} /></Field>
+          </>
+        )}
+        {tab === "legal" && (
+          <>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+              These details are used in invoices and E-Way Bills
+            </div>
+            <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="22AAAAA0000A1Z5" /></Field>
+            <Field label="PAN Number"><Input value={form.pan_number} onChange={set("pan_number")} placeholder="AAAAA0000A" /></Field>
+            <Field label="IEC Number"><Input value={form.iec_number} onChange={set("iec_number")} placeholder="Import Export Code" /></Field>
+          </>
+        )}
+        {tab === "bank" && (
+          <>
+            <Field label="Bank Name"><Input value={form.bank_name} onChange={set("bank_name")} placeholder="State Bank of India" /></Field>
+            <Field label="Account Number"><Input value={form.bank_account} onChange={set("bank_account")} /></Field>
+            <Field label="IFSC Code"><Input value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="SBIN0000001" /></Field>
+            <Field label="Branch"><Input value={form.bank_branch} onChange={set("bank_branch")} /></Field>
+          </>
+        )}
+        <ErrBanner msg={err} />
+      </div>
+    </div>
+  );
+}
+
+// ── SETTINGS (MOBILE) ─────────────────────────────────────────────────────────
+function Settings() {
+  const { user } = useAuth();
+  const role = user?.user_metadata?.role || "admin";
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <h1 className="text-xl font-black text-gray-900">Settings</h1>
+      </div>
+      <div className="px-4 mt-3 space-y-3 pb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-bold text-gray-400 uppercase mb-3">Account</p>
+          <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600">
+              {(user?.email || "U")[0].toUpperCase()}
+            </div>
+            <div>
+              <p className="font-bold text-gray-800">{user?.user_metadata?.full_name || "User"}</p>
+              <p className="text-sm text-gray-400">{user?.email}</p>
+              <Badge text={role} color={role === "admin" ? "blue" : "orange"} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-bold text-gray-400 uppercase mb-3">Access Level</p>
+          {role === "admin" ? (
+            <div className="bg-blue-50 rounded-xl p-3 text-sm text-blue-700">
+              <p className="font-bold mb-1">Admin Account</p>
+              <p className="text-xs">Full access to all modules — Dashboard, Inventory, Deals, Transit, Insights, Yards, Suppliers, Customers, Company.</p>
+            </div>
+          ) : (
+            <div className="bg-orange-50 rounded-xl p-3 text-sm text-orange-700">
+              <p className="font-bold mb-1">Worker Account</p>
+              <p className="text-xs">Access to Inventory and Transit only. Contact your admin to change access level.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-bold text-gray-400 uppercase mb-3">App Info</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">App</span><span className="font-semibold">Dockside Trade OS</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Version</span><span className="font-semibold">2.0</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Platform</span><span className="font-semibold">Supabase + React</span></div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-700">
+          To update company details (GST, PAN, Bank), go to <strong>Company</strong> in the menu.
+          To change user roles, update user metadata in the Supabase dashboard.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ── MOBILE APP SHELL ──────────────────────────────────────────────────────────
 export default function MobileApp({ user, companyId, role, onSignOut }) {
   const isAdmin = role !== "worker";
@@ -1344,10 +1958,15 @@ export default function MobileApp({ user, companyId, role, onSignOut }) {
           <Route path="/inventory"   element={<Inventory />} />
           <Route path="/transit"     element={<Transit />} />
 
-          {/* Admin only - redirect workers to inventory */}
-          <Route path="/"            element={isAdmin ? <Dashboard />   : <Navigate to="/inventory" />} />
-          <Route path="/deals"       element={isAdmin ? <Deals />       : <Navigate to="/inventory" />} />
-          <Route path="/ai-insights" element={isAdmin ? <AIInsights />  : <Navigate to="/inventory" />} />
+          {/* Admin only */}
+          <Route path="/"            element={isAdmin ? <Dashboard />  : <Navigate to="/inventory" />} />
+          <Route path="/deals"       element={isAdmin ? <Deals />      : <Navigate to="/inventory" />} />
+          <Route path="/ai-insights" element={isAdmin ? <AIInsights /> : <Navigate to="/inventory" />} />
+          <Route path="/yards"       element={isAdmin ? <Yards />      : <Navigate to="/inventory" />} />
+          <Route path="/suppliers"   element={isAdmin ? <Suppliers />  : <Navigate to="/inventory" />} />
+          <Route path="/customers"   element={isAdmin ? <Customers />  : <Navigate to="/inventory" />} />
+          <Route path="/company"     element={isAdmin ? <Company />    : <Navigate to="/inventory" />} />
+          <Route path="/settings"    element={<Settings />} />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to={isAdmin ? "/" : "/inventory"} />} />
