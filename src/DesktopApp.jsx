@@ -55,7 +55,10 @@ const Sidebar = ({ onSignOut, role = "admin" }) => (
         </div>
       )}
     </nav>
-    <div className="p-3 border-t border-gray-700">
+    <div className="p-3 border-t border-gray-700 space-y-1">
+      <div className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-gray-500">
+        <span>Search</span><span className="font-mono bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">Ctrl+K</span>
+      </div>
       <button onClick={onSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
         <span>🚪</span> Sign Out
       </button>
@@ -73,13 +76,72 @@ const BOTTOM_TABS = [
 
 
 // ── PAGES ──────────────────────────────────────────────────────────────────────
+// ── GLOBAL SEARCH ─────────────────────────────────────────────────────────────
+function GlobalSearch({ inventory, deals, customers, onClose }) {
+  const [q, setQ] = useState("");
+  const inputRef  = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const results = q.trim().length < 2 ? [] : [
+    ...inventory.filter(i => (i.product_name||"").toLowerCase().includes(q.toLowerCase()))
+      .slice(0,4).map(i => ({ type:"stock", label: i.product_name, sub: (i.category||"") + " · " + (i.available_quantity||0) + " " + (i.unit||""), id: i.id })),
+    ...deals.filter(d => (d.customer_name||"").toLowerCase().includes(q.toLowerCase()) || (d.deal_number||"").toLowerCase().includes(q.toLowerCase()))
+      .slice(0,4).map(d => ({ type:"deal", label: d.customer_name || d.deal_number, sub: "Deal · " + fmt(d.total_value), id: d.id })),
+    ...customers.filter(c => (c.name||"").toLowerCase().includes(q.toLowerCase()))
+      .slice(0,4).map(c => ({ type:"customer", label: c.name, sub: c.city || "", id: c.id })),
+  ];
+
+  const typeIcon = t => t === "stock" ? "📦" : t === "deal" ? "🤝" : "👥";
+  const typeBadge = t => t === "stock" ? "Inventory" : t === "deal" ? "Deal" : "Customer";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4"
+      onClick={onClose}>
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+          <span className="text-gray-400 text-lg">🔍</span>
+          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
+            placeholder="Search inventory, deals, customers..."
+            className="flex-1 text-base outline-none text-gray-800 placeholder-gray-300" />
+          <button onClick={onClose} className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded font-mono">Esc</button>
+        </div>
+        {results.length > 0 ? (
+          <div className="py-2 max-h-80 overflow-y-auto">
+            {results.map((r, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                <span className="text-xl">{typeIcon(r.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 text-sm truncate">{r.label}</p>
+                  <p className="text-xs text-gray-400 truncate">{r.sub}</p>
+                </div>
+                <span className="text-xs text-gray-300 bg-gray-100 px-2 py-0.5 rounded-full">{typeBadge(r.type)}</span>
+              </div>
+            ))}
+          </div>
+        ) : q.trim().length >= 2 ? (
+          <div className="px-4 py-8 text-center text-gray-300 text-sm">No results for "{q}"</div>
+        ) : (
+          <div className="px-4 py-6 text-center text-gray-300 text-sm">Type at least 2 characters to search</div>
+        )}
+        <div className="px-4 py-2 border-t border-gray-50 flex gap-4 text-xs text-gray-300">
+          <span>📦 Inventory</span><span>🤝 Deals</span><span>👥 Customers</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── DASHBOARD ──────────────────────────────────────────────────────────────────
 function Dashboard() {
   const { companyId } = useAuth();
+  const role    = useRole();
+  const isAdmin = role !== "worker";
   const [inv, setInv] = useState([]);
   const [deals, setDeals] = useState([]);
   const [ships, setShips] = useState([]);
   const [yards, setYards] = useState([]);
+  const DEAD_STOCK_DAYS = 45; // configurable threshold
 
   useEffect(() => {
     if (!companyId) return;
@@ -105,6 +167,16 @@ function Dashboard() {
   }));
 
   const pendingPay = deals.filter(d => d.payment_status === "Pending").length;
+
+  // Dead stock detection
+  const DEAD_STOCK_DAYS = 45;
+  const nowTs = Date.now();
+  const deadStock = inv.filter(i => {
+    const lastMove = i.last_movement_at || i.date || i.created_at;
+    if (!lastMove) return false;
+    const daysSince = (nowTs - new Date(lastMove).getTime()) / (1000*60*60*24);
+    return daysSince > DEAD_STOCK_DAYS && (i.available_quantity||0) > 0 && (i.stock_status||"Available") !== "Sold";
+  });
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24 md:pb-4">
@@ -142,6 +214,32 @@ function Dashboard() {
             </div>
           ))}
         </div>
+
+        {/* Dead stock alert - desktop */}
+        {isAdmin && deadStock.length > 0 && (
+          <div className="hidden md:block mb-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="font-black text-amber-800">Dead Stock Alert — {deadStock.length} items idle {DEAD_STOCK_DAYS}+ days</p>
+                  <p className="text-xs text-amber-600">Total at-risk value: {fmt(deadStock.reduce((s,i)=>(s+(i.cost_price||0)*(i.available_quantity||0)),0))}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {deadStock.slice(0,3).map(i => (
+                  <div key={i.id} className="bg-white rounded-xl p-3 border border-amber-100">
+                    <p className="font-bold text-gray-800 text-sm truncate">{i.product_name}</p>
+                    <p className="text-xs text-gray-400">{i.available_quantity} {i.unit} · {yards.find(y=>y.id===i.yard_id)?.name||"—"}</p>
+                    <p className="text-xs text-amber-600 font-semibold mt-1">{Math.floor((nowTs-new Date(i.last_movement_at||i.date||i.created_at).getTime())/(1000*60*60*24))} days idle</p>
+                    <p className="text-xs text-amber-500 mt-1">Tip: Discount or transfer to active yard</p>
+                  </div>
+                ))}
+              </div>
+              {deadStock.length > 3 && <p className="text-xs text-center text-amber-400 mt-2">+{deadStock.length-3} more — check Inventory page</p>}
+            </div>
+          </div>
+        )}
 
         {/* Desktop stat grid */}
         <div className="hidden md:grid grid-cols-4 gap-4">
@@ -213,14 +311,17 @@ function Dashboard() {
 // ── INVENTORY ──────────────────────────────────────────────────────────────────
 function Inventory() {
   const { companyId } = useAuth();
+  const role = useRole();
+  const isAdmin = role !== "worker";
   const [items, setItems] = useState([]);
   const [yards, setYards] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+  const [showAdd, setShowAdd]     = useState(false);
+  const [selected, setSelected]   = useState(null);  // row detail panel
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
   const [timberType, setTimberType] = useState("Sawn Timber");
   const INV_DEFAULTS = {
     product_name:"", category:"Plywood", wood_type:"", grade:"A Grade",
@@ -392,15 +493,31 @@ function Inventory() {
                 </thead>
                 <tbody>
                   {filtered.map(i => (
-                    <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold text-gray-800">{i.product_name || "—"}</td>
+                    <tr key={i.id}
+                      onClick={() => setSelected(i)}
+                      className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-gray-800">{i.product_name || "—"}</div>
+                        {i.stock_status && (
+                          <span className={cls("text-xs font-bold px-2 py-0.5 rounded-full mt-0.5 inline-block",
+                            i.stock_status === "Available" ? "bg-green-100 text-green-700" :
+                            i.stock_status === "Reserved"  ? "bg-orange-100 text-orange-700" :
+                            "bg-gray-100 text-gray-500")}>
+                            {i.stock_status || "Available"}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-gray-500">{i.category || "—"}</td>
                       <td className="px-4 py-3 text-gray-500">{i.wood_type || "—"}</td>
-                      <td className="px-4 py-3"><Badge text={i.grade || "—"} /></td>
+                      <td className="px-4 py-3"><Badge text={i.quality_grade || i.grade || "—"} /></td>
                       <td className="px-4 py-3 text-gray-500">{yards.find(y => y.id === i.yard_id)?.name || "—"}</td>
                       <td className="px-4 py-3 font-semibold">{i.available_quantity || 0}</td>
                       <td className="px-4 py-3 text-gray-400 text-xs">{i.unit || "pcs"}</td>
-                      <td className="px-4 py-3 font-semibold text-green-700">{fmt(i.cost_price)}</td>
+                      {isAdmin ? (
+                        <td className="px-4 py-3 font-semibold text-green-700">{fmt(i.cost_price)}</td>
+                      ) : (
+                        <td className="px-4 py-3 text-gray-300 text-xs">—</td>
+                      )}
                       <td className="px-4 py-3 font-bold text-blue-700">{fmt((i.cost_price||0)*(i.available_quantity||0))}</td>
                     </tr>
                   ))}
@@ -411,6 +528,112 @@ function Inventory() {
           </div>
         </>
       )}
+      {/* ── INVENTORY DETAIL PANEL ── */}
+      <SlidePanel title="Stock Detail" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (() => {
+          const yardName = yards.find(y => y.id === selected.yard_id)?.name || "—";
+          const totalVal = (selected.cost_price||0)*(selected.available_quantity||0);
+          const margin   = selected.cost_price && selected.market_value
+            ? (((selected.market_value - selected.cost_price) / selected.cost_price) * 100).toFixed(1)
+            : null;
+          const statusColor = s => s === "Available" ? "green" : s === "Reserved" ? "orange" : "gray";
+          return (
+            <>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 leading-tight">{selected.product_name}</h2>
+                  <p className="text-sm text-gray-400 mt-0.5">{selected.wood_type || "—"} · {selected.category || "—"}</p>
+                </div>
+                <Badge text={selected.stock_status || "Available"} color={statusColor(selected.stock_status)} />
+              </div>
+
+              {/* Volume + Yard */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-blue-400 mb-1">Volume</p>
+                  <p className="font-black text-blue-700 text-xl">{selected.available_quantity || 0}</p>
+                  <p className="text-xs text-blue-400">{selected.unit || "pcs"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-1">Grade</p>
+                  <p className="font-bold text-gray-700">{selected.quality_grade || selected.grade || "—"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-1">Yard</p>
+                  <p className="font-bold text-gray-700 text-xs leading-tight">{yardName}</p>
+                </div>
+              </div>
+
+              {/* Pricing — admin only */}
+              {isAdmin ? (
+                <div className="bg-gray-900 rounded-xl p-4 mb-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Financials (Admin Only)</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-400">Cost / unit</p>
+                      <p className="font-black text-white">{fmt(selected.cost_price)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Market / unit</p>
+                      <p className="font-black text-green-400">{fmt(selected.market_value)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Margin</p>
+                      <p className="font-black text-yellow-400">{margin ? margin + "%" : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-700 mt-3 pt-3 flex justify-between">
+                    <span className="text-xs text-gray-400">Total Stock Value</span>
+                    <span className="font-black text-white text-lg">{fmt(totalVal)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center text-gray-400 text-sm">
+                  Pricing details visible to admins only
+                </div>
+              )}
+
+              {/* Movement Timeline */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Movement Timeline</p>
+                {[
+                  { label: "Created", done: true, date: selected.date || selected.created_at },
+                  { label: "In Yard", done: true, date: null },
+                  { label: "Reserved", done: selected.stock_status === "Reserved" || selected.stock_status === "Sold", date: null },
+                  { label: "Dispatched", done: selected.stock_status === "Sold", date: null },
+                  { label: "Delivered", done: false, date: null },
+                ].map((step, idx) => (
+                  <div key={step.label} className="flex items-start gap-3 mb-2">
+                    <div className={cls("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                      step.done ? "bg-blue-600 border-blue-600" : "border-gray-300 bg-white")}>
+                      {step.done && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className="flex-1">
+                      <p className={cls("text-sm font-semibold", step.done ? "text-gray-800" : "text-gray-300")}>{step.label}</p>
+                      {step.date && <p className="text-xs text-gray-400">{fmtDate(step.date)}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Details */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-1.5">
+                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Details</p>
+                <DetailRow label="Supplier" value={selected.supplier_name} />
+                <DetailRow label="Added" value={fmtDate(selected.date || selected.created_at)} />
+                {selected.thickness_mm && <DetailRow label="Thickness" value={selected.thickness_mm + " mm"} />}
+                {selected.width_mm && <DetailRow label="Width" value={selected.width_mm + " mm"} />}
+                {selected.length_ft && <DetailRow label="Length" value={selected.length_ft + " ft"} />}
+                {selected.pieces && <DetailRow label="Pieces" value={selected.pieces} />}
+                {selected.girth_in && <DetailRow label="Girth" value={selected.girth_in + " in"} />}
+                {selected.notes && <DetailRow label="Notes" value={selected.notes} />}
+              </div>
+            </>
+          );
+        })()}
+      </SlidePanel>
+
       <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv} wide>
         {/* Live Math sticky header - shows volume as you type */}
         {calc && (
@@ -590,9 +813,10 @@ function Yards() {
   const [yards, setYards] = useState([]);
   const [inv, setInv] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+  const [showAdd, setShowAdd]     = useState(false);
+  const [selected, setSelected]   = useState(null);  // row detail panel
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
   const [selected, setSelected] = useState(null);
   const DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
   const [form, setForm] = useState(DEFAULTS);
@@ -710,16 +934,56 @@ function Yards() {
 // ── DEALS (DESKTOP) ────────────────────────────────────────────────────────────
 function Deals() {
   const { companyId } = useAuth();
+  const role    = useRole();
+  const isAdmin = role !== "worker";
   const [deals, setDeals] = useState([]);
+  const [stageMenu, setStageMenu] = useState(null); // {dealId, rect}
   const [customers, setCustomers] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("All");
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+  const [showAdd, setShowAdd]     = useState(false);
+  const [selected, setSelected]   = useState(null);  // row detail panel
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
   const [custName, setCustName] = useState("");
   const DEAL_DEFAULTS = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
+
+  // Auto stock deduction when deal moves to Dispatched; restore on rollback
+  const updateDealStage = async (deal, newStage) => {
+    setStageMenu(null);
+    try {
+      const prevStage = (deal.stage || deal.status || "draft").toLowerCase();
+      const next      = newStage.toLowerCase();
+      const invId     = deal.inventory_id;
+
+      // Deduct stock when moving TO dispatched
+      if (invId && next === "dispatched" && prevStage !== "dispatched" && prevStage !== "delivered" && prevStage !== "completed") {
+        const qty = parseFloat(deal.quantity) || 0;
+        const { data: inv } = await sb.from("inventory").select("available_quantity,stock_status").eq("id", invId).single();
+        if (inv) {
+          const newQty = Math.max(0, (inv.available_quantity || 0) - qty);
+          await sb.from("inventory").update({ available_quantity: newQty, stock_status: "Sold", last_movement_at: new Date().toISOString() }).eq("id", invId);
+        }
+      }
+      // Restore stock on rollback FROM dispatched
+      if (invId && prevStage === "dispatched" && next !== "dispatched" && next !== "delivered" && next !== "completed") {
+        const qty = parseFloat(deal.quantity) || 0;
+        const { data: inv } = await sb.from("inventory").select("available_quantity").eq("id", invId).single();
+        if (inv) {
+          const restored = (inv.available_quantity || 0) + qty;
+          await sb.from("inventory").update({ available_quantity: restored, stock_status: "Available", last_movement_at: new Date().toISOString() }).eq("id", invId);
+        }
+      }
+      // Reserve on confirm
+      if (invId && next === "confirmed" && prevStage === "draft") {
+        await sb.from("inventory").update({ stock_status: "Reserved", last_movement_at: new Date().toISOString() }).eq("id", invId);
+      }
+
+      await sb.from("deals").update({ stage: newStage, status: newStage }).eq("id", deal.id);
+      fetchAll();
+    } catch (e) { alert("Stage update failed: " + e.message); }
+  };
   const [form, setForm] = useState(DEAL_DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
@@ -776,7 +1040,10 @@ function Deals() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>{["Deal #","Customer","Product","Qty","Value","Stage","Payment","Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+              <tr>
+                {["Deal #","Customer","Product","Qty","Value","Stage","Payment","Date"].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}
+                {isAdmin && <th className="text-left px-4 py-3 text-xs font-semibold text-orange-400 uppercase">Profit</th>}
+              </tr>
             </thead>
             <tbody>
               {filtered.map(d => (
@@ -786,9 +1053,49 @@ function Deals() {
                   <td className="px-4 py-3 text-gray-500">{d.product_name || "—"}</td>
                   <td className="px-4 py-3">{d.quantity || "—"}</td>
                   <td className="px-4 py-3 font-bold text-green-700">{fmt(d.total_value || d.negotiated_price)}</td>
-                  <td className="px-4 py-3"><Badge text={d.stage || d.status || "draft"} /></td>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <div className="relative">
+                      <button
+                        onClick={e => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setStageMenu(stageMenu?.dealId === d.id ? null : { dealId: d.id, deal: d, rect });
+                        }}
+                        className={cls("px-3 py-1 rounded-full text-xs font-bold border transition-all",
+                          (d.stage||d.status||"draft") === "completed" ? "bg-green-100 text-green-700 border-green-200" :
+                          (d.stage||d.status||"draft") === "dispatched" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                          (d.stage||d.status||"draft") === "confirmed"  ? "bg-indigo-100 text-indigo-700 border-indigo-200" :
+                          (d.stage||d.status||"draft") === "delivered"  ? "bg-purple-100 text-purple-700 border-purple-200" :
+                          "bg-gray-100 text-gray-500 border-gray-200"
+                        )}>
+                        {d.stage || d.status || "draft"} ▾
+                      </button>
+                      {stageMenu?.dealId === d.id && (
+                        <div className="absolute left-0 top-8 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 min-w-36">
+                          {["Draft","Confirmed","Dispatched","Delivered","Completed"].map(s => (
+                            <button key={s} onClick={() => updateDealStage(stageMenu.deal, s)}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 font-medium text-gray-700">
+                              {s}
+                              {(stageMenu.deal.stage || stageMenu.deal.status || "draft").toLowerCase() === s.toLowerCase() && " ✓"}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3"><Badge text={d.payment_status || "—"} color={d.payment_status === "Paid" ? "green" : "orange"} /></td>
                   <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
+                  {isAdmin && (() => {
+                    const selInv = inventory.find(i => i.id === d.inventory_id);
+                    const cost   = (selInv?.cost_price || 0) * (d.quantity || 0);
+                    const profit = (d.total_value || 0) - cost;
+                    const margin = cost > 0 ? ((profit / cost) * 100).toFixed(1) : null;
+                    return (
+                      <td className="px-4 py-3">
+                        <p className={cls("font-bold text-sm", profit > 0 ? "text-green-600" : "text-red-500")}>{fmt(profit)}</p>
+                        {margin && <p className="text-xs text-gray-400">{margin}%</p>}
+                      </td>
+                    );
+                  })()}
                 </tr>
               ))}
               {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
@@ -1213,9 +1520,10 @@ function Customers() {
   const { companyId } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+  const [showAdd, setShowAdd]     = useState(false);
+  const [selected, setSelected]   = useState(null);  // row detail panel
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
   const [form, setForm] = useState({ name:"", city:"", state:"", country:"India", gst_number:"", pan_number:"", phone:"", email:"", notes:"" });
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
@@ -1808,10 +2116,218 @@ function Settings() {
 
 
 // ── DESKTOP APP SHELL ──────────────────────────────────────────────────────────
+// ── AI CHAT ASSISTANT ────────────────────────────────────────────────────────
+function AIChat({ companyId, onClose }) {
+  const [messages, setMessages] = useState([
+    { role:"assistant", content:"Hi! I'm your Dockside AI assistant. Ask me anything about your business — inventory, deals, customers, profits, or insights." }
+  ]);
+  const [input, setInput]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+
+  const sendMessage = async () => {
+    const q = input.trim();
+    if (!q || loading) return;
+    setInput("");
+    const userMsg = { role:"user", content: q };
+    setMessages(p => [...p, userMsg]);
+    setLoading(true);
+
+    try {
+      // Fetch live business data to give AI real context
+      const [invR, dealsR, custsR, yardsR] = await Promise.all([
+        sb.from("inventory").select("product_name,category,wood_type,available_quantity,unit,cost_price,market_value,stock_status,yard_id").eq("company_id", companyId).limit(100),
+        sb.from("deals").select("customer_name,product_name,quantity,total_value,negotiated_price,stage,payment_status,created_at").eq("company_id", companyId).limit(100),
+        sb.from("customers").select("name,city,phone").eq("company_id", companyId).limit(50),
+        sb.from("yards").select("name,city").eq("company_id", companyId),
+      ]);
+
+      const inv   = invR.data   || [];
+      const deals = dealsR.data || [];
+      const custs = custsR.data || [];
+      const yards = yardsR.data || [];
+
+      const totalInvValue  = inv.reduce((s,i)=>(s+(i.cost_price||0)*(i.available_quantity||0)),0);
+      const totalRevenue   = deals.filter(d=>d.payment_status==="Paid").reduce((s,d)=>(s+(d.total_value||0)),0);
+      const pendingPayment = deals.filter(d=>d.payment_status==="Pending").reduce((s,d)=>(s+(d.total_value||0)),0);
+      const activeDeals    = deals.filter(d=>!["completed","delivered"].includes((d.stage||"").toLowerCase())).length;
+      const lowStock       = inv.filter(i=>(i.available_quantity||0)<10);
+      const topProducts    = [...inv].sort((a,b)=>(b.available_quantity||0)-(a.available_quantity||0)).slice(0,5);
+
+      const systemPrompt = `You are a smart business assistant for a timber trading company using Dockside ERP.
+You have access to real-time business data. Be concise, use numbers, give actionable advice.
+
+CURRENT BUSINESS SNAPSHOT:
+- Inventory: ${inv.length} products, total value ₹${totalInvValue.toLocaleString("en-IN")}
+- Low stock items (< 10 units): ${lowStock.map(i=>i.product_name).join(", ") || "none"}
+- Top products by volume: ${topProducts.map(i=>`${i.product_name} (${i.available_quantity} ${i.unit})`).join(", ")}
+- Yards: ${yards.map(y=>y.name).join(", ")}
+- Deals: ${deals.length} total, ${activeDeals} active
+- Revenue (paid): ₹${totalRevenue.toLocaleString("en-IN")}
+- Pending payments: ₹${pendingPayment.toLocaleString("en-IN")}
+- Customers: ${custs.length} total
+
+RECENT DEALS (last 10):
+${deals.slice(0,10).map(d=>`${d.customer_name||"?"} | ${d.product_name||"?"} | Qty:${d.quantity} | ₹${d.total_value||0} | ${d.stage||"draft"} | ${d.payment_status}`).join("
+")}
+
+INVENTORY BREAKDOWN:
+${inv.slice(0,20).map(i=>`${i.product_name} | ${i.available_quantity} ${i.unit} | ₹${i.cost_price||0}/unit | ${i.stock_status||"Available"} | Yard:${yards.find(y=>y.id===i.yard_id)?.name||"?"}`).join("
+")}
+
+Answer business questions clearly. Use ₹ for amounts. Give specific insights, not generic advice.`;
+
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 600,
+          system: systemPrompt,
+          messages: [
+            ...messages.filter(m=>m.role!=="assistant"||messages.indexOf(m)>0).map(m=>({ role:m.role, content:m.content })),
+            { role:"user", content: q }
+          ],
+        }),
+      });
+
+      const data = await resp.json();
+      const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response. Please try again.";
+      setMessages(p => [...p, { role:"assistant", content: reply }]);
+    } catch (e) {
+      setMessages(p => [...p, { role:"assistant", content: "Error: " + e.message }]);
+    }
+    setLoading(false);
+  };
+
+  const quickPrompts = [
+    "Which stock is not moving?",
+    "Show pending payments",
+    "Top customers this month",
+    "What should I price teak?",
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
+      <div className="w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col pointer-events-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-900 to-blue-900 rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-black text-white">AI</div>
+            <div>
+              <p className="text-white font-bold text-sm">Dockside AI</p>
+              <p className="text-blue-300 text-xs">Powered by Claude</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl w-7 h-7 flex items-center justify-center">×</button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          {messages.map((m, i) => (
+            <div key={i} className={cls("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+              <div className={cls("max-w-xs rounded-2xl px-3 py-2 text-sm leading-relaxed",
+                m.role === "user"
+                  ? "bg-blue-600 text-white rounded-br-sm"
+                  : "bg-gray-100 text-gray-800 rounded-bl-sm"
+              )}>
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Quick prompts */}
+        {messages.length <= 1 && (
+          <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+            {quickPrompts.map(p => (
+              <button key={p} onClick={() => setInput(p)}
+                className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-semibold hover:bg-blue-100 transition-colors">
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="px-3 pb-3 pt-2 border-t border-gray-100">
+          <div className="flex gap-2">
+            <input value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              placeholder="Ask anything about your business..."
+              className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button onClick={sendMessage} disabled={loading || !input.trim()}
+              className="w-9 h-9 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition-all">
+              ↑
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DesktopApp({ user, companyId, role, onSignOut }) {
   const isAdmin = role !== "worker";
+  const [showSearch, setShowSearch] = useState(false);
+  const [showAI, setShowAI]         = useState(false);
+  const [searchData, setSearchData] = useState({ inventory:[], deals:[], customers:[] });
+
+  // Global Ctrl+K shortcut
+  useEffect(() => {
+    const handler = e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        // Load data for search
+        Promise.all([
+          sb.from("inventory").select("*").eq("company_id", companyId).limit(200),
+          sb.from("deals").select("*").eq("company_id", companyId).limit(200),
+          sb.from("customers").select("*").eq("company_id", companyId).limit(200),
+        ]).then(([a, b, c]) => {
+          setSearchData({ inventory: a.data||[], deals: b.data||[], customers: c.data||[] });
+          setShowSearch(true);
+        });
+      }
+      if (e.key === "Escape") setShowSearch(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [companyId]);
+
   return (
     <AuthCtx.Provider value={{ user, companyId, role }}>
+      {/* AI Chat */}
+      {showAI && <AIChat companyId={resolvedCompanyId || companyId} onClose={() => setShowAI(false)} />}
+
+      {/* AI Floating Button */}
+      {!showAI && (
+        <button onClick={() => setShowAI(true)}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105">
+          <span className="text-lg leading-none">AI</span>
+          <span className="text-xs font-bold leading-none">Ask</span>
+        </button>
+      )}
+
+      {showSearch && (
+        <GlobalSearch
+          inventory={searchData.inventory}
+          deals={searchData.deals}
+          customers={searchData.customers}
+          onClose={() => setShowSearch(false)}
+        />
+      )}
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar onSignOut={onSignOut} role={role} />
         <div className="flex-1 ml-52 min-h-screen">
