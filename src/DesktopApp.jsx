@@ -168,15 +168,6 @@ function Dashboard() {
 
   const pendingPay = deals.filter(d => d.payment_status === "Pending").length;
 
-  // Dead stock detection
-  const DEAD_STOCK_DAYS = 45;
-  const nowTs = Date.now();
-  const deadStock = inv.filter(i => {
-    const lastMove = i.last_movement_at || i.date || i.created_at;
-    if (!lastMove) return false;
-    const daysSince = (nowTs - new Date(lastMove).getTime()) / (1000*60*60*24);
-    return daysSince > DEAD_STOCK_DAYS && (i.available_quantity||0) > 0 && (i.stock_status||"Available") !== "Sold";
-  });
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24 md:pb-4">
@@ -817,7 +808,6 @@ function Yards() {
   const [selected, setSelected]   = useState(null);  // row detail panel
   const [saving, setSaving]       = useState(false);
   const [err, setErr]             = useState("");
-  const [selected, setSelected] = useState(null);
   const DEFAULTS = { name:"", city:"", address:"", manager_name:"", manager_phone:"", notes:"" };
   const [form, setForm] = useState(DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
@@ -1528,7 +1518,6 @@ function Customers() {
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
   const [deals, setDeals] = useState([]);
-  const [selected, setSelected] = useState(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -2162,7 +2151,7 @@ You have access to real-time business data. Be concise, use numbers, give action
 CURRENT BUSINESS SNAPSHOT:
 - Inventory: ${inv.length} products, total value ₹${totalInvValue.toLocaleString("en-IN")}
 - Low stock items (< 10 units): ${lowStock.map(i=>i.product_name).join(", ") || "none"}
-- Top products by volume: ${topProducts.map(i=>`${i.product_name} (${i.available_quantity} ${i.unit})`).join(", ")}
+- Top products by volume: ${topProducts.map(i=>i.product_name+" ("+i.available_quantity+" "+(i.unit||"")+" )").join(", ")}
 - Yards: ${yards.map(y=>y.name).join(", ")}
 - Deals: ${deals.length} total, ${activeDeals} active
 - Revenue (paid): ₹${totalRevenue.toLocaleString("en-IN")}
@@ -2170,11 +2159,11 @@ CURRENT BUSINESS SNAPSHOT:
 - Customers: ${custs.length} total
 
 RECENT DEALS (last 10):
-${deals.slice(0,10).map(d=>`${d.customer_name||"?"} | ${d.product_name||"?"} | Qty:${d.quantity} | ₹${d.total_value||0} | ${d.stage||"draft"} | ${d.payment_status}`).join("
+${deals.slice(0,10).map(d=>(d.customer_name||"?")+"|"+(d.product_name||"?")+"|Qty:"+(d.quantity||0)+"|Rs"+(d.total_value||0)+"|"+(d.stage||"draft")).join("\n")}
 ")}
 
 INVENTORY BREAKDOWN:
-${inv.slice(0,20).map(i=>`${i.product_name} | ${i.available_quantity} ${i.unit} | ₹${i.cost_price||0}/unit | ${i.stock_status||"Available"} | Yard:${yards.find(y=>y.id===i.yard_id)?.name||"?"}`).join("
+${inv.slice(0,20).map(i=>i.product_name+"|"+(i.available_quantity||0)+" "+(i.unit||"")+"|Rs"+(i.cost_price||0)+"|"+(i.stock_status||"Available")).join("\n")}
 ")}
 
 Answer business questions clearly. Use ₹ for amounts. Give specific insights, not generic advice.`;
