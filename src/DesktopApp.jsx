@@ -958,6 +958,7 @@ function Deals() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [custName, setCustName] = useState("");
@@ -1105,7 +1106,9 @@ function Deals() {
                 const profitData = isAdmin ? calculateDealProfit(d, inventory) : null;
 
                 return (
-                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={d.id}
+                    onClick={() => setSelectedDeal(d)}
+                    className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-blue-600">
                       {d.deal_number || "#" + (d.id||"").toString().slice(-6)}
                     </td>
@@ -1132,10 +1135,7 @@ function Deals() {
                     <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
                     {isAdmin && profitData && (
                       <td className="px-4 py-3">
-                        <p className={cls(
-                          "font-bold text-sm",
-                          profitData.profit > 0 ? "text-green-600" : "text-red-500"
-                        )}>
+                        <p className={cls("font-bold text-sm", profitData.profit > 0 ? "text-green-600" : "text-red-500")}>
                           {fmt(profitData.profit)}
                         </p>
                         <p className="text-xs text-gray-400">{profitData.margin}%</p>
@@ -1155,6 +1155,148 @@ function Deals() {
           </table>
         </div>
       )}
+
+      {/* ── DEAL DETAIL INVOICE DRAWER ── */}
+      <SlidePanel title="Deal Invoice" open={!!selectedDeal} onClose={() => setSelectedDeal(null)} wide>
+        {selectedDeal && (() => {
+          const profitData = isAdmin ? calculateDealProfit(selectedDeal, inventory) : null;
+          const invItem = inventory.find(i => i.id === selectedDeal.inventory_id);
+          const stageColor = s => {
+            const l = (s||"").toLowerCase();
+            if (["completed","delivered"].includes(l)) return "green";
+            if (["dispatched","confirmed"].includes(l)) return "blue";
+            return "gray";
+          };
+          return (
+            <>
+              {/* Invoice Header */}
+              <div className="bg-gradient-to-r from-gray-900 to-blue-900 -mx-4 -mt-4 px-5 py-5 mb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">⚓</span>
+                      <span className="text-white font-black text-sm tracking-wide">DOCKSIDE TRADE OS</span>
+                    </div>
+                    <p className="text-blue-300 text-xs">Deal Invoice</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-black text-lg">{selectedDeal.deal_number || "#"+String(selectedDeal.id).slice(-6)}</p>
+                    <p className="text-blue-300 text-xs mt-0.5">{fmtDate(selectedDeal.created_at)}</p>
+                    <div className="mt-1">
+                      <Badge text={selectedDeal.stage || selectedDeal.status || "Draft"} color={stageColor(selectedDeal.stage)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer & Product */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Bill To</p>
+                  <p className="font-black text-gray-800 text-base">{selectedDeal.customer_name || "—"}</p>
+                  {(() => {
+                    const cust = customers.find(c => c.id === selectedDeal.customer_id);
+                    return cust ? (
+                      <>
+                        {cust.city && <p className="text-xs text-gray-500 mt-0.5">{cust.city}</p>}
+                        {cust.phone && <p className="text-xs text-blue-600 mt-0.5">{cust.phone}</p>}
+                        {cust.gst_number && <p className="text-xs text-gray-400 mt-0.5">GST: {cust.gst_number}</p>}
+                      </>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Product</p>
+                  <p className="font-black text-gray-800 text-base">{selectedDeal.product_name || "—"}</p>
+                  {invItem && (
+                    <>
+                      <p className="text-xs text-gray-500 mt-0.5">{invItem.category} · {invItem.wood_type || "—"}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Grade: {invItem.quality_grade || "—"}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Line Items */}
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      {["Description","Qty","Unit Price","Amount"].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-gray-500 uppercase">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-100">
+                      <td className="px-4 py-3 font-semibold text-gray-800">{selectedDeal.product_name || "Product"}</td>
+                      <td className="px-4 py-3 text-gray-600">{selectedDeal.quantity || "—"}</td>
+                      <td className="px-4 py-3 text-gray-600">{fmt(selectedDeal.negotiated_price)}</td>
+                      <td className="px-4 py-3 font-bold text-gray-800">{fmt(selectedDeal.total_value)}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot className="bg-gray-50 border-t border-gray-200">
+                    <tr>
+                      <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-gray-700">Total</td>
+                      <td className="px-4 py-3 font-black text-green-700 text-base">{fmt(selectedDeal.total_value)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Payment + Stage Status */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className={cls("rounded-xl p-4 text-center border", selectedDeal.payment_status === "Paid" ? "bg-green-50 border-green-200" : selectedDeal.payment_status === "Partial" ? "bg-orange-50 border-orange-200" : "bg-red-50 border-red-200")}>
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-1">Payment</p>
+                  <p className={cls("font-black text-lg", selectedDeal.payment_status === "Paid" ? "text-green-700" : selectedDeal.payment_status === "Partial" ? "text-orange-600" : "text-red-600")}>
+                    {selectedDeal.payment_status || "Pending"}
+                  </p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-1">Deal Stage</p>
+                  <p className="font-black text-lg text-blue-700 capitalize">{selectedDeal.stage || selectedDeal.status || "Draft"}</p>
+                </div>
+              </div>
+
+              {/* Profit — admin only */}
+              {isAdmin && profitData && (
+                <div className="bg-gray-900 rounded-xl p-4 mb-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">💰 Profit Analysis</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Revenue</p>
+                      <p className="font-black text-white">{fmt(profitData.revenue)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Cost</p>
+                      <p className="font-black text-orange-400">{fmt(profitData.cost)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Profit ({profitData.margin}%)</p>
+                      <p className={cls("font-black", profitData.profit >= 0 ? "text-green-400" : "text-red-400")}>{fmt(profitData.profit)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedDeal.notes && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-2">Notes</p>
+                  <p className="text-sm text-gray-700">{selectedDeal.notes}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <Btn onClick={() => generateInvoicePDF({ ...selectedDeal, type: "deal" }, companyId, "invoice")}>
+                  📥 Download PDF
+                </Btn>
+                <Btn variant="secondary" onClick={() => setSelectedDeal(null)}>Close</Btn>
+              </div>
+            </>
+          );
+        })()}
+      </SlidePanel>
 
       <SlidePanel title="Create Deal" open={showAdd} onClose={closeDeal}>
         <Field label="Customer Name"><Input value={custName} onChange={e => setCustName(e.target.value)} placeholder="Customer name" /></Field>
@@ -1205,6 +1347,42 @@ function Deals() {
           <Btn variant="secondary" onClick={closeDeal}>Cancel</Btn>
         </div>
       </SlidePanel>
+    </div>
+  );
+}
+
+// ── INLINE STATUS PICKER (no scroll, all options visible at once) ─────────────
+function InlineStatusPicker({ current, options, onSelect }) {
+  const getColor = (opt) => {
+    const l = (opt||"").toLowerCase();
+    if (["delivered","completed","paid"].includes(l)) return "bg-green-100 text-green-700 border-green-300";
+    if (["dispatched","in transit","arrived","confirmed"].includes(l)) return "bg-blue-100 text-blue-700 border-blue-300";
+    if (["loaded"].includes(l)) return "bg-orange-100 text-orange-700 border-orange-300";
+    return "bg-gray-100 text-gray-600 border-gray-300";
+  };
+  const activeColor = (opt) => {
+    const l = (opt||"").toLowerCase();
+    if (["delivered","completed","paid"].includes(l)) return "bg-green-600 text-white border-green-600";
+    if (["dispatched","in transit","arrived","confirmed"].includes(l)) return "bg-blue-600 text-white border-blue-600";
+    if (["loaded"].includes(l)) return "bg-orange-500 text-white border-orange-500";
+    return "bg-gray-700 text-white border-gray-700";
+  };
+  return (
+    <div className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
+      {options.map(opt => (
+        <button
+          key={opt}
+          onClick={() => onSelect(opt)}
+          className={cls(
+            "px-2 py-0.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap",
+            current?.toLowerCase() === opt.toLowerCase()
+              ? activeColor(opt)
+              : getColor(opt) + " opacity-60 hover:opacity-100"
+          )}
+        >
+          {opt}
+        </button>
+      ))}
     </div>
   );
 }
@@ -1321,7 +1499,7 @@ function Transit() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["Shipment #","Vehicle","Driver","Origin → Dest","Dispatch","ETA","Status","Freight"].map(h => (
+                {["Vehicle","Driver","Origin → Dest","Dispatch","ETA","Status","Cost"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
@@ -1329,29 +1507,28 @@ function Transit() {
             <tbody>
               {filtered.map(s => (
                 <tr key={s.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(s)}>
-                  <td className="px-4 py-3 font-mono text-xs text-blue-600">
-                    {s.shipment_number || `#${s.id?.toString().slice(-6)}`}
-                  </td>
-                  <td className="px-4 py-3 font-semibold">{s.vehicle_number || "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-800">{s.vehicle_number || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{s.driver_name || "—"}</td>
                   <td className="px-4 py-3">
-                    {yards.find(y => y.id === s.origin_yard_id)?.name || "—"} → {s.destination || "—"}
+                    <span className="text-gray-700">{yards.find(y => y.id === s.origin_yard_id)?.name || "—"}</span>
+                    <span className="text-gray-400 mx-1">→</span>
+                    <span className="text-gray-700">{s.destination || "—"}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs">{fmtDate(s.dispatch_date)}</td>
-                  <td className="px-4 py-3 text-xs">{fmtDate(s.expected_arrival)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(s.dispatch_date)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(s.expected_arrival)}</td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <StatusDropdown
-                      currentStatus={s.status || "Created"}
+                    <InlineStatusPicker
+                      current={s.status || "Created"}
                       options={["Created","Loaded","Dispatched","In Transit","Arrived","Delivered"]}
                       onSelect={(newStatus) => updateShipmentStatus(s, newStatus)}
                     />
                   </td>
-                  <td className="px-4 py-3 font-semibold">{fmt(s.freight_cost)}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-700">{fmt(s.freight_cost)}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-gray-300">No shipments</td>
+                  <td colSpan={7} className="px-4 py-16 text-center text-gray-300">No shipments</td>
                 </tr>
               )}
             </tbody>
@@ -1737,6 +1914,7 @@ function Suppliers() {
 function Customers() {
   const { companyId } = useAuth();
   const [customers, setCustomers] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -1750,8 +1928,12 @@ function Customers() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await sb.from("customers").select("*").eq("company_id", companyId).order("name");
-      setCustomers(data || []);
+      const [a, b] = await Promise.all([
+        sb.from("customers").select("*").eq("company_id", companyId).order("name"),
+        sb.from("deals").select("customer_id,customer_name,total_value,stage,payment_status").eq("company_id", companyId),
+      ]);
+      setCustomers(a.data || []);
+      setDeals(b.data || []);
     } finally { setLoading(false); }
   }, [companyId]);
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -1776,6 +1958,12 @@ function Customers() {
     window.open("https://wa.me/" + (c.phone||"") + "?text=" + encodeURIComponent(msg), "_blank");
   };
 
+  const getCustTxn = (c) => {
+    const custDeals = deals.filter(d => d.customer_id === c.id || d.customer_name === c.name);
+    const total = custDeals.reduce((s, d) => s + (d.total_value || 0), 0);
+    return { count: custDeals.length, total };
+  };
+
   const filtered = customers.filter(c => !search || (c.name||"").toLowerCase().includes(search.toLowerCase()) || (c.city||"").toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -1796,29 +1984,42 @@ function Customers() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {["Customer","City","Contact","Phone","Credit Limit","GST","Actions"].map(h => (
+                  {["Customer","City","Contact","Phone","Credit Limit","GST","Transaction History","Actions"].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => (
-                  <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(c)}>
-                    <td className="px-4 py-3 font-semibold text-gray-800">{c.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{c.city || "—"}</td>
-                    <td className="px-4 py-3 text-gray-500">{c.contact_person || "—"}</td>
-                    <td className="px-4 py-3">{c.phone ? <a href={"tel:"+c.phone} className="text-blue-600 hover:underline" onClick={e=>e.stopPropagation()}>{c.phone}</a> : "—"}</td>
-                    <td className="px-4 py-3 text-gray-500">{c.credit_limit > 0 ? fmt(c.credit_limit) : "—"}</td>
-                    <td className="px-4 py-3">{c.gst_number ? <Badge text="GST ✓" color="green" /> : <span className="text-gray-300 text-xs">—</span>}</td>
-                    <td className="px-4 py-3 flex gap-2" onClick={e=>e.stopPropagation()}>
-                      {c.phone && (
-                        <button onClick={() => sendWhatsApp(c)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg font-semibold hover:bg-green-100">WhatsApp</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map(c => {
+                  const txn = getCustTxn(c);
+                  return (
+                    <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(c)}>
+                      <td className="px-4 py-3 font-semibold text-gray-800">{c.name}</td>
+                      <td className="px-4 py-3 text-gray-500">{c.city || "—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{c.contact_person || "—"}</td>
+                      <td className="px-4 py-3">{c.phone ? <a href={"tel:"+c.phone} className="text-blue-600 hover:underline" onClick={e=>e.stopPropagation()}>{c.phone}</a> : "—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{c.credit_limit > 0 ? fmt(c.credit_limit) : "—"}</td>
+                      <td className="px-4 py-3">{c.gst_number ? <Badge text="GST ✓" color="green" /> : <span className="text-gray-300 text-xs">—</span>}</td>
+                      <td className="px-4 py-3">
+                        {txn.count > 0 ? (
+                          <div>
+                            <p className="font-bold text-blue-700 text-sm">{fmt(txn.total)}</p>
+                            <p className="text-xs text-gray-400">{txn.count} deal{txn.count !== 1 ? "s" : ""}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-300">No deals yet</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 flex gap-2" onClick={e=>e.stopPropagation()}>
+                        {c.phone && (
+                          <button onClick={() => sendWhatsApp(c)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg font-semibold hover:bg-green-100">WhatsApp</button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-300">No customers found</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No customers found</td></tr>
                 )}
               </tbody>
             </table>
@@ -1826,31 +2027,68 @@ function Customers() {
         </div>
       )}
       <SlidePanel title="Customer Details" open={!!selected} onClose={() => setSelected(null)}>
-        {selected && (
-          <>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-black text-blue-700">{(selected.name||"C")[0].toUpperCase()}</div>
-              <div>
-                <p className="font-black text-gray-800 text-lg">{selected.name}</p>
-                <p className="text-sm text-gray-400">{selected.city || ""}</p>
+        {selected && (() => {
+          const txn = getCustTxn(selected);
+          const custDeals = deals.filter(d => d.customer_id === selected.id || d.customer_name === selected.name);
+          return (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-black text-blue-700">{(selected.name||"C")[0].toUpperCase()}</div>
+                <div>
+                  <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+                  <p className="text-sm text-gray-400">{selected.city || ""}</p>
+                </div>
               </div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
-              <DetailRow label="Contact Person" value={selected.contact_person} />
-              <DetailRow label="Phone" value={selected.phone} />
-              <DetailRow label="Email" value={selected.email} />
-              <DetailRow label="GST No." value={selected.gst_number} />
-              <DetailRow label="Credit Limit" value={selected.credit_limit > 0 ? fmt(selected.credit_limit) : "Not set"} />
-              <DetailRow label="Notes" value={selected.notes} />
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              {selected.phone && (
-                <a href={"tel:"+selected.phone} className="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl text-sm">📞 Call</a>
+
+              {/* Transaction Summary */}
+              {txn.count > 0 && (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-black text-blue-700">{txn.count}</p>
+                    <p className="text-xs text-blue-500">Total Deals</p>
+                  </div>
+                  <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
+                    <p className="text-lg font-black text-green-700">{fmt(txn.total)}</p>
+                    <p className="text-xs text-green-500">Lifetime Value</p>
+                  </div>
+                </div>
               )}
-              <button onClick={() => sendWhatsApp(selected)} className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 rounded-xl text-sm">WhatsApp</button>
-            </div>
-          </>
-        )}
+
+              <div className="bg-gray-50 rounded-xl p-4 space-y-1 mb-3">
+                <DetailRow label="Contact Person" value={selected.contact_person} />
+                <DetailRow label="Phone" value={selected.phone} />
+                <DetailRow label="Email" value={selected.email} />
+                <DetailRow label="GST No." value={selected.gst_number} />
+                <DetailRow label="Credit Limit" value={selected.credit_limit > 0 ? fmt(selected.credit_limit) : "Not set"} />
+                <DetailRow label="Notes" value={selected.notes} />
+              </div>
+
+              {custDeals.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recent Deals</p>
+                  <div className="space-y-2">
+                    {custDeals.slice(0,5).map((d,i) => (
+                      <div key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-3 py-2">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700">{d.customer_name || "—"}</p>
+                          <Badge text={d.payment_status || "Pending"} color={d.payment_status === "Paid" ? "green" : d.payment_status === "Partial" ? "orange" : "red"} />
+                        </div>
+                        <p className="font-bold text-blue-700 text-sm">{fmt(d.total_value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {selected.phone && (
+                  <a href={"tel:"+selected.phone} className="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl text-sm">📞 Call</a>
+                )}
+                <button onClick={() => sendWhatsApp(selected)} className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 rounded-xl text-sm">WhatsApp</button>
+              </div>
+            </>
+          );
+        })()}
       </SlidePanel>
       <SlidePanel title="Add Customer" open={showAdd} onClose={close}>
         <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} placeholder="Company or person name" /></Field>
@@ -2104,6 +2342,47 @@ function Reports() {
     const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = filename; a.click();
   };
 
+  // "Format Once" — standardized export schema for all report types
+  const EXPORT_FORMATS = {
+    inventory: {
+      headers: ["product_name","category","wood_type","quality_grade","available_quantity","unit","cost_price","market_value","yard_name","supplier_name","deal_status","date"],
+      label: "Inventory Report",
+      filename: "dockside_inventory_report.csv",
+    },
+    deals: {
+      headers: ["deal_number","customer_name","product_name","quantity","negotiated_price","total_value","stage","payment_status","notes","created_at"],
+      label: "Deals Report",
+      filename: "dockside_deals_report.csv",
+    },
+    customers: {
+      headers: ["name","city","contact_person","phone","email","gst_number","credit_limit","notes"],
+      label: "Customers Report",
+      filename: "dockside_customers_report.csv",
+    },
+    suppliers: {
+      headers: ["name","city","country","contact_person","phone","email","gst_number","products_supplied"],
+      label: "Suppliers Report",
+      filename: "dockside_suppliers_report.csv",
+    },
+    shipments: {
+      headers: ["shipment_number","vehicle_number","driver_name","driver_phone","destination","dispatch_date","expected_arrival","freight_cost","status","cargo_details"],
+      label: "Transit Report",
+      filename: "dockside_transit_report.csv",
+    },
+  };
+
+  const runStandardExport = (type) => {
+    const fmt = EXPORT_FORMATS[type];
+    const rows = data[type] || [];
+    exportCSV(rows, fmt.headers, fmt.filename);
+  };
+
+  const exportAllBundle = () => {
+    Object.keys(EXPORT_FORMATS).forEach((type, i) => {
+      setTimeout(() => runStandardExport(type), i * 300);
+    });
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen pb-4">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
@@ -2113,7 +2392,40 @@ function Reports() {
         </div>
       </div>
       <div className="px-6 space-y-6">
-        {/* Summary KPIs */}
+        {/* Format Once — Standardized Exports */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-bold text-gray-800">📤 Format Once — Standardized Exports</h3>
+              <p className="text-xs text-gray-400 mt-0.5">All exports use a fixed, consistent column schema. Format defined once, applied everywhere.</p>
+            </div>
+            <button
+              onClick={exportAllBundle}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm px-4 py-2 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm"
+            >
+              ⬇ Export All (Bundle)
+            </button>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            {Object.entries(EXPORT_FORMATS).map(([type, fmt]) => (
+              <button
+                key={type}
+                onClick={() => runStandardExport(type)}
+                className="flex flex-col items-center gap-2 p-4 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all group"
+              >
+                <span className="text-2xl">{type === "inventory" ? "📦" : type === "deals" ? "🤝" : type === "customers" ? "👥" : type === "suppliers" ? "🏭" : "🚛"}</span>
+                <span className="text-xs font-bold text-gray-700 group-hover:text-blue-700 text-center">{fmt.label}</span>
+                <span className="text-xs text-gray-400 font-mono truncate w-full text-center">{(data[type]||[]).length} rows</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
+            <p className="text-xs text-amber-700">
+              <strong>Schema locked:</strong> All CSV exports follow a standardized column order. 
+              Import into any tool (Excel, Tally, Google Sheets) without reformatting.
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Inventory Value" value={fmt(invValue)} icon="📦" color="blue" />
           <StatCard label="Revenue Collected" value={fmt(dealRevenue)} icon="✅" color="green" />

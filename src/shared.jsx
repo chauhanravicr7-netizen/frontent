@@ -104,7 +104,9 @@ const DetailRow = ({ label, value }) => (
 );
 
 // ── STATUS DROPDOWN ────────────────────────────────────────────────────────────
-const StatusDropdown = ({ value, onChange, options, label }) => {
+const StatusDropdown = ({ value, currentStatus, onChange, onSelect, options, label }) => {
+  const resolvedValue = value ?? currentStatus;
+  const resolvedOnChange = onChange ?? onSelect;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -126,7 +128,7 @@ const StatusDropdown = ({ value, onChange, options, label }) => {
     return { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" };
   };
 
-  const color = getColor(value);
+  const color = getColor(resolvedValue);
 
   return (
     <div ref={dropdownRef} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
@@ -136,7 +138,7 @@ const StatusDropdown = ({ value, onChange, options, label }) => {
           "px-3 py-1 rounded-full text-xs font-bold border transition-all",
           color.bg, color.text, color.border
         )}>
-        {value || label} ▾
+        {resolvedValue || label} ▾
       </button>
       {isOpen && (
         <div className="absolute left-0 top-8 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 min-w-36">
@@ -144,11 +146,11 @@ const StatusDropdown = ({ value, onChange, options, label }) => {
             <button
               key={opt}
               onClick={() => {
-                onChange(opt);
+                resolvedOnChange(opt);
                 setIsOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 font-medium text-gray-700">
-              {opt}{value?.toLowerCase() === opt.toLowerCase() ? " ✓" : ""}
+              {opt}{resolvedValue?.toLowerCase() === opt.toLowerCase() ? " ✓" : ""}
             </button>
           ))}
         </div>
