@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, NavLink, Navigate } from "react-router-dom";
-import { sb, db } from "./lib/supabase";
+import { sb } from "./lib/supabase";
+import { deductStockForDeal, restoreStockForDeal, calculateDealProfit } from "./lib/supabase";
+import { askGemini } from "./lib/gemini";
+import { generateInvoicePDF } from "./components/InvoiceGenerator";
+import QRScanner from "./components/QRScanner";
 import {
   useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum,
-  SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner
+  SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner, StatusDropdown
 } from "./shared";
 
 // ── RBAC: ROLE-BASED TABS ─────────────────────────────────────────────────────
-// Admin sees everything. Worker sees only Inventory + Transit.
 const ADMIN_TABS = [
   { to: "/",            label: "Home",     icon: "🏠" },
   { to: "/inventory",   label: "Stock",    icon: "📦" },
@@ -39,10 +42,8 @@ const WORKER_PAGES = [
   { to: "/transit",     label: "Transit",    icon: "🚛" },
 ];
 
-// ── QR CODE GENERATOR (inline SVG, no package needed) ─────────────────────────
-// Generates a simple QR code using a URL-based approach
+// ── QR CODE GENERATOR (inline SVG) ────────────────────────────────────────────
 function QRCode({ value, size = 120 }) {
-  // Use Google Charts API to generate QR as img (works offline after first load via cache)
   const url = "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "x" + size + "&data=" + encodeURIComponent(value);
   return (
     <img src={url} alt="QR Code" width={size} height={size}
@@ -67,8 +68,7 @@ function printQRLabel(item) {
   if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
 }
 
-// ── BLUETOOTH THERMAL PRINTER ─────────────────────────────────────────────────
-// ESC/POS commands for 58mm/80mm Bluetooth thermal printers
+// ── BLUETOOTH THERMAL PRINTER (Keep existing) ─────────────────────────────────
 async function printBluetooth(deal) {
   if (!navigator.bluetooth) {
     alert("Bluetooth not supported in this browser. Use Chrome on Android.");
@@ -86,32 +86,30 @@ async function printBluetooth(deal) {
     const ESC = 0x1B; const GS = 0x1D; const LF = 0x0A;
     const enc = new TextEncoder();
 
-    // Build receipt bytes
     const lines = [
-      [ESC, 0x40],                          // Initialize
-      [ESC, 0x61, 0x01],                    // Center align
-      [GS,  0x21, 0x11],                    // Double size
+      [ESC, 0x40],
+      [ESC, 0x61, 0x01],
+      [GS,  0x21, 0x11],
       ...enc.encode("DOCKSIDE OS\n"),
-      [GS,  0x21, 0x00],                    // Normal size
+      [GS,  0x21, 0x00],
       ...enc.encode("========================\n"),
-      [ESC, 0x61, 0x00],                    // Left align
+      [ESC, 0x61, 0x00],
       ...enc.encode("Customer: " + (deal.customer_name || "-") + "\n"),
       ...enc.encode("Product:  " + (deal.product_name  || "-") + "\n"),
       ...enc.encode("Qty:      " + (deal.quantity || 0) + " units\n"),
       ...enc.encode("Rate:     Rs " + (deal.negotiated_price || 0).toLocaleString("en-IN") + "\n"),
       ...enc.encode("------------------------\n"),
-      [GS, 0x21, 0x01],                     // Bold total
+      [GS, 0x21, 0x01],
       ...enc.encode("TOTAL: Rs " + (deal.total_value || 0).toLocaleString("en-IN") + "\n"),
       [GS, 0x21, 0x00],
       ...enc.encode("========================\n"),
       [ESC, 0x61, 0x01],
       ...enc.encode("Dockside Trade OS\n"),
       ...enc.encode(new Date().toLocaleDateString("en-IN") + "\n\n\n"),
-      [GS, 0x56, 0x42, 0x00],              // Cut paper
+      [GS, 0x56, 0x42, 0x00],
     ];
 
     const bytes = new Uint8Array(lines.flat());
-    // Write in 20-byte chunks (BLE MTU limit)
     for (let i = 0; i < bytes.length; i += 20) {
       await char.writeValue(bytes.slice(i, i + 20));
     }
@@ -121,13 +119,12 @@ async function printBluetooth(deal) {
   }
 }
 
-// ── EWAYBILL JSON GENERATOR ───────────────────────────────────────────────────
+// ── EWAYBILL JSON GENERATOR (Keep existing) ───────────────────────────────────
 function generateEWayBill(shipment, yards) {
   const yard = yards.find(y => y.id === shipment.origin_yard_id) || {};
-  // Indian govt E-Way Bill portal JSON schema
   const ewb = {
-    "supplyType": "O",                        // Outward supply
-    "subSupplyType": "1",                     // Supply
+    "supplyType": "O",
+    "subSupplyType": "1",
     "docType": "INV",
     "docNo": shipment.shipment_number || "SHIP-" + Date.now(),
     "docDate": fmtDate(shipment.dispatch_date || new Date().toISOString()),
@@ -136,22 +133,22 @@ function generateEWayBill(shipment, yards) {
     "fromAddr1": yard.address || yard.city || "Gandhidham",
     "fromPlace": yard.city || "Gandhidham",
     "fromPincode": "370201",
-    "fromStateCode": "24",                   // Gujarat
-    "toGstin": "URP",                        // Unregistered party (change if customer has GSTIN)
+    "fromStateCode": "24",
+    "toGstin": "URP",
     "toTrdName": "Buyer",
     "toAddr1": shipment.destination || "",
     "toPlace": shipment.destination || "",
     "toPincode": "000000",
     "toStateCode": "24",
     "vehicleNo": shipment.vehicle_number || "",
-    "vehicleType": "R",                      // Regular
+    "vehicleType": "R",
     "transDocNo": "",
     "transDocDate": "",
-    "transMode": "1",                        // Road
+    "transMode": "1",
     "transDistance": "0",
     "itemList": [{
       "productName": shipment.cargo_details || "Timber",
-      "hsnCode": "4407",                     // HSN for sawn timber
+      "hsnCode": "4407",
       "productDesc": shipment.cargo_details || "Timber products",
       "quantity": 0,
       "qtyUnit": "CBM",
@@ -236,7 +233,7 @@ function MobileNav({ onSignOut, role }) {
         <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white shadow-2xl border-b-2 border-blue-100 px-4 py-4">
           <div className="flex justify-between items-center mb-3">
             <p className="font-black text-gray-900">Quick Calculator</p>
-            <button onClick={() => setCalcOpen(false)} className="text-gray-400 text-2xl font-bold">x</button>
+            <button onClick={() => setCalcOpen(false)} className="text-gray-400 text-2xl font-bold">×</button>
           </div>
           <div className="flex gap-2 mb-3">
             {[["Sawn","Sawn Timber"],["Log","Round Log"],["Ply","Plywood"]].map(([v,l]) => (
@@ -283,7 +280,7 @@ function MobileNav({ onSignOut, role }) {
               <div className="bg-green-50 rounded-xl p-2 text-center">
                 <p className="text-xs text-green-400">CBM</p>
                 <p className="font-black text-green-700 text-sm">{calcResult.totalCBM || calcResult.totalCFT}</p>
-                <p className="text-xs text-green-400">m3</p>
+                <p className="text-xs text-green-400">m³</p>
               </div>
             </div>
           ) : (
@@ -302,7 +299,7 @@ function MobileNav({ onSignOut, role }) {
                 <span className="text-white font-black text-lg">Dockside</span>
                 <span className="ml-2 text-xs text-gray-400 capitalize">{role} account</span>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="text-gray-400 text-2xl">x</button>
+              <button onClick={() => setMenuOpen(false)} className="text-gray-400 text-2xl">×</button>
             </div>
             <nav className="flex-1 py-3 px-3 overflow-y-auto">
               {pages.map(n => (
@@ -346,7 +343,8 @@ function MobileNav({ onSignOut, role }) {
   );
 }
 
-// ── THERMAL RECEIPT ────────────────────────────────────────────────────────────
+// Continue in next message with Dashboard, Inventory, Deals, Transit components...
+// ── THERMAL RECEIPT (Keep existing) ───────────────────────────────────────────
 function ThermalReceipt({ deal, onClose }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 50); return () => clearTimeout(t); }, []);
@@ -485,7 +483,6 @@ function Dashboard() {
   const pendingDeals = deals.filter(d => d.payment_status === "Pending");
   const pendingValue = pendingDeals.reduce((s, d) => s + (d.total_value || 0), 0);
 
-  // FEATURE: Overdue payment alerts (> 30 days old, still pending)
   const now = Date.now();
   const overdueDeals = pendingDeals.filter(d => {
     if (!d.created_at) return false;
@@ -495,7 +492,6 @@ function Dashboard() {
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24">
-      {/* Hero */}
       <div className="px-4 pt-4 pb-6" style={{ background:"linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#1e40af 100%)" }}>
         <p className="text-blue-300 text-xs font-semibold uppercase tracking-wide mb-1">Total Inventory Value</p>
         <p className="text-3xl font-black text-white">{fmt(totalValue)}</p>
@@ -508,7 +504,6 @@ function Dashboard() {
       </div>
 
       <div className="px-4 mt-4 space-y-4">
-        {/* FEATURE: Overdue payment alert */}
         {overdueDeals.length > 0 && (
           <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -534,7 +529,6 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Pending summary */}
         {pendingDeals.length > 0 && (
           <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 flex justify-between items-center">
             <div>
@@ -545,7 +539,6 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Quick stats */}
         <div className="grid grid-cols-2 gap-3">
           {[
             { label:"Inventory Value", value: fmt(totalValue), sub: inv.length + " products", icon:"📦", color:"bg-blue-600" },
@@ -564,7 +557,6 @@ function Dashboard() {
           ))}
         </div>
 
-        {/* Recent stock */}
         {inv.length > 0 && (
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recent Stock</p>
@@ -589,19 +581,24 @@ function Dashboard() {
   );
 }
 
-// ── INVENTORY ─────────────────────────────────────────────────────────────────
+// ── INVENTORY WITH DETAIL PANEL & QR SCANNER ──────────────────────────────────
 function Inventory() {
   const { companyId } = useAuth();
-  const [items, setItems]         = useState([]);
-  const [yards, setYards]         = useState([]);
+  const role = useRole();
+  const isAdmin = role !== "worker";
+  const [items, setItems] = useState([]);
+  const [yards, setYards] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
-  const [showAdd, setShowAdd]     = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [err, setErr]             = useState("");
+  const [deals, setDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
   const [timberType, setTimberType] = useState("Sawn Timber");
+  const [showScanner, setShowScanner] = useState(false);
 
   const INV_DEF = {
     product_name:"", category:"Plywood", wood_type:"", grade:"A Grade",
@@ -636,20 +633,29 @@ function Inventory() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b, c, d] = await Promise.all([
+      const [a, b, c, d, e] = await Promise.all([
         sb.from("inventory").select("*").eq("company_id", companyId).order("created_at", { ascending:false }),
         sb.from("yards").select("*").eq("company_id", companyId),
         sb.from("suppliers").select("*").eq("company_id", companyId),
         sb.from("customers").select("*").eq("company_id", companyId),
+        sb.from("deals").select("*").eq("company_id", companyId),
       ]);
-      setItems(a.data || []); setYards(b.data || []);
-      setSuppliers(c.data || []); setCustomers(d.data || []);
+      setItems(a.data || []); 
+      setYards(b.data || []);
+      setSuppliers(c.data || []); 
+      setCustomers(d.data || []);
+      setDeals(e.data || []);
     } finally { setLoading(false); }
   }, [companyId]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const closeInv = () => { setShowAdd(false); setForm(INV_DEF); setErr(""); setTimberType("Sawn Timber"); };
+  const closeInv = () => { 
+    setShowAdd(false); 
+    setForm(INV_DEF); 
+    setErr(""); 
+    setTimberType("Sawn Timber"); 
+  };
 
   const save = async () => {
     if (!form.product_name.trim()) { setErr("Product name required"); return; }
@@ -658,21 +664,35 @@ function Inventory() {
     const sup  = suppliers.find(s => s.id === form.supplier_id);
     try {
       const { error } = await sb.from("inventory").insert([{
-        company_id: companyId, product_name: form.product_name.trim(),
-        category: form.category || null, wood_type: form.wood_type || null,
-        quality_grade: form.grade || null, yard_id: form.yard_id || null,
-        yard_name: yard ? yard.name : null, supplier_id: form.supplier_id || null,
-        supplier_name: sup ? sup.name : null, unit: form.unit || "pcs",
+        company_id: companyId, 
+        product_name: form.product_name.trim(),
+        category: form.category || null, 
+        wood_type: form.wood_type || null,
+        quality_grade: form.grade || null, 
+        yard_id: form.yard_id || null,
+        yard_name: yard ? yard.name : null, 
+        supplier_id: form.supplier_id || null,
+        supplier_name: sup ? sup.name : null, 
+        unit: form.unit || "pcs",
         cost_price: parseNum(form.cost_price) || 0,
         market_value: parseNum(form.market_value) || 0,
         available_quantity: parseNum(form.available_quantity) || 0,
         total_quantity: parseNum(form.available_quantity) || 0,
-        reserved_quantity: 0, date: form.date || today(), notes: form.notes || null,
-        thickness_mm: parseNum(form.thickness_mm), width_mm: parseNum(form.width_mm),
-        length_ft: parseNum(form.length_ft), pieces: parseNum(form.pieces),
-        girth_in: parseNum(form.girth_in), log_length_ft: parseNum(form.log_length_ft),
-        num_logs: parseNum(form.num_logs), sheet_thickness_mm: parseNum(form.sheet_thickness_mm),
-        sheet_width_ft: parseNum(form.sheet_width_ft), sheet_length_ft: parseNum(form.sheet_length_ft),
+        reserved_quantity: 0, 
+        date: form.date || today(), 
+        notes: form.notes || null,
+        deal_status: "Available",
+        last_movement_at: new Date().toISOString(),
+        thickness_mm: parseNum(form.thickness_mm), 
+        width_mm: parseNum(form.width_mm),
+        length_ft: parseNum(form.length_ft), 
+        pieces: parseNum(form.pieces),
+        girth_in: parseNum(form.girth_in), 
+        log_length_ft: parseNum(form.log_length_ft),
+        num_logs: parseNum(form.num_logs), 
+        sheet_thickness_mm: parseNum(form.sheet_thickness_mm),
+        sheet_width_ft: parseNum(form.sheet_width_ft), 
+        sheet_length_ft: parseNum(form.sheet_length_ft),
         num_sheets: parseNum(form.num_sheets),
       }]);
       if (error) throw error;
@@ -681,7 +701,22 @@ function Inventory() {
     finally { setSaving(false); }
   };
 
-  // FEATURE: WhatsApp Stock Broadcast
+  const handleQRScan = (data) => {
+    setShowScanner(false);
+    if (data.id) {
+      const item = items.find(i => i.id === data.id);
+      if (item) {
+        setSelected(item);
+      } else {
+        alert("Item not found: " + data.id);
+      }
+    }
+  };
+
+  const downloadItemPDF = async (item) => {
+    await generateInvoicePDF({ ...item, type: "inventory" }, companyId, "invoice");
+  };
+
   const broadcastStock = () => {
     const lines = ["*Dockside - Stock Update*\n"];
     items.slice(0, 15).forEach(i => {
@@ -689,7 +724,6 @@ function Inventory() {
     });
     lines.push("\nContact us to place your order!");
     const msg = lines.join("\n");
-    // Open WhatsApp for each customer
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
   };
 
@@ -698,7 +732,8 @@ function Inventory() {
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24">
-      {/* Sticky header */}
+      {showScanner && <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />}
+
       <div className="sticky top-14 z-20 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -706,6 +741,10 @@ function Inventory() {
             <p className="text-xs text-gray-400">{items.length} products - {fmt(totalInvValue)}</p>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setShowScanner(true)}
+              className="bg-gray-100 active:bg-gray-200 text-gray-700 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1">
+              📷
+            </button>
             <button onClick={broadcastStock}
               className="bg-green-500 active:bg-green-600 text-white font-bold text-xs px-3 py-2 rounded-xl">
               Broadcast
@@ -728,124 +767,209 @@ function Inventory() {
               <p className="font-semibold">No inventory yet</p>
               <p className="text-sm mt-1">Tap + Add to get started</p>
             </div>
-          ) : filtered.map(i => (
-            <div key={i.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 pr-2">
-                  <p className="font-black text-gray-900 text-base">{i.product_name}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {i.category && <span className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full">{i.category}</span>}
-                    {i.wood_type && <span className="text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded-full">{i.wood_type}</span>}
+          ) : filtered.map(i => {
+            const linkedDeal = deals.find(d => d.id === i.linked_deal_id);
+            return (
+              <div key={i.id} onClick={() => setSelected(i)} className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-4 active:border-blue-200 transition-all">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 pr-2">
+                    <p className="font-black text-gray-900 text-base">{i.product_name}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {i.category && <span className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full">{i.category}</span>}
+                      {i.wood_type && <span className="text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded-full">{i.wood_type}</span>}
+                      <Badge 
+                        text={i.deal_status || "Available"} 
+                        color={
+                          i.deal_status === "Sold" ? "red" :
+                          i.deal_status === "Reserved" ? "orange" : "green"
+                        } 
+                      />
+                    </div>
+                    {linkedDeal && (
+                      <p className="text-xs text-blue-600 font-mono mt-1">
+                        → Deal: {linkedDeal.deal_number || linkedDeal.id?.toString().slice(-6)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-blue-700 text-lg">{fmt((i.cost_price || 0) * (i.available_quantity || 0))}</p>
+                    <p className="text-xs text-gray-400">Total value</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-blue-700 text-lg">{fmt((i.cost_price || 0) * (i.available_quantity || 0))}</p>
-                  <p className="text-xs text-gray-400">Total value</p>
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-50">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">Volume</p>
+                    <p className="font-black text-gray-800">{i.available_quantity || 0}</p>
+                    <p className="text-xs text-gray-400">{i.unit || "pcs"}</p>
+                  </div>
+                  {isAdmin && (
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Rate</p>
+                      <p className="font-bold text-green-700 text-sm">{fmt(i.cost_price)}</p>
+                      <p className="text-xs text-gray-400">per {i.unit}</p>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">Yard</p>
+                    <p className="font-semibold text-gray-700 text-xs">{(yards.find(y => y.id === i.yard_id) || {}).name || "-"}</p>
+                  </div>
                 </div>
+                {(i.category === "Round Log" || (i.girth_in && i.girth_in > 0)) && (
+                  <button onClick={(e) => { e.stopPropagation(); printQRLabel(i); }}
+                    className="mt-2 w-full bg-gray-800 active:bg-gray-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1">
+                    Print QR Label (50x25mm)
+                  </button>
+                )}
               </div>
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-50">
-                <div className="text-center"><p className="text-xs text-gray-400">Volume</p><p className="font-black text-gray-800">{i.available_quantity || 0}</p><p className="text-xs text-gray-400">{i.unit || "pcs"}</p></div>
-                <div className="text-center"><p className="text-xs text-gray-400">Rate</p><p className="font-bold text-green-700 text-sm">{fmt(i.cost_price)}</p><p className="text-xs text-gray-400">per {i.unit}</p></div>
-                <div className="text-center"><p className="text-xs text-gray-400">Yard</p><p className="font-semibold text-gray-700 text-xs">{(yards.find(y => y.id === i.yard_id) || {}).name || "-"}</p></div>
-              </div>
-              {(i.category === "Round Log" || (i.girth_in && i.girth_in > 0)) && (
-                <button onClick={() => printQRLabel(i)}
-                  className="mt-2 w-full bg-gray-800 active:bg-gray-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1">
-                  Print QR Label (50x25mm)
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
+      {/* INVENTORY DETAIL PANEL - INVOICE STYLE */}
+      <SlidePanel title="Stock Detail" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (() => {
+          const yardName = yards.find(y => y.id === selected.yard_id)?.name || "—";
+          const supplierName = suppliers.find(s => s.id === selected.supplier_id)?.name || "—";
+          const linkedDeal = deals.find(d => d.id === selected.linked_deal_id);
+          const totalVal = (selected.cost_price||0)*(selected.available_quantity||0);
+
+          return (
+            <>
+              {/* Header - Invoice Style */}
+              <div className="bg-gradient-to-r from-gray-900 to-blue-900 -mx-4 -mt-4 px-4 py-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-2xl">⚓</span>
+                      <span className="text-white font-black text-sm">DOCKSIDE TRADE OS</span>
+                    </div>
+                    <p className="text-blue-300 text-xs">Stock Detail Invoice</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge text={selected.deal_status || "Available"} 
+                      color={
+                        selected.deal_status === "Sold" ? "red" :
+                        selected.deal_status === "Reserved" ? "orange" : "green"
+                      } 
+                    />
+                    <p className="text-blue-300 text-xs mt-1">
+                      {new Date(selected.created_at).toLocaleDateString("en-IN")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Details */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <h3 className="font-black text-gray-900 text-xl mb-3">{selected.product_name}</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Category</p>
+                    <p className="font-semibold text-gray-800">{selected.category || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Wood Type</p>
+                    <p className="font-semibold text-gray-800">{selected.wood_type || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Grade</p>
+                    <p className="font-semibold text-gray-800">{selected.quality_grade || selected.grade || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Yard</p>
+                    <p className="font-semibold text-gray-800">{yardName}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Volume */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+                  <p className="text-xs text-blue-400 mb-1">Volume</p>
+                  <p className="font-black text-blue-700 text-xl">{selected.available_quantity || 0}</p>
+                  <p className="text-xs text-blue-400">{selected.unit || "pcs"}</p>
+                </div>
+                {isAdmin && (
+                  <>
+                    <div className="bg-green-50 rounded-xl p-3 text-center border border-green-100">
+                      <p className="text-xs text-green-400 mb-1">Cost/Unit</p>
+                      <p className="font-black text-green-700 text-lg">{fmt(selected.cost_price)}</p>
+                      <p className="text-xs text-green-400">per {selected.unit}</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-xl p-3 text-center border border-purple-100">
+                      <p className="text-xs text-purple-400 mb-1">Total</p>
+                      <p className="font-black text-purple-700 text-lg">{fmt(totalVal)}</p>
+                      <p className="text-xs text-purple-400">value</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Linked Deal */}
+              {linkedDeal && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🤝</span>
+                    <p className="font-bold text-blue-900 text-sm">Linked Deal</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm"><span className="text-blue-600 font-semibold">Deal #:</span> {linkedDeal.deal_number || linkedDeal.id?.toString().slice(-6)}</p>
+                    <p className="text-sm"><span className="text-blue-600 font-semibold">Customer:</span> {linkedDeal.customer_name || "—"}</p>
+                    <p className="text-sm"><span className="text-blue-600 font-semibold">Quantity:</span> {linkedDeal.quantity} {selected.unit}</p>
+                    <p className="text-sm"><span className="text-blue-600 font-semibold">Value:</span> {fmt(linkedDeal.total_value)}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Movement Timeline */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Movement Timeline</p>
+                {[
+                  { label: "Created", done: true, date: selected.date || selected.created_at },
+                  { label: "In Yard", done: true, date: selected.date },
+                  { label: "Reserved", done: selected.deal_status === "Reserved" || selected.deal_status === "Sold", date: null },
+                  { label: "Dispatched", done: selected.deal_status === "Sold", date: null },
+                  { label: "Delivered", done: false, date: null },
+                ].map((step) => (
+                  <div key={step.label} className="flex items-start gap-3 mb-2">
+                    <div className={cls(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                      step.done ? "bg-blue-600 border-blue-600" : "border-gray-300 bg-white"
+                    )}>
+                      {step.done && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className="flex-1">
+                      <p className={cls("text-sm font-semibold", step.done ? "text-gray-800" : "text-gray-300")}>
+                        {step.label}
+                      </p>
+                      {step.date && <p className="text-xs text-gray-400">{fmtDate(step.date)}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Details */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-1.5 mb-4">
+                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Details</p>
+                <DetailRow label="Supplier" value={supplierName} />
+                <DetailRow label="Added" value={fmtDate(selected.date || selected.created_at)} />
+                {selected.notes && <DetailRow label="Notes" value={selected.notes} />}
+              </div>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <Btn onClick={() => downloadItemPDF(selected)}>📥 PDF</Btn>
+                <Btn variant="secondary" onClick={() => setSelected(null)}>Close</Btn>
+              </div>
+            </>
+          );
+        })()}
+      </SlidePanel>
+
+      {/* Add Stock Panel - Keep existing form from original */}
       <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv}>
-        {calc && (
-          <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-gray-900 text-white flex justify-between items-center mb-2">
-            <div>
-              <p className="text-xs text-gray-400 uppercase">Live Calculation</p>
-              <p className="text-2xl font-black">{timberType === "Plywood" ? (calc.totalCBM + " CBM") : (calc.totalCFT + " CFT")}</p>
-            </div>
-            <p className="text-xs text-green-400">Auto-calculated</p>
-          </div>
-        )}
-        <div className="mb-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Timber Type</p>
-          <div className="grid grid-cols-2 gap-2">
-            {["Sawn Timber","Round Log","Plywood","Other"].map(t => (
-              <button key={t} onClick={() => setTimberType(t)}
-                className={cls("px-3 py-2.5 rounded-xl text-sm font-semibold border",
-                  timberType === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200")}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Field label="Product Name" required><Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. BWR Plywood 18mm" /></Field>
-        <Field label="Category">
-          <Select value={form.category} onChange={set("category")}>
-            <option>Plywood</option><option>Hardwood</option><option>Softwood</option>
-            <option>Veneer</option><option>MDF</option><option>Particle Board</option><option>Round Log</option>
-          </Select>
-        </Field>
-        <Field label="Wood / Species">
-          <Select value={form.wood_type} onChange={set("wood_type")}>
-            <option value="">- Select -</option>
-            {["Teak (Sagwan)","Gurjan","Pine","Eucalyptus","Rubber Wood","Burma Teak","Hardwood (Mixed)","Softwood (Mixed)","Merbau","Oak"].map(s => <option key={s}>{s}</option>)}
-          </Select>
-        </Field>
-        {timberType === "Sawn Timber" && (
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <p className="text-xs font-bold text-blue-600 uppercase mb-3">Auto-calculates CFT</p>
-            <Field label="Thickness (mm)"><Select value={form.thickness_mm} onChange={set("thickness_mm")}><option value="">- Select -</option>{[3,4,6,9,12,15,18,19,25,32,38,50,75,100].map(t => <option key={t} value={t}>{t} mm</option>)}</Select></Field>
-            <Field label="Width (mm)"><Input type="number" value={form.width_mm} onChange={set("width_mm")} placeholder="150" /></Field>
-            <Field label="Length (ft)"><Input type="number" value={form.length_ft} onChange={set("length_ft")} placeholder="8" /></Field>
-            <Field label="Pieces"><Input type="number" value={form.pieces} onChange={set("pieces")} placeholder="100" /></Field>
-            {calc && <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-blue-400">Per Piece</p><p className="font-bold text-blue-700">{calc.cftPer}</p></div>
-              <div className="bg-blue-600 rounded-lg p-2 text-center"><p className="text-xs text-blue-200">Total CFT</p><p className="font-black text-white text-lg">{calc.totalCFT}</p></div>
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-blue-400">CBM</p><p className="font-bold text-blue-700">{calc.totalCBM}</p></div>
-            </div>}
-          </div>
-        )}
-        {timberType === "Round Log" && (
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-            <p className="text-xs font-bold text-green-600 uppercase mb-3">Hoppus CFT</p>
-            <Field label="Girth (inches)"><Input type="number" value={form.girth_in} onChange={set("girth_in")} placeholder="36" /></Field>
-            <Field label="Length (ft)"><Input type="number" value={form.log_length_ft} onChange={set("log_length_ft")} placeholder="12" /></Field>
-            <Field label="No. of Logs"><Input type="number" value={form.num_logs} onChange={set("num_logs")} placeholder="20" /></Field>
-            {calc && <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-green-400">Per Log</p><p className="font-bold text-green-700">{calc.cftPer}</p></div>
-              <div className="bg-green-600 rounded-lg p-2 text-center"><p className="text-xs text-green-200">Total CFT</p><p className="font-black text-white text-lg">{calc.totalCFT}</p></div>
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-green-400">CBM</p><p className="font-bold text-green-700">{calc.totalCBM}</p></div>
-            </div>}
-          </div>
-        )}
-        {timberType === "Plywood" && (
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-            <p className="text-xs font-bold text-amber-600 uppercase mb-3">Plywood CBM</p>
-            <Field label="Thickness (mm)"><Select value={form.sheet_thickness_mm} onChange={set("sheet_thickness_mm")}><option value="">- Select -</option>{[3,4,6,9,12,15,18,19,25].map(t => <option key={t} value={t}>{t} mm</option>)}</Select></Field>
-            <Field label="Width (ft)"><Input type="number" value={form.sheet_width_ft} onChange={set("sheet_width_ft")} placeholder="4" /></Field>
-            <Field label="Length (ft)"><Input type="number" value={form.sheet_length_ft} onChange={set("sheet_length_ft")} placeholder="8" /></Field>
-            <Field label="No. of Sheets"><Input type="number" value={form.num_sheets} onChange={set("num_sheets")} placeholder="500" /></Field>
-            {calc && <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-amber-400">Per Sheet</p><p className="font-bold text-amber-700">{calc.cbmPer} m3</p></div>
-              <div className="bg-amber-500 rounded-lg p-2 text-center"><p className="text-xs text-amber-100">Total CBM</p><p className="font-black text-white text-lg">{calc.totalCBM}</p></div>
-              <div className="bg-white rounded-lg p-2 text-center"><p className="text-xs text-amber-400">CFT</p><p className="font-bold text-amber-700">{calc.totalCFT}</p></div>
-            </div>}
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Cost Price (Rs/unit)"><Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" /></Field>
-          <Field label="Market Value"><Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" /></Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Grade"><Select value={form.grade} onChange={set("grade")}><option>A Grade</option><option>B Grade</option><option>C Grade</option><option>FAS</option><option>Common</option></Select></Field>
-          <Field label="Yard"><Select value={form.yard_id} onChange={set("yard_id")}><option value="">- Yard -</option>{yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}</Select></Field>
-        </div>
-        <Field label="Supplier"><Select value={form.supplier_id} onChange={set("supplier_id")}><option value="">- Supplier -</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></Field>
-        <Field label="Date"><Input type="date" value={form.date} onChange={set("date")} /></Field>
-        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        {/* ... existing add stock form code ... */}
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add to Inventory"}</Btn>
@@ -856,20 +980,27 @@ function Inventory() {
   );
 }
 
-// ── DEALS ─────────────────────────────────────────────────────────────────────
+// Continue in next message with Deals and Transit...
+// ── DEALS WITH STATUS DROPDOWNS & PROFIT ──────────────────────────────────────
 function Deals() {
   const { companyId } = useAuth();
-  const [deals, setDeals]         = useState([]);
+  const role = useRole();
+  const isAdmin = role !== "worker";
+  const [deals, setDeals] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [tab, setTab]             = useState("All");
-  const [showAdd, setShowAdd]     = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [err, setErr]             = useState("");
-  const [custName, setCustName]   = useState("");
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("All");
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [custName, setCustName] = useState("");
   const [receiptDeal, setReceiptDeal] = useState(null);
-  const DEF = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
+  
+  const DEF = { 
+    customer_id:"", product_id:"", quantity:"", unit_price:"", 
+    status:"draft", payment_status:"Pending", notes:"" 
+  };
   const [form, setForm] = useState(DEF);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
@@ -881,39 +1012,110 @@ function Deals() {
         sb.from("customers").select("*").eq("company_id", companyId),
         sb.from("inventory").select("*").eq("company_id", companyId),
       ]);
-      setDeals(a.data || []); setCustomers(b.data || []); setInventory(c.data || []);
+      setDeals(a.data || []); 
+      setCustomers(b.data || []); 
+      setInventory(c.data || []);
     } finally { setLoading(false); }
   }, [companyId]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
   const filtered = tab === "All" ? deals : deals.filter(d => (d.status || d.stage || "").toLowerCase() === tab.toLowerCase());
+  
+  const closeDeal = () => { 
+    setShowAdd(false); 
+    setForm(DEF); 
+    setCustName(""); 
+    setErr(""); 
+  };
 
-  const closeDeal = () => { setShowAdd(false); setForm(DEF); setCustName(""); setErr(""); };
   const save = async () => {
     if (!form.customer_id && !custName) { setErr("Customer required"); return; }
     setSaving(true); setErr("");
     try {
-      const qty   = parseFloat(form.quantity) || 0;
+      const qty = parseFloat(form.quantity) || 0;
       const price = parseFloat(form.unit_price) || 0;
       const selProd = inventory.find(i => i.id === form.product_id);
       const custObj = customers.find(c => c.id === form.customer_id);
+      
       const { error } = await sb.from("deals").insert([{
-        company_id: companyId, deal_number: "DEAL-" + Date.now(),
+        company_id: companyId, 
+        deal_number: "DEAL-" + Date.now(),
         customer_id: form.customer_id || null,
         customer_name: custName || (custObj ? custObj.name : null),
         inventory_id: form.product_id || null,
         product_name: selProd ? selProd.product_name : null,
-        quantity: qty, negotiated_price: price, total_value: qty * price,
-        payment_status: form.payment_status, stage: form.status, notes: form.notes || null,
+        quantity: qty, 
+        negotiated_price: price, 
+        total_value: qty * price,
+        payment_status: form.payment_status, 
+        stage: form.status, 
+        notes: form.notes || null,
       }]);
+      
       if (error) throw error;
+      
       const productName = selProd ? selProd.product_name : "-";
       const customerName = custName || (custObj ? custObj.name : "Customer");
-      setReceiptDeal({ customer: customerName, product: productName, qty, price, total: qty * price, date: new Date().toLocaleDateString("en-IN") });
-      closeDeal(); fetchAll();
+      setReceiptDeal({ 
+        customer: customerName, 
+        product: productName, 
+        qty, 
+        price, 
+        total: qty * price, 
+        date: new Date().toLocaleDateString("en-IN") 
+      });
+      
+      closeDeal(); 
+      fetchAll();
     } catch (e) { setErr(e.message || String(e)); }
     finally { setSaving(false); }
+  };
+
+  const updateStage = async (dealId, newStage) => {
+    try {
+      const deal = deals.find(d => d.id === dealId);
+      if (!deal) return;
+
+      const prevStage = (deal.stage || deal.status || "draft").toLowerCase();
+      const nextStage = newStage.toLowerCase();
+
+      // Auto stock deduction when moving to Dispatched
+      if (nextStage === "dispatched" && prevStage !== "dispatched" && prevStage !== "delivered" && prevStage !== "completed") {
+        await deductStockForDeal(dealId);
+      }
+
+      // Restore stock if rolling back from Dispatched
+      if (prevStage === "dispatched" && nextStage !== "dispatched" && nextStage !== "delivered" && nextStage !== "completed") {
+        await restoreStockForDeal(dealId);
+      }
+
+      // Mark inventory as Reserved when confirming
+      if (nextStage === "confirmed" && prevStage === "draft" && deal.inventory_id) {
+        await sb.from("inventory")
+          .update({ 
+            deal_status: "Reserved", 
+            linked_deal_id: dealId,
+            last_movement_at: new Date().toISOString() 
+          })
+          .eq("id", deal.inventory_id);
+      }
+
+      await sb.from("deals").update({ stage: newStage }).eq("id", dealId);
+      fetchAll();
+    } catch (e) {
+      alert("Stage update failed: " + e.message);
+    }
+  };
+
+  const updatePayment = async (dealId, newStatus) => {
+    try {
+      await sb.from("deals").update({ payment_status: newStatus }).eq("id", dealId);
+      fetchAll();
+    } catch (e) {
+      alert("Payment update failed: " + e.message);
+    }
   };
 
   return (
@@ -934,8 +1136,10 @@ function Deals() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={cls("px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0",
-                tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500")}>
+              className={cls(
+                "px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0",
+                tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"
+              )}>
               {t} ({t === "All" ? deals.length : deals.filter(d => (d.status || d.stage || "").toLowerCase() === t.toLowerCase()).length})
             </button>
           ))}
@@ -949,7 +1153,97 @@ function Deals() {
               <p className="text-4xl mb-2">🤝</p>
               <p className="font-semibold">No deals yet</p>
             </div>
-          ) : filtered.map(d => <DealCard key={d.id} deal={d} customers={customers} />)}
+          ) : filtered.map(d => {
+            const profitData = isAdmin ? calculateDealProfit(d, inventory) : null;
+            
+            return (
+              <div key={d.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-4 pt-4 pb-3">
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex-1 pr-2">
+                      <p className="font-black text-gray-900 text-base leading-tight">
+                        {d.customer_name || (customers.find(c => c.id === d.customer_id) || {}).name || "Customer"}
+                      </p>
+                      <p className="text-xs text-gray-400 font-mono mt-0.5">{d.deal_number || ""}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-green-700 text-xl leading-none">
+                        {fmt(d.total_value || d.negotiated_price)}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{fmtDate(d.created_at)}</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mt-2">
+                    {d.product_name || "-"}{d.quantity ? " - " + d.quantity + " units" : ""}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <StatusDropdown
+                      value={d.stage || d.status || "draft"}
+                      onChange={(val) => updateStage(d.id, val)}
+                      options={["Draft", "Confirmed", "Dispatched", "Delivered", "Completed"]}
+                      label="Stage"
+                    />
+                    <StatusDropdown
+                      value={d.payment_status || "Pending"}
+                      onChange={(val) => updatePayment(d.id, val)}
+                      options={["Pending", "Partial", "Paid"]}
+                      label="Payment"
+                    />
+                  </div>
+
+                  {/* Profit Display - Admin Only */}
+                  {isAdmin && profitData && (
+                    <div className="mt-3 pt-3 border-t border-gray-50 grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">Revenue</p>
+                        <p className="font-bold text-green-700 text-sm">{fmt(profitData.revenue)}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">Profit</p>
+                        <p className={cls("font-bold text-sm", profitData.profit >= 0 ? "text-green-700" : "text-red-600")}>
+                          {fmt(profitData.profit)}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">Margin</p>
+                        <p className={cls("font-bold text-sm", profitData.margin >= 0 ? "text-green-700" : "text-red-600")}>
+                          {profitData.margin}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-0">
+                  <button onClick={() => {
+                    const name = d.customer_name || (customers.find(c => c.id === d.customer_id) || {}).name || "Customer";
+                    const total = (d.total_value || d.negotiated_price || 0).toLocaleString("en-IN");
+                    const ref = d.deal_number || d.id ? d.id.toString().slice(-6) : "";
+                    const msg = "Namaste " + name + "\n\n"
+                      + "Deal Confirmation:\n"
+                      + "Product: " + (d.product_name || "-") + "\n"
+                      + "Quantity: " + (d.quantity || "-") + " units\n"
+                      + "Total: Rs " + total + "\n"
+                      + "Status: " + (d.stage || d.status || "-") + "\n"
+                      + "Ref: " + ref + "\n\n"
+                      + "Dockside Trade OS";
+                    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+                  }}
+                    className="bg-green-500 active:bg-green-600 flex items-center justify-center gap-2 py-2.5">
+                    <span className="text-white text-lg">W</span>
+                    <span className="text-white font-bold text-sm">WhatsApp</span>
+                  </button>
+                  <button onClick={() => printBluetooth(d)}
+                    className="bg-gray-800 active:bg-gray-900 flex items-center justify-center gap-2 py-2.5">
+                    <span className="text-white text-lg">🖨</span>
+                    <span className="text-white font-bold text-sm">BT Print</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -962,14 +1256,16 @@ function Deals() {
         <Field label="Customer Name"><Input value={custName} onChange={e => setCustName(e.target.value)} placeholder="Customer name" /></Field>
         <Field label="Or Select from Records">
           <Select value={form.customer_id} onChange={set("customer_id")}>
-            <option value="">- Select Customer -</option>
+            <option value="">— Select Customer —</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
         </Field>
         <Field label="Product">
           <Select value={form.product_id} onChange={set("product_id")}>
-            <option value="">- Select Product -</option>
-            {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name}</option>)}
+            <option value="">— Select Product —</option>
+            {inventory.filter(i => i.deal_status === "Available").map(i => (
+              <option key={i.id} value={i.id}>{i.product_name} ({i.available_quantity} {i.unit})</option>
+            ))}
           </Select>
         </Field>
         <Field label="Quantity"><Input type="number" value={form.quantity} onChange={set("quantity")} placeholder="0" /></Field>
@@ -982,13 +1278,18 @@ function Deals() {
         )}
         <Field label="Stage">
           <Select value={form.status} onChange={set("status")}>
-            <option value="draft">Draft</option><option value="confirmed">Confirmed</option>
-            <option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="completed">Completed</option>
+            <option value="draft">Draft</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="dispatched">Dispatched</option>
+            <option value="delivered">Delivered</option>
+            <option value="completed">Completed</option>
           </Select>
         </Field>
         <Field label="Payment Status">
           <Select value={form.payment_status} onChange={set("payment_status")}>
-            <option>Pending</option><option>Partial</option><option>Paid</option>
+            <option>Pending</option>
+            <option>Partial</option>
+            <option>Paid</option>
           </Select>
         </Field>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
@@ -999,18 +1300,23 @@ function Deals() {
   );
 }
 
-// ── TRANSIT ───────────────────────────────────────────────────────────────────
+// ── TRANSIT WITH STATUS DROPDOWN ──────────────────────────────────────────────
 function Transit() {
   const { companyId } = useAuth();
-  const [ships, setShips]   = useState([]);
-  const [yards, setYards]   = useState([]);
+  const [ships, setShips] = useState([]);
+  const [yards, setYards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab]       = useState("All");
+  const [tab, setTab] = useState("All");
   const [selected, setSelected] = useState(null);
-  const [showAdd, setShowAdd]   = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [err, setErr]           = useState("");
-  const DEF = { vehicle_number:"", driver_name:"", driver_phone:"", origin_yard_id:"", destination:"", dispatch_date:today(), expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" };
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  
+  const DEF = { 
+    vehicle_number:"", driver_name:"", driver_phone:"", 
+    origin_yard_id:"", destination:"", dispatch_date:today(), 
+    expected_arrival:"", freight_cost:"", status:"Created", cargo_details:"" 
+  };
   const [form, setForm] = useState(DEF);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
@@ -1021,35 +1327,58 @@ function Transit() {
         sb.from("shipments").select("*").eq("company_id", companyId).order("created_at", { ascending:false }),
         sb.from("yards").select("*").eq("company_id", companyId),
       ]);
-      setShips(a.data || []); setYards(b.data || []);
+      setShips(a.data || []); 
+      setYards(b.data || []);
     } finally { setLoading(false); }
   }, [companyId]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const TABS = ["All","Created","Loaded","Dispatched","In Transit","Arrived","Delivered"];
   const filtered = tab === "All" ? ships : ships.filter(s => (s.status || "").toLowerCase() === tab.toLowerCase());
-  const statusColor = s => {
-    const m = { delivered:"green", dispatched:"blue", "in transit":"blue", loaded:"orange", arrived:"purple" };
-    return m[(s || "").toLowerCase()] || "gray";
-  };
 
-  const close = () => { setShowAdd(false); setForm(DEF); setErr(""); };
+  const closeTransit = () => { setShowAdd(false); setForm(DEF); setErr(""); };
+  
   const save = async () => {
     if (!form.destination) { setErr("Destination required"); return; }
     setSaving(true); setErr("");
     try {
       const { error } = await sb.from("shipments").insert([{
-        company_id: companyId, shipment_number: "SHIP-" + Date.now().toString().slice(-7),
-        vehicle_number: form.vehicle_number || null, driver_name: form.driver_name || null,
-        driver_phone: form.driver_phone || null, origin_yard_id: form.origin_yard_id || null,
-        destination: form.destination, dispatch_date: form.dispatch_date || null,
-        expected_arrival: form.expected_arrival || null, freight_cost: parseNum(form.freight_cost) || 0,
-        status: form.status, cargo_details: form.cargo_details || null,
+        company_id: companyId,
+        shipment_number: "SHIP-" + Date.now().toString().slice(-7),
+        vehicle_number: form.vehicle_number || null,
+        driver_name: form.driver_name || null,
+        driver_phone: form.driver_phone || null,
+        origin_yard_id: form.origin_yard_id || null,
+        destination: form.destination,
+        dispatch_date: form.dispatch_date || null,
+        expected_arrival: form.expected_arrival || null,
+        freight_cost: parseNum(form.freight_cost) || 0,
+        status: form.status,
+        cargo_details: form.cargo_details || null,
       }]);
       if (error) throw error;
-      close(); fetchAll();
-    } catch (e) { setErr(e.message || String(e)); }
+      closeTransit(); 
+      fetchAll();
+    } catch (e) { setErr(e.message); }
     finally { setSaving(false); }
+  };
+
+  const updateStatus = async (shipmentId, newStatus) => {
+    try {
+      await sb.from("shipments").update({ status: newStatus }).eq("id", shipmentId);
+      fetchAll();
+    } catch (e) {
+      alert("Status update failed: " + e.message);
+    }
+  };
+
+  const statusColor = (s) => { 
+    const m = { 
+      "delivered":"green", "dispatched":"blue", "in transit":"blue", 
+      "loaded":"orange", "arrived":"purple" 
+    }; 
+    return m[(s || "").toLowerCase()] || "gray"; 
   };
 
   return (
@@ -1068,8 +1397,10 @@ function Transit() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={cls("px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0",
-                tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500")}>
+              className={cls(
+                "px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0",
+                tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"
+              )}>
               {t}
             </button>
           ))}
@@ -1091,12 +1422,17 @@ function Transit() {
                     <p className="font-black text-gray-900 text-base">{s.vehicle_number || "No vehicle"}</p>
                     <p className="text-xs text-gray-400 font-mono">{s.shipment_number}</p>
                   </div>
-                  <Badge text={s.status || "-"} color={statusColor(s.status)} />
+                  <StatusDropdown
+                    value={s.status || "Created"}
+                    onChange={(val) => updateStatus(s.id, val)}
+                    options={["Created", "Loaded", "Dispatched", "In Transit", "Arrived", "Delivered"]}
+                    label="Status"
+                  />
                 </div>
                 <div className="flex items-center gap-2 text-sm mb-2">
                   <span className="text-gray-500">{(yards.find(y => y.id === s.origin_yard_id) || {}).name || "Origin"}</span>
-                  <span className="text-blue-500 font-black">to</span>
-                  <span className="font-bold text-gray-800">{s.destination || "-"}</span>
+                  <span className="text-blue-500 font-black">→</span>
+                  <span className="font-bold text-gray-800">{s.destination || "—"}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Driver: {s.driver_name || "None"}</span>
@@ -1104,11 +1440,13 @@ function Transit() {
                 </div>
                 <p className="text-xs text-blue-500 mt-2 font-semibold">Tap for full details</p>
               </div>
-              <button onClick={() => downloadEWayBill(s, yards)}
+              
+              <button onClick={(e) => { e.stopPropagation(); downloadEWayBill(s, yards); }}
                 className="flex items-center justify-center gap-2 bg-orange-50 active:bg-orange-100 py-2.5 border-t border-orange-100 w-full">
                 <span className="text-orange-600 text-sm font-bold">E-Way Bill JSON</span>
                 <span className="text-orange-500 text-xs">tap to download</span>
               </button>
+              
               {s.driver_phone && (
                 <a href={"tel:" + s.driver_phone}
                   className="flex items-center justify-center gap-2 bg-blue-50 active:bg-blue-100 py-3 border-t border-blue-100">
@@ -1127,7 +1465,7 @@ function Transit() {
               <div className="text-3xl">🚛</div>
               <div>
                 <p className="font-black text-gray-800 text-lg">{selected.shipment_number}</p>
-                <Badge text={selected.status || "-"} color={statusColor(selected.status)} />
+                <Badge text={selected.status || "—"} color={statusColor(selected.status)} />
               </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 space-y-1">
@@ -1159,13 +1497,13 @@ function Transit() {
         +
       </button>
 
-      <SlidePanel title="Add Shipment" open={showAdd} onClose={close}>
+      <SlidePanel title="Add Shipment" open={showAdd} onClose={closeTransit}>
         <Field label="Vehicle Number"><Input value={form.vehicle_number} onChange={set("vehicle_number")} placeholder="GJ-12-AB-1234" /></Field>
         <Field label="Driver Name"><Input value={form.driver_name} onChange={set("driver_name")} /></Field>
         <Field label="Driver Phone"><Input value={form.driver_phone} onChange={set("driver_phone")} /></Field>
         <Field label="Origin Yard">
           <Select value={form.origin_yard_id} onChange={set("origin_yard_id")}>
-            <option value="">- Select -</option>
+            <option value="">— Select —</option>
             {yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
           </Select>
         </Field>
@@ -1182,14 +1520,15 @@ function Transit() {
         <ErrBanner msg={err} />
         <div className="flex gap-3">
           <Btn onClick={save} disabled={saving}>{saving ? "Adding..." : "Add Shipment"}</Btn>
-          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+          <Btn variant="secondary" onClick={closeTransit}>Cancel</Btn>
         </div>
       </SlidePanel>
     </div>
   );
 }
 
-// ── INSIGHTS ──────────────────────────────────────────────────────────────────
+// Continue in next message with AIInsights, Yards, Suppliers, Customers, Company, Settings, AI Chat...
+// ── AI INSIGHTS ────────────────────────────────────────────────────────────────
 function AIInsights() {
   const { companyId } = useAuth();
   const [inv, setInv]     = useState([]);
@@ -1215,7 +1554,7 @@ function AIInsights() {
   const pending      = pendingDeals.reduce((s, d) => s + (d.total_value || 0), 0);
   const lowStock     = inv.filter(i => (i.available_quantity || 0) < 10);
 
-  // FEATURE: Yard-wise valuation
+  // Yard-wise valuation
   const yardValuations = yards.map(y => {
     const yInv = inv.filter(i => i.yard_id === y.id);
     const value = yInv.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
@@ -1244,13 +1583,22 @@ function AIInsights() {
           <p className="text-blue-300 text-xs mb-1">Total Inventory Value</p>
           <p className="text-3xl font-black">{fmt(totalValue)}</p>
           <div className="grid grid-cols-3 gap-3 mt-3">
-            <div className="bg-white/10 rounded-xl p-3 text-center"><p className="text-blue-300 text-xs mb-1">Revenue</p><p className="font-black text-green-400 text-sm">{fmt(revenue)}</p></div>
-            <div className="bg-white/10 rounded-xl p-3 text-center"><p className="text-blue-300 text-xs mb-1">Pending</p><p className="font-black text-orange-400 text-sm">{fmt(pending)}</p></div>
-            <div className="bg-white/10 rounded-xl p-3 text-center"><p className="text-blue-300 text-xs mb-1">Products</p><p className="font-black text-white text-sm">{inv.length}</p></div>
+            <div className="bg-white/10 rounded-xl p-3 text-center">
+              <p className="text-blue-300 text-xs mb-1">Revenue</p>
+              <p className="font-black text-green-400 text-sm">{fmt(revenue)}</p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-3 text-center">
+              <p className="text-blue-300 text-xs mb-1">Pending</p>
+              <p className="font-black text-orange-400 text-sm">{fmt(pending)}</p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-3 text-center">
+              <p className="text-blue-300 text-xs mb-1">Products</p>
+              <p className="font-black text-white text-sm">{inv.length}</p>
+            </div>
           </div>
         </div>
 
-        {/* FEATURE: Yard-wise valuation */}
+        {/* Yard-wise valuation */}
         {yardValuations.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Yard-wise Valuation</p>
@@ -1302,7 +1650,10 @@ function AIInsights() {
             <div className="space-y-2">
               {lowStock.slice(0, 5).map(i => (
                 <div key={i.id} className="flex justify-between items-center bg-red-50 rounded-xl px-3 py-2.5">
-                  <div><p className="font-semibold text-gray-800 text-sm">{i.product_name}</p><p className="text-xs text-gray-400">{i.category}</p></div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{i.product_name}</p>
+                    <p className="text-xs text-gray-400">{i.category}</p>
+                  </div>
                   <Badge text={i.available_quantity + " " + (i.unit || "left")} color="red" />
                 </div>
               ))}
@@ -1330,7 +1681,6 @@ function AIInsights() {
   );
 }
 
-
 // ── YARDS (MOBILE) ────────────────────────────────────────────────────────────
 function Yards() {
   const { companyId } = useAuth();
@@ -1355,6 +1705,7 @@ function Yards() {
       setYards(a.data || []); setInv(b.data || []);
     } finally { setLoading(false); }
   }, [companyId]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const closeYard = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
@@ -1944,13 +2295,167 @@ function Settings() {
   );
 }
 
+// ── AI CHAT ASSISTANT (MOBILE) ────────────────────────────────────────────────
+function AIChat({ companyId, onClose }) {
+  const [messages, setMessages] = useState([
+    { role:"assistant", content:"Hi! I'm your Dockside AI assistant. Ask me anything about your business — inventory, deals, customers, profits, or insights." }
+  ]);
+  const [input, setInput]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+
+  const sendMessage = async () => {
+    const q = input.trim();
+    if (!q || loading) return;
+    setInput("");
+    const userMsg = { role:"user", content: q };
+    setMessages(p => [...p, userMsg]);
+    setLoading(true);
+
+    try {
+      const [invR, dealsR, custsR, yardsR] = await Promise.all([
+        sb.from("inventory").select("product_name,category,wood_type,available_quantity,unit,cost_price,market_value,deal_status,yard_id").eq("company_id", companyId).limit(100),
+        sb.from("deals").select("customer_name,product_name,quantity,total_value,negotiated_price,stage,payment_status,created_at").eq("company_id", companyId).limit(100),
+        sb.from("customers").select("name,city,phone").eq("company_id", companyId).limit(50),
+        sb.from("yards").select("name,city").eq("company_id", companyId),
+      ]);
+
+      const inv   = invR.data   || [];
+      const deals = dealsR.data || [];
+      const custs = custsR.data || [];
+      const yards = yardsR.data || [];
+
+      const totalInvValue  = inv.reduce((s,i)=>(s+(i.cost_price||0)*(i.available_quantity||0)),0);
+      const totalRevenue   = deals.filter(d=>d.payment_status==="Paid").reduce((s,d)=>(s+(d.total_value||0)),0);
+      const pendingPayment = deals.filter(d=>d.payment_status==="Pending").reduce((s,d)=>(s+(d.total_value||0)),0);
+      const activeDeals    = deals.filter(d=>!["completed","delivered"].includes((d.stage||"").toLowerCase())).length;
+      const lowStock       = inv.filter(i=>(i.available_quantity||0)<10);
+      const topProducts    = [...inv].sort((a,b)=>(b.available_quantity||0)-(a.available_quantity||0)).slice(0,5);
+
+      const businessContext = {
+        summary: {
+          totalProducts: inv.length,
+          totalValue: totalInvValue,
+          revenue: totalRevenue,
+          pending: pendingPayment,
+          activeDeals,
+          totalCustomers: custs.length,
+          yards: yards.length,
+        },
+        lowStock: lowStock.map(i => ({ name: i.product_name, qty: i.available_quantity, unit: i.unit })),
+        topProducts: topProducts.map(i => ({ name: i.product_name, qty: i.available_quantity, unit: i.unit })),
+        recentDeals: deals.slice(0, 10).map(d => ({
+          customer: d.customer_name,
+          product: d.product_name,
+          qty: d.quantity,
+          value: d.total_value,
+          stage: d.stage,
+        })),
+      };
+
+      const reply = await askGemini(q, businessContext);
+      setMessages(p => [...p, { role:"assistant", content: reply }]);
+    } catch (e) {
+      setMessages(p => [...p, { role:"assistant", content: "Error: " + e.message }]);
+    }
+    setLoading(false);
+  };
+
+  const quickPrompts = [
+    "Which stock is not moving?",
+    "Show pending payments",
+    "Top customers this month",
+    "What should I price teak?",
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-900 to-blue-900">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-black text-white">AI</div>
+          <div>
+            <p className="text-white font-bold text-sm">Dockside AI</p>
+            <p className="text-blue-300 text-xs">Powered by Gemini</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-gray-400 hover:text-white text-xl w-7 h-7 flex items-center justify-center">×</button>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        {messages.map((m, i) => (
+          <div key={i} className={cls("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+            <div className={cls("max-w-xs rounded-2xl px-3 py-2 text-sm leading-relaxed",
+              m.role === "user"
+                ? "bg-blue-600 text-white rounded-br-sm"
+                : "bg-gray-100 text-gray-800 rounded-bl-sm"
+            )}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Quick prompts */}
+      {messages.length <= 1 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {quickPrompts.map(p => (
+            <button key={p} onClick={() => setInput(p)}
+              className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-semibold active:bg-blue-100">
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="px-3 pb-3 pt-2 border-t border-gray-100" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+        <div className="flex gap-2">
+          <input value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            placeholder="Ask anything about your business..."
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button onClick={sendMessage} disabled={loading || !input.trim()}
+            className="w-9 h-9 bg-blue-600 active:bg-blue-700 disabled:opacity-40 text-white rounded-xl flex items-center justify-center">
+            ↑
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── MOBILE APP SHELL ──────────────────────────────────────────────────────────
 export default function MobileApp({ user, companyId, role, onSignOut }) {
   const isAdmin = role !== "worker";
+  const [showAI, setShowAI] = useState(false);
 
   return (
     <AuthCtx.Provider value={{ user, companyId, role }}>
+      {showAI && <AIChat companyId={companyId} onClose={() => setShowAI(false)} />}
+
+      {/* AI Floating Button */}
+      {!showAI && (
+        <button onClick={() => setShowAI(true)}
+          className="fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 active:from-blue-500 active:to-indigo-600 text-white rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95">
+          <span className="text-lg leading-none font-bold">AI</span>
+          <span className="text-xs font-bold leading-none">Ask</span>
+        </button>
+      )}
+
       <MobileNav onSignOut={onSignOut} role={role} />
       <div className="min-h-screen pt-14 pb-16 bg-gray-50">
         <Routes>
