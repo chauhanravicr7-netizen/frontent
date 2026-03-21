@@ -168,6 +168,13 @@ function Dashboard() {
 
   const pendingPay = deals.filter(d => d.payment_status === "Pending").length;
 
+  const nowTs = Date.now();
+  const deadStock = inv.filter(i => {
+    const lastMove = i.last_movement_at || i.date || i.created_at;
+    if (!lastMove) return false;
+    const daysSince = (nowTs - new Date(lastMove).getTime()) / (1000 * 60 * 60 * 24);
+    return daysSince > DEAD_STOCK_DAYS && (i.available_quantity || 0) > 0 && (i.stock_status || "Available") !== "Sold";
+  });
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24 md:pb-4">
@@ -926,57 +933,21 @@ function Deals() {
   const { companyId } = useAuth();
   const role    = useRole();
   const isAdmin = role !== "worker";
-  const [deals, setDeals] = useState([]);
-  const [stageMenu, setStageMenu] = useState(null); // {dealId, rect}
+  const [deals, setDeals]         = useState([]);
   const [customers, setCustomers] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("All");
+  const [loading, setLoading]     = useState(true);
+  const [tab, setTab]             = useState("All");
   const [showAdd, setShowAdd]     = useState(false);
-  const [selected, setSelected]   = useState(null);  // row detail panel
   const [saving, setSaving]       = useState(false);
   const [err, setErr]             = useState("");
-  const [custName, setCustName] = useState("");
+  const [custName, setCustName]   = useState("");
+  const [stageMenu, setStageMenu] = useState(null);
   const DEAL_DEFAULTS = { customer_id:"", product_id:"", quantity:"", unit_price:"", status:"draft", payment_status:"Pending", notes:"" };
-
-  // Auto stock deduction when deal moves to Dispatched; restore on rollback
-  const updateDealStage = async (deal, newStage) => {
-    setStageMenu(null);
-    try {
-      const prevStage = (deal.stage || deal.status || "draft").toLowerCase();
-      const next      = newStage.toLowerCase();
-      const invId     = deal.inventory_id;
-
-      // Deduct stock when moving TO dispatched
-      if (invId && next === "dispatched" && prevStage !== "dispatched" && prevStage !== "delivered" && prevStage !== "completed") {
-        const qty = parseFloat(deal.quantity) || 0;
-        const { data: inv } = await sb.from("inventory").select("available_quantity,stock_status").eq("id", invId).single();
-        if (inv) {
-          const newQty = Math.max(0, (inv.available_quantity || 0) - qty);
-          await sb.from("inventory").update({ available_quantity: newQty, stock_status: "Sold", last_movement_at: new Date().toISOString() }).eq("id", invId);
-        }
-      }
-      // Restore stock on rollback FROM dispatched
-      if (invId && prevStage === "dispatched" && next !== "dispatched" && next !== "delivered" && next !== "completed") {
-        const qty = parseFloat(deal.quantity) || 0;
-        const { data: inv } = await sb.from("inventory").select("available_quantity").eq("id", invId).single();
-        if (inv) {
-          const restored = (inv.available_quantity || 0) + qty;
-          await sb.from("inventory").update({ available_quantity: restored, stock_status: "Available", last_movement_at: new Date().toISOString() }).eq("id", invId);
-        }
-      }
-      // Reserve on confirm
-      if (invId && next === "confirmed" && prevStage === "draft") {
-        await sb.from("inventory").update({ stock_status: "Reserved", last_movement_at: new Date().toISOString() }).eq("id", invId);
-      }
-
-      await sb.from("deals").update({ stage: newStage, status: newStage }).eq("id", deal.id);
-      fetchAll();
-    } catch (e) { alert("Stage update failed: " + e.message); }
-  };
   const [form, setForm] = useState(DEAL_DEFAULTS);
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}));
 
+  // fetchAll MUST be defined before updateDealStage (which calls it)
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -990,35 +961,75 @@ function Deals() {
   }, [companyId]);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // Auto stock deduction when deal moves to Dispatched; restore on rollback
+  const updateDealStage = async (deal, newStage) => {
+    setStageMenu(null);
+    try {
+      const prevStage = (deal.stage || deal.status || "draft").toLowerCase();
+      const next      = newStage.toLowerCase();
+      const invId     = deal.inventory_id;
+
+      if (invId && next === "dispatched" && prevStage !== "dispatched" && prevStage !== "delivered" && prevStage !== "completed") {
+        const qty = parseFloat(deal.quantity) || 0;
+        const { data: inv } = await sb.from("inventory").select("available_quantity,stock_status").eq("id", invId).single();
+        if (inv) {
+          const newQty = Math.max(0, (inv.available_quantity || 0) - qty);
+          await sb.from("inventory").update({ available_quantity: newQty, stock_status: "Sold", last_movement_at: new Date().toISOString() }).eq("id", invId);
+        }
+      }
+      if (invId && prevStage === "dispatched" && next !== "dispatched" && next !== "delivered" && next !== "completed") {
+        const qty = parseFloat(deal.quantity) || 0;
+        const { data: inv } = await sb.from("inventory").select("available_quantity").eq("id", invId).single();
+        if (inv) {
+          const restored = (inv.available_quantity || 0) + qty;
+          await sb.from("inventory").update({ available_quantity: restored, stock_status: "Available", last_movement_at: new Date().toISOString() }).eq("id", invId);
+        }
+      }
+      if (invId && next === "confirmed" && prevStage === "draft") {
+        await sb.from("inventory").update({ stock_status: "Reserved", last_movement_at: new Date().toISOString() }).eq("id", invId);
+      }
+      await sb.from("deals").update({ stage: newStage }).eq("id", deal.id);
+      fetchAll();
+    } catch (e) { alert("Stage update failed: " + e.message); }
+  };
+
   const TABS = ["All","Draft","Confirmed","Dispatched","Delivered","Completed"];
   const filtered = tab === "All" ? deals : deals.filter(d => (d.status||d.stage||"").toLowerCase() === tab.toLowerCase());
   const closeDeal = () => { setShowAdd(false); setForm(DEAL_DEFAULTS); setCustName(""); setErr(""); };
+
   const save = async () => {
     if (!form.customer_id && !custName) { setErr("Customer required"); return; }
     setSaving(true); setErr("");
     try {
-      const qty = parseFloat(form.quantity) || 0;
+      const qty   = parseFloat(form.quantity) || 0;
       const price = parseFloat(form.unit_price) || 0;
       const selProd = inventory.find(i => i.id === form.product_id);
+      const custObj = customers.find(c => c.id === form.customer_id);
       const { error } = await sb.from("deals").insert([{
-        company_id: companyId, deal_number: `DEAL-${Date.now()}`,
-        customer_id: form.customer_id || null, customer_name: custName || customers.find(c=>c.id===form.customer_id)?.name,
-        inventory_id: form.product_id || null, product_name: selProd?.product_name,
+        company_id: companyId, deal_number: "DEAL-" + Date.now(),
+        customer_id: form.customer_id || null,
+        customer_name: custName || (custObj ? custObj.name : null),
+        inventory_id: form.product_id || null,
+        product_name: selProd ? selProd.product_name : null,
         quantity: qty, negotiated_price: price, total_value: qty * price,
         payment_status: form.payment_status, stage: form.status, notes: form.notes || null,
       }]);
       if (error) throw error;
       closeDeal(); fetchAll();
-    } catch (e) { setErr(e.message); }
-    setSaving(false);
+    } catch (e) { setErr(e.message || String(e)); }
+    finally { setSaving(false); }
   };
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <div><h1 className="text-2xl font-black text-gray-800">Deals</h1><p className="text-gray-400 text-sm">{deals.length} total</p></div>
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Deals</h1>
+          <p className="text-gray-400 text-sm">{deals.length} total</p>
+        </div>
         <Btn onClick={() => setShowAdd(true)}>+ Create Deal</Btn>
       </div>
+
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={cls("px-4 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap", tab === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
@@ -1026,8 +1037,9 @@ function Deals() {
           </button>
         ))}
       </div>
+
       {loading ? <Spinner /> : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto" onClick={() => setStageMenu(null)}>
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -1038,20 +1050,17 @@ function Deals() {
             <tbody>
               {filtered.map(d => (
                 <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{d.deal_number || `#${d.id?.toString().slice(-6)}`}</td>
-                  <td className="px-4 py-3 font-semibold">{d.customer_name || customers.find(c=>c.id===d.customer_id)?.name || "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{d.deal_number || "#" + (d.id||"").toString().slice(-6)}</td>
+                  <td className="px-4 py-3 font-semibold">{d.customer_name || (customers.find(c=>c.id===d.customer_id)||{}).name || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{d.product_name || "—"}</td>
                   <td className="px-4 py-3">{d.quantity || "—"}</td>
                   <td className="px-4 py-3 font-bold text-green-700">{fmt(d.total_value || d.negotiated_price)}</td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="relative">
                       <button
-                        onClick={e => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setStageMenu(stageMenu?.dealId === d.id ? null : { dealId: d.id, deal: d, rect });
-                        }}
-                        className={cls("px-3 py-1 rounded-full text-xs font-bold border transition-all",
-                          (d.stage||d.status||"draft") === "completed" ? "bg-green-100 text-green-700 border-green-200" :
+                        onClick={() => setStageMenu(stageMenu?.dealId === d.id ? null : { dealId: d.id, deal: d })}
+                        className={cls("px-3 py-1 rounded-full text-xs font-bold border",
+                          (d.stage||d.status||"draft") === "completed"  ? "bg-green-100 text-green-700 border-green-200" :
                           (d.stage||d.status||"draft") === "dispatched" ? "bg-blue-100 text-blue-700 border-blue-200" :
                           (d.stage||d.status||"draft") === "confirmed"  ? "bg-indigo-100 text-indigo-700 border-indigo-200" :
                           (d.stage||d.status||"draft") === "delivered"  ? "bg-purple-100 text-purple-700 border-purple-200" :
@@ -1064,8 +1073,7 @@ function Deals() {
                           {["Draft","Confirmed","Dispatched","Delivered","Completed"].map(s => (
                             <button key={s} onClick={() => updateDealStage(stageMenu.deal, s)}
                               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 font-medium text-gray-700">
-                              {s}
-                              {(stageMenu.deal.stage || stageMenu.deal.status || "draft").toLowerCase() === s.toLowerCase() && " ✓"}
+                              {s}{(stageMenu.deal.stage||stageMenu.deal.status||"draft").toLowerCase() === s.toLowerCase() ? " ✓" : ""}
                             </button>
                           ))}
                         </div>
@@ -1078,7 +1086,7 @@ function Deals() {
                     const selInv = inventory.find(i => i.id === d.inventory_id);
                     const cost   = (selInv?.cost_price || 0) * (d.quantity || 0);
                     const profit = (d.total_value || 0) - cost;
-                    const margin = cost > 0 ? ((profit / cost) * 100).toFixed(1) : null;
+                    const margin = cost > 0 ? (((profit / cost) * 100).toFixed(1)) : null;
                     return (
                       <td className="px-4 py-3">
                         <p className={cls("font-bold text-sm", profit > 0 ? "text-green-600" : "text-red-500")}>{fmt(profit)}</p>
@@ -1088,14 +1096,15 @@ function Deals() {
                   })()}
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={isAdmin ? 9 : 8} className="px-4 py-16 text-center text-gray-300">No deals found</td></tr>}
             </tbody>
           </table>
         </div>
       )}
+
       <SlidePanel title="Create Deal" open={showAdd} onClose={closeDeal}>
         <Field label="Customer Name"><Input value={custName} onChange={e => setCustName(e.target.value)} placeholder="Customer name" /></Field>
-        <Field label="Customer (from records)">
+        <Field label="Or Select from Records">
           <Select value={form.customer_id} onChange={set("customer_id")}>
             <option value="">— Select Customer —</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1109,7 +1118,7 @@ function Deals() {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Quantity"><Input type="number" value={form.quantity} onChange={set("quantity")} placeholder="0" /></Field>
-          <Field label="Unit Price (₹)"><Input type="number" value={form.unit_price} onChange={set("unit_price")} placeholder="0" /></Field>
+          <Field label="Unit Price (Rs)"><Input type="number" value={form.unit_price} onChange={set("unit_price")} placeholder="0" /></Field>
         </div>
         {form.quantity && form.unit_price && (
           <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 flex justify-between">
@@ -1132,7 +1141,7 @@ function Deals() {
         </div>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
-        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating…" : "Create Deal"}</Btn><Btn variant="secondary" onClick={closeDeal}>Cancel</Btn></div>
+        <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Creating..." : "Create Deal"}</Btn><Btn variant="secondary" onClick={closeDeal}>Cancel</Btn></div>
       </SlidePanel>
     </div>
   );
@@ -2298,7 +2307,7 @@ export default function DesktopApp({ user, companyId, role, onSignOut }) {
   return (
     <AuthCtx.Provider value={{ user, companyId, role }}>
       {/* AI Chat */}
-      {showAI && <AIChat companyId={resolvedCompanyId || companyId} onClose={() => setShowAI(false)} />}
+      {showAI && <AIChat companyId={companyId} onClose={() => setShowAI(false)} />}
 
       {/* AI Floating Button */}
       {!showAI && (
