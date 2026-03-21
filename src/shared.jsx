@@ -316,3 +316,70 @@ function NewUserSetup({ user, onDone, onSignOut }) {
 export { GlobalStyles, useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum };
 export { SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner };
 export { Login, NewUserSetup };
+
+// ── STATUS DROPDOWN COMPONENT ──────────────────────────────────────────────────
+export const StatusDropdown = ({ currentStatus, options, onSelect, label }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const getStatusColor = (status) => {
+    const s = (status || "").toLowerCase();
+    if (["completed", "delivered", "paid"].includes(s)) return "green";
+    if (["dispatched", "confirmed", "in transit"].includes(s)) return "blue";
+    if (["pending", "partial"].includes(s)) return "orange";
+    if (["draft", "created"].includes(s)) return "gray";
+    return "purple";
+  };
+
+  return (
+    <div ref={ref} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cls(
+          "px-3 py-1 rounded-full text-xs font-bold border transition-all",
+          `bg-${getStatusColor(currentStatus)}-100`,
+          `text-${getStatusColor(currentStatus)}-700`,
+          `border-${getStatusColor(currentStatus)}-200`,
+          "hover:shadow-sm"
+        )}
+      >
+        {label || currentStatus || "—"} ▾
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 min-w-[140px]">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => {
+                onSelect(opt);
+                setOpen(false);
+              }}
+              className={cls(
+                "w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors",
+                opt === currentStatus ? "font-bold text-blue-600" : "text-gray-700"
+              )}
+            >
+              {opt}
+              {opt === currentStatus && <span className="float-right">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Update the export at the bottom to include StatusDropdown
+export { 
+  // ... existing exports ...
+  StatusDropdown 
+};
