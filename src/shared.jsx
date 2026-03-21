@@ -103,6 +103,60 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
+// ── STATUS DROPDOWN ────────────────────────────────────────────────────────────
+const StatusDropdown = ({ value, onChange, options, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getColor = (val) => {
+    const lower = (val || "").toLowerCase();
+    if (["completed", "delivered", "paid"].includes(lower)) return { bg: "bg-green-100", text: "text-green-700", border: "border-green-200" };
+    if (["dispatched", "confirmed", "in transit", "arrived"].includes(lower)) return { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200" };
+    if (["pending", "partial"].includes(lower)) return { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200" };
+    return { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" };
+  };
+
+  const color = getColor(value);
+
+  return (
+    <div ref={dropdownRef} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cls(
+          "px-3 py-1 rounded-full text-xs font-bold border transition-all",
+          color.bg, color.text, color.border
+        )}>
+        {value || label} ▾
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 top-8 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 min-w-36">
+          {options.map(opt => (
+            <button
+              key={opt}
+              onClick={() => {
+                onChange(opt);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 font-medium text-gray-700">
+              {opt}{value?.toLowerCase() === opt.toLowerCase() ? " ✓" : ""}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── TIMBER MATH ────────────────────────────────────────────────────────────────
 const TM = {
   sawnCFT(thickMM, widthMM, lengthFt, pieces = 1) {
@@ -211,8 +265,6 @@ function Login({ onLogin }) {
 }
 
 // ── NEW USER SETUP ────────────────────────────────────────────────────────────
-// Shown to users who signed up but have no company yet.
-// Creates a company record + user_profile row, then lets them into the app.
 function NewUserSetup({ user, onDone, onSignOut }) {
   const [companyName, setCompanyName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -224,7 +276,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
     if (!companyName.trim()) { setErr("Company name is required"); return; }
     setSaving(true); setErr("");
     try {
-      // 1. Create company record
       const { data: co, error: coErr } = await sb.from("company").insert([{
         name: companyName.trim(),
         owner_name: ownerName.trim() || null,
@@ -233,7 +284,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
       }]).select().single();
       if (coErr) throw coErr;
 
-      // 2. Create user_profile linking this user to the new company
       const { error: upErr } = await sb.from("user_profiles").insert([{
         user_id: user.id,
         company_id: co.id,
@@ -242,7 +292,6 @@ function NewUserSetup({ user, onDone, onSignOut }) {
       }]);
       if (upErr) throw upErr;
 
-      // 3. Done — pass companyId back to App root
       onDone(co.id);
     } catch (e) {
       setErr(e.message || "Setup failed. Please try again.");
@@ -314,72 +363,5 @@ function NewUserSetup({ user, onDone, onSignOut }) {
 
 
 export { GlobalStyles, useAuth, useRole, AuthCtx, TM, fmt, fmtDate, cls, today, parseNum };
-export { SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner };
+export { SlidePanel, DetailRow, Field, Input, Select, Textarea, Btn, Badge, ErrBanner, StatCard, Spinner, StatusDropdown };
 export { Login, NewUserSetup };
-
-// ── STATUS DROPDOWN COMPONENT ──────────────────────────────────────────────────
-export const StatusDropdown = ({ currentStatus, options, onSelect, label }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const getStatusColor = (status) => {
-    const s = (status || "").toLowerCase();
-    if (["completed", "delivered", "paid"].includes(s)) return "green";
-    if (["dispatched", "confirmed", "in transit"].includes(s)) return "blue";
-    if (["pending", "partial"].includes(s)) return "orange";
-    if (["draft", "created"].includes(s)) return "gray";
-    return "purple";
-  };
-
-  return (
-    <div ref={ref} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
-      <button
-        onClick={() => setOpen(!open)}
-        className={cls(
-          "px-3 py-1 rounded-full text-xs font-bold border transition-all",
-          `bg-${getStatusColor(currentStatus)}-100`,
-          `text-${getStatusColor(currentStatus)}-700`,
-          `border-${getStatusColor(currentStatus)}-200`,
-          "hover:shadow-sm"
-        )}
-      >
-        {label || currentStatus || "—"} ▾
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 min-w-[140px]">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => {
-                onSelect(opt);
-                setOpen(false);
-              }}
-              className={cls(
-                "w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors",
-                opt === currentStatus ? "font-bold text-blue-600" : "text-gray-700"
-              )}
-            >
-              {opt}
-              {opt === currentStatus && <span className="float-right">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Update the export at the bottom to include StatusDropdown
-export { 
-  // ... existing exports ...
-  StatusDropdown 
-};
