@@ -967,9 +967,131 @@ function Inventory() {
         })()}
       </SlidePanel>
 
-      {/* Add Stock Panel - Keep existing form from original */}
+      {/* Add Stock Panel */}
       <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv}>
-        {/* ... existing add stock form code ... */}
+        {calc && (
+          <div className="sticky top-0 z-10 -mx-4 px-4 py-3 mb-2 bg-gray-900 text-white flex items-center justify-between shadow-md">
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Live Calculation</p>
+              <p className="text-2xl font-black text-white">
+                {timberType === "Plywood" ? `${calc.totalCBM} CBM` : `${calc.totalCFT} CFT`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">{timberType === "Plywood" ? `${calc.totalCFT} CFT` : `${calc.totalCBM} m³`}</p>
+              <p className="text-xs text-green-400 mt-0.5">Auto-calculated ✓</p>
+            </div>
+          </div>
+        )}
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Timber Type</p>
+          <div className="flex flex-wrap gap-2">
+            {["Sawn Timber","Round Log","Plywood","Other"].map(t => (
+              <button key={t} onClick={() => setTimberType(t)} className={cls(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                timberType === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200"
+              )}>{t}</button>
+            ))}
+          </div>
+        </div>
+
+        <Field label="Product Name" required>
+          <Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. Gurjan Sawn 18mm" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Category">
+            <Select value={form.category} onChange={set("category")}>
+              {["Plywood","Sawn Timber","Round Log","MDF","Block Board","Veneer","Other"].map(c => <option key={c}>{c}</option>)}
+            </Select>
+          </Field>
+          <Field label="Wood / Species">
+            <Input value={form.wood_type} onChange={set("wood_type")} placeholder="e.g. Gurjan, Teak" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Grade">
+            <Select value={form.grade} onChange={set("grade")}>
+              {["A Grade","B Grade","C Grade","Premium","Economy"].map(g => <option key={g}>{g}</option>)}
+            </Select>
+          </Field>
+          <Field label="Date">
+            <Input type="date" value={form.date} onChange={set("date")} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Yard">
+            <Select value={form.yard_id} onChange={set("yard_id")}>
+              <option value="">— Yard —</option>
+              {yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Supplier">
+            <Select value={form.supplier_id} onChange={set("supplier_id")}>
+              <option value="">— Supplier —</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
+          </Field>
+        </div>
+
+        {timberType === "Sawn Timber" && (
+          <div className="bg-blue-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-blue-600 uppercase">Dimensions → auto CFT</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Thickness (mm)"><Input type="number" value={form.thickness_mm} onChange={set("thickness_mm")} placeholder="25" /></Field>
+              <Field label="Width (mm)"><Input type="number" value={form.width_mm} onChange={set("width_mm")} placeholder="150" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.length_ft} onChange={set("length_ft")} placeholder="10" /></Field>
+              <Field label="Pieces"><Input type="number" value={form.pieces} onChange={set("pieces")} placeholder="100" /></Field>
+            </div>
+          </div>
+        )}
+        {timberType === "Round Log" && (
+          <div className="bg-green-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-green-600 uppercase">Hoppus → auto CFT</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Girth (in)"><Input type="number" value={form.girth_in} onChange={set("girth_in")} placeholder="48" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.log_length_ft} onChange={set("log_length_ft")} placeholder="12" /></Field>
+              <Field label="No. of Logs"><Input type="number" value={form.num_logs} onChange={set("num_logs")} placeholder="20" /></Field>
+            </div>
+          </div>
+        )}
+        {timberType === "Plywood" && (
+          <div className="bg-purple-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-purple-600 uppercase">Dimensions → auto CBM</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Thickness (mm)"><Input type="number" value={form.sheet_thickness_mm} onChange={set("sheet_thickness_mm")} placeholder="18" /></Field>
+              <Field label="Width (ft)"><Input type="number" value={form.sheet_width_ft} onChange={set("sheet_width_ft")} placeholder="4" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.sheet_length_ft} onChange={set("sheet_length_ft")} placeholder="8" /></Field>
+              <Field label="Sheets"><Input type="number" value={form.num_sheets} onChange={set("num_sheets")} placeholder="200" /></Field>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={`Qty (${form.unit})`}>
+            <Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0" />
+          </Field>
+          <Field label="Unit">
+            <Select value={form.unit} onChange={set("unit")}>
+              {["CFT","CBM","CBT","Pcs","Sheets","Bundles","MT","KG"].map(u => <option key={u}>{u}</option>)}
+            </Select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cost Price / unit (₹)">
+            <Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" />
+          </Field>
+          <Field label="Market Value / unit (₹)">
+            <Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" />
+          </Field>
+        </div>
+        {form.cost_price && form.available_quantity && (
+          <div className="bg-gray-900 rounded-xl px-4 py-3 flex justify-between items-center">
+            <span className="text-sm text-gray-400">Total Value</span>
+            <span className="font-black text-white">{fmt(parseFloat(form.cost_price) * parseFloat(form.available_quantity))}</span>
+          </div>
+        )}
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} placeholder="Any additional details…" /></Field>
+
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add to Inventory"}</Btn>
@@ -2356,7 +2478,7 @@ function AIChat({ companyId, onClose }) {
       };
 
       const reply = await askGemini(q, businessContext);
-      setMessages(p => [...p, { role:"assistant", content: reply }]);
+      setMessages(p => [...p, { role:"assistant", content: reply.message || reply }]);
     } catch (e) {
       setMessages(p => [...p, { role:"assistant", content: "Error: " + e.message }]);
     }

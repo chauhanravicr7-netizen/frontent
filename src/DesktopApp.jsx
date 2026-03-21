@@ -806,9 +806,8 @@ function Inventory() {
         })()}
       </SlidePanel>
 
-      {/* Add Stock Panel - Same as before */}
+      {/* Add Stock Panel */}
       <SlidePanel title="Add Stock" open={showAdd} onClose={closeInv} wide>
-        {/* ... (keep existing add stock form code) ... */}
         {calc && (
           <div className="sticky top-0 z-10 -mx-4 px-4 py-3 mb-2 bg-gray-900 text-white flex items-center justify-between shadow-md">
             <div>
@@ -825,7 +824,7 @@ function Inventory() {
         )}
         <div className="mb-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Timber Type</p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {["Sawn Timber","Round Log","Plywood","Other"].map(t => (
               <button key={t} onClick={() => setTimberType(t)} className={cls(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
@@ -834,11 +833,111 @@ function Inventory() {
             ))}
           </div>
         </div>
-        {/* ... rest of form fields same as original ... */}
+
         <Field label="Product Name" required>
           <Input value={form.product_name} onChange={set("product_name")} placeholder="e.g. Gurjan Sawn 18mm" />
         </Field>
-        {/* ... continue with all form fields from original code ... */}
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Category">
+            <Select value={form.category} onChange={set("category")}>
+              {["Plywood","Sawn Timber","Round Log","MDF","Block Board","Veneer","Other"].map(c => <option key={c}>{c}</option>)}
+            </Select>
+          </Field>
+          <Field label="Wood / Species">
+            <Input value={form.wood_type} onChange={set("wood_type")} placeholder="e.g. Gurjan, Teak" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Grade">
+            <Select value={form.grade} onChange={set("grade")}>
+              {["A Grade","B Grade","C Grade","Premium","Economy"].map(g => <option key={g}>{g}</option>)}
+            </Select>
+          </Field>
+          <Field label="Date">
+            <Input type="date" value={form.date} onChange={set("date")} />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Yard">
+            <Select value={form.yard_id} onChange={set("yard_id")}>
+              <option value="">— Select Yard —</option>
+              {yards.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Supplier">
+            <Select value={form.supplier_id} onChange={set("supplier_id")}>
+              <option value="">— Select Supplier —</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </Select>
+          </Field>
+        </div>
+
+        {/* Dimension inputs by timber type */}
+        {timberType === "Sawn Timber" && (
+          <div className="bg-blue-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-blue-600 uppercase">Dimensions (auto-calculates CFT)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Thickness (mm)"><Input type="number" value={form.thickness_mm} onChange={set("thickness_mm")} placeholder="e.g. 25" /></Field>
+              <Field label="Width (mm)"><Input type="number" value={form.width_mm} onChange={set("width_mm")} placeholder="e.g. 150" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.length_ft} onChange={set("length_ft")} placeholder="e.g. 10" /></Field>
+              <Field label="No. of Pieces"><Input type="number" value={form.pieces} onChange={set("pieces")} placeholder="e.g. 100" /></Field>
+            </div>
+          </div>
+        )}
+        {timberType === "Round Log" && (
+          <div className="bg-green-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-green-600 uppercase">Dimensions — Hoppus (auto-calculates CFT)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Girth (inches)"><Input type="number" value={form.girth_in} onChange={set("girth_in")} placeholder="e.g. 48" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.log_length_ft} onChange={set("log_length_ft")} placeholder="e.g. 12" /></Field>
+              <Field label="No. of Logs"><Input type="number" value={form.num_logs} onChange={set("num_logs")} placeholder="e.g. 20" /></Field>
+            </div>
+          </div>
+        )}
+        {timberType === "Plywood" && (
+          <div className="bg-purple-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-bold text-purple-600 uppercase">Dimensions (auto-calculates CBM)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Thickness (mm)"><Input type="number" value={form.sheet_thickness_mm} onChange={set("sheet_thickness_mm")} placeholder="e.g. 18" /></Field>
+              <Field label="Width (ft)"><Input type="number" value={form.sheet_width_ft} onChange={set("sheet_width_ft")} placeholder="4" /></Field>
+              <Field label="Length (ft)"><Input type="number" value={form.sheet_length_ft} onChange={set("sheet_length_ft")} placeholder="8" /></Field>
+              <Field label="No. of Sheets"><Input type="number" value={form.num_sheets} onChange={set("num_sheets")} placeholder="e.g. 200" /></Field>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={`Quantity (${form.unit})`}>
+            <Input type="number" value={form.available_quantity} onChange={set("available_quantity")} placeholder="0" />
+          </Field>
+          <Field label="Unit">
+            <Select value={form.unit} onChange={set("unit")}>
+              {["CFT","CBM","CBT","Pcs","Sheets","Bundles","MT","KG"].map(u => <option key={u}>{u}</option>)}
+            </Select>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cost Price / unit (₹)">
+            <Input type="number" value={form.cost_price} onChange={set("cost_price")} placeholder="0" />
+          </Field>
+          <Field label="Market Value / unit (₹)">
+            <Input type="number" value={form.market_value} onChange={set("market_value")} placeholder="0" />
+          </Field>
+        </div>
+
+        {form.cost_price && form.available_quantity && (
+          <div className="bg-gray-900 rounded-xl px-4 py-3 flex justify-between items-center">
+            <span className="text-sm text-gray-400">Total Stock Value</span>
+            <span className="font-black text-white">{fmt(parseFloat(form.cost_price) * parseFloat(form.available_quantity))}</span>
+          </div>
+        )}
+
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} placeholder="Any additional details…" /></Field>
+
         <ErrBanner msg={err} />
         <div className="flex gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add to Inventory"}</Btn>
@@ -1003,8 +1102,7 @@ function Deals() {
             </thead>
             <tbody>
               {filtered.map(d => {
-                const selInv = inventory.find(i => i.id === d.inventory_id);
-                const profitData = isAdmin && selInv ? calculateDealProfit(d, selInv) : null;
+                const profitData = isAdmin ? calculateDealProfit(d, inventory) : null;
 
                 return (
                   <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
@@ -1506,40 +1604,705 @@ function Yards() {
   );
 }
 
-// ── SUPPLIERS (Keep existing - no changes) ────────────────────────────────────
+// ── SUPPLIERS ─────────────────────────────────────────────────────────────────
 function Suppliers() {
-  // ... (keep existing code from original file)
-  return <div>Suppliers Component - Keep Original Code</div>;
+  const { companyId } = useAuth();
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [search, setSearch] = useState("");
+  const DEFAULTS = { name:"", city:"", country:"India", contact_person:"", phone:"", email:"", gst_number:"", products_supplied:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("suppliers").select("*").eq("company_id", companyId).order("name");
+      setSuppliers(data || []);
+    } finally { setLoading(false); }
+  }, [companyId]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try {
+      const { error } = await sb.from("suppliers").insert([{ ...form, company_id: companyId }]);
+      if (error) throw error;
+      close(); fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const filtered = suppliers.filter(s => !search || (s.name||"").toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-4">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Suppliers</h1>
+          <p className="text-gray-400 text-sm">{suppliers.length} suppliers</p>
+        </div>
+        <div className="flex gap-3">
+          <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Btn onClick={() => setShowAdd(true)}>+ Add Supplier</Btn>
+        </div>
+      </div>
+      {loading ? <Spinner /> : (
+        <div className="px-6 pb-6">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["Name","Location","Contact","Phone","GST","Products"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(s => (
+                  <tr key={s.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(s)}>
+                    <td className="px-4 py-3 font-semibold text-gray-800">{s.name}</td>
+                    <td className="px-4 py-3 text-gray-500">{[s.city, s.country].filter(Boolean).join(", ") || "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">{s.contact_person || "—"}</td>
+                    <td className="px-4 py-3">{s.phone ? <a href={"tel:"+s.phone} className="text-blue-600 hover:underline" onClick={e=>e.stopPropagation()}>{s.phone}</a> : "—"}</td>
+                    <td className="px-4 py-3">{s.gst_number ? <Badge text="GST ✓" color="green" /> : <span className="text-gray-300 text-xs">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs max-w-xs truncate">{s.products_supplied || "—"}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-16 text-center text-gray-300">No suppliers found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <SlidePanel title="Supplier Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-xl font-black text-blue-600">{(selected.name||"S")[0].toUpperCase()}</div>
+              <div>
+                <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+                <p className="text-sm text-gray-400">{[selected.city, selected.country].filter(Boolean).join(", ")}</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <DetailRow label="Contact Person" value={selected.contact_person} />
+              <DetailRow label="Phone" value={selected.phone} />
+              <DetailRow label="Email" value={selected.email} />
+              <DetailRow label="GST No." value={selected.gst_number} />
+              <DetailRow label="Products Supplied" value={selected.products_supplied} />
+              <DetailRow label="Notes" value={selected.notes} />
+            </div>
+            {selected.phone && (
+              <a href={"tel:"+selected.phone} className="mt-3 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl text-sm">
+                📞 Call Supplier
+              </a>
+            )}
+          </>
+        )}
+      </SlidePanel>
+      <SlidePanel title="Add Supplier" open={showAdd} onClose={close}>
+        <Field label="Supplier Name" required><Input value={form.name} onChange={set("name")} placeholder="Company or trader name" /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="e.g. Myanmar" /></Field>
+          <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Contact Person"><Input value={form.contact_person} onChange={set("contact_person")} /></Field>
+          <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+        </div>
+        <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+        <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="22AAAAA0000A1Z5" /></Field>
+        <Field label="Products Supplied"><Textarea value={form.products_supplied} onChange={set("products_supplied")} placeholder="e.g. Teak logs, Gurjan sawn timber" /></Field>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3">
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Supplier"}</Btn>
+          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+        </div>
+      </SlidePanel>
+    </div>
+  );
 }
 
-// ── CUSTOMERS (Keep existing - no changes) ────────────────────────────────────
+// ── CUSTOMERS ────────────────────────────────────────────────────────────────
 function Customers() {
-  // ... (keep existing code from original file)
-  return <div>Customers Component - Keep Original Code</div>;
+  const { companyId } = useAuth();
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [search, setSearch] = useState("");
+  const DEFAULTS = { name:"", city:"", contact_person:"", phone:"", email:"", gst_number:"", credit_limit:"", notes:"" };
+  const [form, setForm] = useState(DEFAULTS);
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("customers").select("*").eq("company_id", companyId).order("name");
+      setCustomers(data || []);
+    } finally { setLoading(false); }
+  }, [companyId]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
+  const save = async () => {
+    if (!form.name) { setErr("Name required"); return; }
+    setSaving(true); setErr("");
+    try {
+      const { error } = await sb.from("customers").insert([{
+        ...form, company_id: companyId,
+        credit_limit: parseNum(form.credit_limit) || 0,
+      }]);
+      if (error) throw error;
+      close(); fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const sendWhatsApp = (c) => {
+    const msg = "Namaste " + c.name + "\n\nHope you are doing well! Contact us for your timber requirements.\n\nDockside Trade OS";
+    window.open("https://wa.me/" + (c.phone||"") + "?text=" + encodeURIComponent(msg), "_blank");
+  };
+
+  const filtered = customers.filter(c => !search || (c.name||"").toLowerCase().includes(search.toLowerCase()) || (c.city||"").toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-4">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Customers</h1>
+          <p className="text-gray-400 text-sm">{customers.length} customers</p>
+        </div>
+        <div className="flex gap-3">
+          <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Btn onClick={() => setShowAdd(true)}>+ Add Customer</Btn>
+        </div>
+      </div>
+      {loading ? <Spinner /> : (
+        <div className="px-6 pb-6">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["Customer","City","Contact","Phone","Credit Limit","GST","Actions"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(c => (
+                  <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50 cursor-pointer" onClick={() => setSelected(c)}>
+                    <td className="px-4 py-3 font-semibold text-gray-800">{c.name}</td>
+                    <td className="px-4 py-3 text-gray-500">{c.city || "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">{c.contact_person || "—"}</td>
+                    <td className="px-4 py-3">{c.phone ? <a href={"tel:"+c.phone} className="text-blue-600 hover:underline" onClick={e=>e.stopPropagation()}>{c.phone}</a> : "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">{c.credit_limit > 0 ? fmt(c.credit_limit) : "—"}</td>
+                    <td className="px-4 py-3">{c.gst_number ? <Badge text="GST ✓" color="green" /> : <span className="text-gray-300 text-xs">—</span>}</td>
+                    <td className="px-4 py-3 flex gap-2" onClick={e=>e.stopPropagation()}>
+                      {c.phone && (
+                        <button onClick={() => sendWhatsApp(c)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg font-semibold hover:bg-green-100">WhatsApp</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-300">No customers found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <SlidePanel title="Customer Details" open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-black text-blue-700">{(selected.name||"C")[0].toUpperCase()}</div>
+              <div>
+                <p className="font-black text-gray-800 text-lg">{selected.name}</p>
+                <p className="text-sm text-gray-400">{selected.city || ""}</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <DetailRow label="Contact Person" value={selected.contact_person} />
+              <DetailRow label="Phone" value={selected.phone} />
+              <DetailRow label="Email" value={selected.email} />
+              <DetailRow label="GST No." value={selected.gst_number} />
+              <DetailRow label="Credit Limit" value={selected.credit_limit > 0 ? fmt(selected.credit_limit) : "Not set"} />
+              <DetailRow label="Notes" value={selected.notes} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              {selected.phone && (
+                <a href={"tel:"+selected.phone} className="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl text-sm">📞 Call</a>
+              )}
+              <button onClick={() => sendWhatsApp(selected)} className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 rounded-xl text-sm">WhatsApp</button>
+            </div>
+          </>
+        )}
+      </SlidePanel>
+      <SlidePanel title="Add Customer" open={showAdd} onClose={close}>
+        <Field label="Customer Name" required><Input value={form.name} onChange={set("name")} placeholder="Company or person name" /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="e.g. Ahmedabad" /></Field>
+          <Field label="Contact Person"><Input value={form.contact_person} onChange={set("contact_person")} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+          <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} /></Field>
+          <Field label="Credit Limit (Rs)"><Input type="number" value={form.credit_limit} onChange={set("credit_limit")} placeholder="0 = no limit" /></Field>
+        </div>
+        <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
+        <ErrBanner msg={err} />
+        <div className="flex gap-3">
+          <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Customer"}</Btn>
+          <Btn variant="secondary" onClick={close}>Cancel</Btn>
+        </div>
+      </SlidePanel>
+    </div>
+  );
 }
 
-// ── FINANCIALS (Keep existing - no changes) ───────────────────────────────────
+// ── FINANCIALS ───────────────────────────────────────────────────────────────
 function Financials() {
-  // ... (keep existing code from original file)
-  return <div>Financials Component - Keep Original Code</div>;
+  const { companyId } = useAuth();
+  const [deals, setDeals] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("overview");
+
+  useEffect(() => {
+    if (!companyId) return;
+    setLoading(true);
+    Promise.all([
+      sb.from("deals").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+      sb.from("inventory").select("*").eq("company_id", companyId),
+    ]).then(([a, b]) => {
+      setDeals(a.data || []);
+      setInventory(b.data || []);
+      setLoading(false);
+    });
+  }, [companyId]);
+
+  const totalRevenue = deals.filter(d => d.payment_status === "Paid").reduce((s, d) => s + (d.total_value || 0), 0);
+  const pendingRevenue = deals.filter(d => d.payment_status === "Pending").reduce((s, d) => s + (d.total_value || 0), 0);
+  const partialRevenue = deals.filter(d => d.payment_status === "Partial").reduce((s, d) => s + (d.total_value || 0), 0);
+  const inventoryValue = inventory.reduce((s, i) => s + (i.cost_price || 0) * (i.available_quantity || 0), 0);
+  const totalDealValue = deals.reduce((s, d) => s + (d.total_value || 0), 0);
+
+  const profitDeals = deals.map(d => {
+    const p = calculateDealProfit(d, inventory);
+    return { ...d, profit: p.profit, margin: p.margin };
+  });
+  const totalProfit = profitDeals.reduce((s, d) => s + (d.profit || 0), 0);
+
+  const pendingDeals = deals.filter(d => d.payment_status === "Pending" || d.payment_status === "Partial");
+  const paidDeals = deals.filter(d => d.payment_status === "Paid");
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-4">
+      <div className="px-6 pt-6 pb-4">
+        <h1 className="text-2xl font-black text-gray-800">Financials</h1>
+        <p className="text-gray-400 text-sm">Revenue, payments & profit overview</p>
+      </div>
+
+      <div className="px-6 mb-4 flex gap-2">
+        {[["overview","Overview"],["pending","Pending Payments"],["history","Deal History"]].map(([v,l]) => (
+          <button key={v} onClick={() => setTab(v)} className={cls(
+            "px-4 py-1.5 rounded-full text-sm font-semibold transition-all",
+            tab === v ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          )}>{l}</button>
+        ))}
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div className="px-6 space-y-4">
+          {tab === "overview" && (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard label="Total Revenue (Paid)" value={fmt(totalRevenue)} icon="✅" color="green" />
+                <StatCard label="Pending Payments" value={fmt(pendingRevenue)} icon="⏳" color="orange" />
+                <StatCard label="Inventory Value" value={fmt(inventoryValue)} icon="📦" color="blue" />
+                <StatCard label="Gross Profit" value={fmt(totalProfit)} icon="💰" color="purple" />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-3">Payment Breakdown</p>
+                  {[
+                    { label: "Paid", value: totalRevenue, count: paidDeals.length, color: "bg-green-500" },
+                    { label: "Pending", value: pendingRevenue, count: pendingDeals.filter(d=>d.payment_status==="Pending").length, color: "bg-orange-400" },
+                    { label: "Partial", value: partialRevenue, count: pendingDeals.filter(d=>d.payment_status==="Partial").length, color: "bg-yellow-400" },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center gap-3 mb-3">
+                      <div className={cls("w-2.5 h-2.5 rounded-full", item.color)} />
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                          <span className="text-sm font-bold text-gray-800">{fmt(item.value)}</span>
+                        </div>
+                        <p className="text-xs text-gray-400">{item.count} deals</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 lg:col-span-2">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-3">Financial Summary</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between py-2 border-b border-gray-50"><span className="text-sm text-gray-500">Total Deal Value</span><span className="font-bold">{fmt(totalDealValue)}</span></div>
+                    <div className="flex justify-between py-2 border-b border-gray-50"><span className="text-sm text-gray-500">Collected (Paid)</span><span className="font-bold text-green-700">{fmt(totalRevenue)}</span></div>
+                    <div className="flex justify-between py-2 border-b border-gray-50"><span className="text-sm text-gray-500">Outstanding</span><span className="font-bold text-orange-600">{fmt(pendingRevenue + partialRevenue)}</span></div>
+                    <div className="flex justify-between py-2 border-b border-gray-50"><span className="text-sm text-gray-500">Inventory at Cost</span><span className="font-bold text-blue-700">{fmt(inventoryValue)}</span></div>
+                    <div className="flex justify-between py-2 pt-3"><span className="text-sm font-bold text-gray-700">Estimated Profit</span><span className={cls("font-black text-lg", totalProfit >= 0 ? "text-green-700" : "text-red-600")}>{fmt(totalProfit)}</span></div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "pending" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {["Deal #","Customer","Product","Amount","Status","Date"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingDeals.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-16 text-center text-green-400 font-semibold">🎉 All payments collected!</td></tr>
+                  ) : pendingDeals.map(d => (
+                    <tr key={d.id} className="border-b border-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600">{d.deal_number || "#"+String(d.id).slice(-6)}</td>
+                      <td className="px-4 py-3 font-semibold">{d.customer_name || "—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{d.product_name || "—"}</td>
+                      <td className="px-4 py-3 font-bold text-orange-600">{fmt(d.total_value)}</td>
+                      <td className="px-4 py-3"><Badge text={d.payment_status} color={d.payment_status === "Partial" ? "orange" : "red"} /></td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {tab === "history" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {["Deal #","Customer","Value","Profit","Margin","Payment","Stage","Date"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {profitDeals.map(d => (
+                    <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600">{d.deal_number || "#"+String(d.id).slice(-6)}</td>
+                      <td className="px-4 py-3 font-semibold">{d.customer_name || "—"}</td>
+                      <td className="px-4 py-3 font-bold text-green-700">{fmt(d.total_value)}</td>
+                      <td className="px-4 py-3"><span className={cls("font-bold", (d.profit||0) >= 0 ? "text-green-600" : "text-red-500")}>{fmt(d.profit)}</span></td>
+                      <td className="px-4 py-3 text-gray-500">{d.margin}%</td>
+                      <td className="px-4 py-3"><Badge text={d.payment_status || "Pending"} color={d.payment_status === "Paid" ? "green" : d.payment_status === "Partial" ? "orange" : "red"} /></td>
+                      <td className="px-4 py-3"><Badge text={d.stage || d.status || "Draft"} color="blue" /></td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(d.created_at)}</td>
+                    </tr>
+                  ))}
+                  {deals.length === 0 && (
+                    <tr><td colSpan={8} className="px-4 py-16 text-center text-gray-300">No deals yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
-// ── AI INSIGHTS (Keep existing - no changes) ──────────────────────────────────
+// ── AI INSIGHTS ───────────────────────────────────────────────────────────────
 function AIInsights() {
-  // ... (keep existing code from original file)
-  return <div>AI Insights Component - Keep Original Code</div>;
+  return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-96 text-center">
+      <div className="text-5xl mb-4">🤖</div>
+      <h2 className="text-xl font-black text-gray-800 mb-2">AI Insights</h2>
+      <p className="text-gray-400 text-sm mb-6">Use the floating AI button (bottom right) to ask Gemini anything about your business.</p>
+      <div className="flex flex-wrap gap-3 justify-center">
+        {["Which stock is not moving?","Show pending payments","Top customers this month","What should I price teak?"].map(q => (
+          <span key={q} className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-sm font-semibold">{q}</span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-// ── REPORTS (Keep existing - no changes) ──────────────────────────────────────
+// ── REPORTS ───────────────────────────────────────────────────────────────────
 function Reports() {
-  // ... (keep existing code from original file)
-  return <div>Reports Component - Keep Original Code</div>;
+  const { companyId } = useAuth();
+  const [data, setData] = useState({ inventory:[], deals:[], customers:[], suppliers:[], shipments:[] });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!companyId) return;
+    Promise.all([
+      sb.from("inventory").select("*").eq("company_id", companyId),
+      sb.from("deals").select("*").eq("company_id", companyId),
+      sb.from("customers").select("*").eq("company_id", companyId),
+      sb.from("suppliers").select("*").eq("company_id", companyId),
+      sb.from("shipments").select("*").eq("company_id", companyId),
+    ]).then(([a,b,c,d,e]) => {
+      setData({ inventory:a.data||[], deals:b.data||[], customers:c.data||[], suppliers:d.data||[], shipments:e.data||[] });
+      setLoading(false);
+    });
+  }, [companyId]);
+
+  if (loading) return <Spinner />;
+
+  const { inventory, deals, customers, suppliers, shipments } = data;
+
+  const invValue = inventory.reduce((s,i) => s+(i.cost_price||0)*(i.available_quantity||0), 0);
+  const dealRevenue = deals.filter(d=>d.payment_status==="Paid").reduce((s,d) => s+(d.total_value||0), 0);
+  const pendingAmt = deals.filter(d=>d.payment_status!=="Paid").reduce((s,d) => s+(d.total_value||0), 0);
+  const profitDeals = deals.map(d => ({ ...d, ...calculateDealProfit(d, inventory) }));
+  const totalProfit = profitDeals.reduce((s,d) => s+(d.profit||0), 0);
+
+  const catMap = {};
+  inventory.forEach(i => {
+    const c = i.category || "Other";
+    catMap[c] = (catMap[c] || { count:0, value:0, qty:0 });
+    catMap[c].count++;
+    catMap[c].value += (i.cost_price||0)*(i.available_quantity||0);
+    catMap[c].qty += (i.available_quantity||0);
+  });
+
+  const custDealMap = {};
+  deals.forEach(d => {
+    const name = d.customer_name || "Unknown";
+    custDealMap[name] = (custDealMap[name]||0) + (d.total_value||0);
+  });
+  const topCustomers = Object.entries(custDealMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const exportCSV = (rows, headers, filename) => {
+    const csv = [headers.join(","), ...rows.map(r => headers.map(h => JSON.stringify(r[h]||"")).join(","))].join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = filename; a.click();
+  };
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-4">
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Reports</h1>
+          <p className="text-gray-400 text-sm">Business intelligence & exports</p>
+        </div>
+      </div>
+      <div className="px-6 space-y-6">
+        {/* Summary KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Inventory Value" value={fmt(invValue)} icon="📦" color="blue" />
+          <StatCard label="Revenue Collected" value={fmt(dealRevenue)} icon="✅" color="green" />
+          <StatCard label="Pending Amount" value={fmt(pendingAmt)} icon="⏳" color="orange" />
+          <StatCard label="Est. Profit" value={fmt(totalProfit)} icon="💰" color="purple" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Inventory by Category */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-800">Inventory by Category</h3>
+              <button onClick={() => exportCSV(inventory, ["product_name","category","wood_type","available_quantity","unit","cost_price"], "inventory_report.csv")}
+                className="text-xs text-blue-600 hover:underline font-semibold">Export CSV</button>
+            </div>
+            <table className="w-full text-sm">
+              <thead><tr>{["Category","Items","Qty","Value"].map(h=><th key={h} className="text-left py-2 text-xs font-bold text-gray-400 uppercase">{h}</th>)}</tr></thead>
+              <tbody>
+                {Object.entries(catMap).map(([cat, v]) => (
+                  <tr key={cat} className="border-t border-gray-50">
+                    <td className="py-2 font-semibold text-gray-700">{cat}</td>
+                    <td className="py-2 text-gray-500">{v.count}</td>
+                    <td className="py-2 text-gray-500">{Math.round(v.qty)}</td>
+                    <td className="py-2 font-bold text-blue-700">{fmt(v.value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Top Customers */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-800">Top Customers by Value</h3>
+              <button onClick={() => exportCSV(customers, ["name","city","phone","email","gst_number"], "customers_report.csv")}
+                className="text-xs text-blue-600 hover:underline font-semibold">Export CSV</button>
+            </div>
+            {topCustomers.length === 0 ? (
+              <p className="text-center text-gray-300 py-8">No deals yet</p>
+            ) : topCustomers.map(([name, val], i) => (
+              <div key={name} className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-black text-blue-600">{i+1}</div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800 text-sm">{name}</p>
+                  <div className="h-1.5 bg-gray-100 rounded-full mt-1"><div className="h-1.5 bg-blue-500 rounded-full" style={{width: Math.round((val/topCustomers[0][1])*100)+"%"}} /></div>
+                </div>
+                <span className="font-bold text-gray-700 text-sm">{fmt(val)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Deals Report */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Deals Report</h3>
+            <button onClick={() => exportCSV(deals, ["deal_number","customer_name","product_name","quantity","total_value","stage","payment_status","created_at"], "deals_report.csv")}
+              className="text-xs text-blue-600 hover:underline font-semibold">Export CSV</button>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            {[["Total Deals", deals.length, "gray"],["Draft", deals.filter(d=>(d.stage||d.status||"").toLowerCase()==="draft").length, "gray"],
+              ["Active", deals.filter(d=>!["completed","delivered"].includes((d.stage||d.status||"").toLowerCase())).length, "blue"],
+              ["Completed", deals.filter(d=>["completed","delivered"].includes((d.stage||d.status||"").toLowerCase())).length, "green"],
+              ["Paid", deals.filter(d=>d.payment_status==="Paid").length, "green"]
+            ].map(([label, count, color]) => (
+              <div key={label} className="bg-gray-50 rounded-xl p-3 text-center">
+                <p className="text-2xl font-black text-gray-800">{count}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// ── COMPANY (Keep existing - no changes) ──────────────────────────────────────
+// ── COMPANY ───────────────────────────────────────────────────────────────────
 function Company() {
-  // ... (keep existing code from original file)
-  return <div>Company Component - Keep Original Code</div>;
+  const { companyId } = useAuth();
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [tab, setTab] = useState("profile");
+  const [form, setForm] = useState({
+    name:"", industry:"Timber Trade", city:"", country:"India", address:"",
+    owner_name:"", phone:"", email:"", website:"",
+    gst_number:"", pan_number:"", iec_number:"",
+    bank_name:"", bank_account:"", bank_ifsc:"", bank_branch:"", notes:""
+  });
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await sb.from("company").select("*").limit(1).single();
+      if (data) { setCompany(data); setForm(f => ({ ...f, ...data })); }
+    } catch {}
+    setLoading(false);
+  }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const save = async () => {
+    setSaving(true); setErr("");
+    try {
+      let error;
+      if (company?.id) {
+        const r = await sb.from("company").update(form).eq("id", company.id);
+        error = r.error;
+      } else {
+        const r = await sb.from("company").insert([form]);
+        error = r.error;
+      }
+      if (error) throw error;
+      alert("Company profile saved!");
+      fetchAll();
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (loading) return <Spinner />;
+
+  const TABS = [["profile","🏢 Profile"],["legal","⚖️ Legal"],["bank","🏦 Bank"]];
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-4">
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Company</h1>
+          <p className="text-gray-400 text-sm">Business profile & compliance details</p>
+        </div>
+        <Btn onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Btn>
+      </div>
+      <div className="px-6">
+        <div className="flex gap-2 mb-5 border-b border-gray-200">
+          {TABS.map(([v, l]) => (
+            <button key={v} onClick={() => setTab(v)} className={cls(
+              "px-4 py-2 text-sm font-semibold border-b-2 transition-all",
+              tab === v ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            )}>{l}</button>
+          ))}
+        </div>
+
+        <div className="max-w-2xl">
+          {tab === "profile" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+              <Field label="Company Name"><Input value={form.name} onChange={set("name")} placeholder="Your company name" /></Field>
+              <Field label="Industry"><Input value={form.industry} onChange={set("industry")} /></Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="City"><Input value={form.city} onChange={set("city")} placeholder="Gandhidham" /></Field>
+                <Field label="Country"><Input value={form.country} onChange={set("country")} /></Field>
+              </div>
+              <Field label="Address"><Textarea value={form.address} onChange={set("address")} /></Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Owner Name"><Input value={form.owner_name} onChange={set("owner_name")} /></Field>
+                <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
+                <Field label="Website"><Input value={form.website} onChange={set("website")} /></Field>
+              </div>
+            </div>
+          )}
+          {tab === "legal" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                These details are used in invoices and E-Way Bills
+              </div>
+              <Field label="GST Number"><Input value={form.gst_number} onChange={set("gst_number")} placeholder="22AAAAA0000A1Z5" /></Field>
+              <Field label="PAN Number"><Input value={form.pan_number} onChange={set("pan_number")} placeholder="AAAAA0000A" /></Field>
+              <Field label="IEC Number"><Input value={form.iec_number} onChange={set("iec_number")} placeholder="Import Export Code" /></Field>
+            </div>
+          )}
+          {tab === "bank" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+              <Field label="Bank Name"><Input value={form.bank_name} onChange={set("bank_name")} placeholder="State Bank of India" /></Field>
+              <Field label="Account Number"><Input value={form.bank_account} onChange={set("bank_account")} /></Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="IFSC Code"><Input value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="SBIN0000001" /></Field>
+                <Field label="Branch"><Input value={form.bank_branch} onChange={set("bank_branch")} /></Field>
+              </div>
+            </div>
+          )}
+          <ErrBanner msg={err} />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── SETTINGS WITH PDF TEMPLATE UPLOAD ─────────────────────────────────────────
