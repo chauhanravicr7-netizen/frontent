@@ -1893,10 +1893,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/stock" element={<Stock />} />
-            <Route path="/inventory" element={<Stock />} {/* backward compat */} />
+            <Route path="/inventory" element={<Stock />} />
             <Route path="/yards" element={<Yards />} />
             <Route path="/trade" element={<TradeEngine />} />
-            <Route path="/deals" element={<TradeEngine />} {/* backward compat */} />
+            <Route path="/deals" element={<TradeEngine />} />
             <Route path="/transit" element={<Transit />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/customers" element={<Customers />} />
