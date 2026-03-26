@@ -975,8 +975,14 @@ export default function App() {
             <Route path="/yards" element={<Yards />} />
             <Route path="/trade" element={<TradeEngine />} />
             <Route path="/deals" element={<TradeEngine />} />
-            {/* Keeping Transit, Suppliers, Customers mapped to dummy for space or you can keep your original code for them here */}
-            {/* ... Your original Transit, Suppliers, Customers, ClosedLedger, Financials, Reports, Company, Settings ... */}
+            <Route path="/transit" element={<Transit />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/ledger" element={<ClosedLedger />} />
+            <Route path="/financials" element={<Financials />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/company" element={<Company />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>
       </div>
