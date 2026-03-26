@@ -8,7 +8,7 @@ import {
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY || "";
 
-// Native fetch-based API client — drop-in axios replacement
+// Native fetch API client — no axios dependency
 const api = (() => {
   const getHeaders = () => {
     const h = { "Content-Type": "application/json" };
@@ -16,27 +16,31 @@ const api = (() => {
     if (t) h["Authorization"] = `Bearer ${t}`;
     return h;
   };
-  const request = async (method, url, body) => {
+  const req = async (method, url, body) => {
     const res = await fetch(`${API}${url}`, {
-      method,
-      headers: getHeaders(),
+      method, headers: getHeaders(),
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = new Error(data?.error || `HTTP ${res.status}`);
+      const err = new Error(data?.error || data?.hint || `HTTP ${res.status}`);
       err.response = { data, status: res.status };
       throw err;
     }
     return { data };
   };
   return {
-    get:    (url)        => request("GET",    url),
-    post:   (url, body)  => request("POST",   url, body),
-    put:    (url, body)  => request("PUT",    url, body),
-    delete: (url)        => request("DELETE", url),
+    get:    (url)       => req("GET",    url),
+    post:   (url, body) => req("POST",   url, body),
+    put:    (url, body) => req("PUT",    url, body),
+    delete: (url)       => req("DELETE", url),
   };
 })();
+
+// Strip undefined/null/empty values to avoid Supabase schema errors
+const clean = (obj) => Object.fromEntries(
+  Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+);
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
 const fmt = (n) => {
@@ -190,12 +194,25 @@ const AutocompleteInput = ({ endpoint, placeholder, onSelect, value, onChange })
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+  const [localList, setLocalList] = useState([]);
+  useEffect(() => {
+    // Pre-load list for instant local search if autocomplete endpoint doesn't exist
+    const base = endpoint.replace("/api/autocomplete/", "/api/");
+    api.get(base).then(r => setLocalList(r.data || [])).catch(() => {});
+  }, [endpoint]);
+
   const search = async (q) => {
-    if (!q) { setSuggestions([]); return; }
+    if (!q) { setSuggestions([]); setOpen(false); return; }
     try {
       const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`);
       setSuggestions(data || []); setOpen(true);
-    } catch {}
+    } catch {
+      // Fallback: filter pre-loaded local list
+      const filtered = localList.filter(item =>
+        (item.name || "").toLowerCase().includes(q.toLowerCase())
+      ).slice(0, 8);
+      setSuggestions(filtered); setOpen(filtered.length > 0);
+    }
   };
   return (
     <div className="relative" ref={ref}>
@@ -464,13 +481,16 @@ function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const submit = async () => {
+    if (!email || !password) { setErr("Email and password required"); return; }
     setLoading(true); setErr("");
     try {
       const { data } = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("dockside-token", data.token);
       localStorage.setItem("dockside-user", JSON.stringify(data.user));
       onLogin(data.user);
-    } catch (e) { setErr(e.response?.data?.error || "Login failed"); }
+    } catch (e) {
+      setErr(e.response?.data?.error || e.message || "Login failed. Check your credentials.");
+    }
     finally { setLoading(false); }
   };
   return (
@@ -620,15 +640,25 @@ function Stock() {
     if (!form.product_name) { setErr("Product name required"); return; }
     setSaving(true); setErr("");
     try {
-      await api.post("/api/inventory", {
-        ...form,
+      const payload = clean({
+        product_name: form.product_name,
+        category: form.category,
+        wood_type: form.wood_type,
+        grade: form.grade,
+        unit: form.unit,
+        thickness: form.thickness,
+        notes: form.notes,
         cost_price: parseFloat(form.cost_price) || 0,
         market_value: parseFloat(form.market_value) || 0,
         available_quantity: parseFloat(form.available_quantity) || 0,
-        stock_status: "available"
+        stock_status: "available",
       });
+      // Only attach yard/supplier if actually selected (avoid null uuid)
+      if (form.yard_id)     payload.yard_id     = form.yard_id;
+      if (form.supplier_id) payload.supplier_id = form.supplier_id;
+      await api.post("/api/inventory", payload);
       close(); fetchAll();
-    } catch (e) { setErr(e.response?.data?.error || e.message); }
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -810,8 +840,12 @@ function Yards() {
   const save = async () => {
     if (!form.name) { setErr("Yard name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/yards", form); close(); fetchAll(); }
-    catch (e) { setErr(e.response?.data?.error || e.message); }
+    try {
+      const payload = clean({ name: form.name, city: form.city, address: form.address, manager_name: form.manager_name, manager_phone: form.manager_phone, notes: form.notes, is_active: true });
+      await api.post("/api/yards", payload);
+      close(); fetchAll();
+    }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -927,24 +961,32 @@ function TradeEngine() {
       const qty = parseFloat(form.quantity) || 0;
       const price = parseFloat(form.unit_price) || 0;
       const selProd = inventory.find(i => i.id === form.product_id);
-      await api.post("/api/deals", {
+      const payload = clean({
         deal_type: form.deal_type,
-        customer_id: form.customer_id || undefined,
-        customer_name: custName || undefined,
-        supplier_id: form.supplier_id || undefined,
-        supplier_name: supplierName || undefined,
-        product_id: form.product_id || undefined,
-        product_name: selProd?.product_name || selProd?.name || undefined,
-        quantity: qty, unit_price: price,
-        total_value: qty * price, total_amount: qty * price,
-        status: "Created", stage: "Created",
+        customer_id: form.customer_id || null,
+        customer_name: custName || null,
+        supplier_id: form.supplier_id || null,
+        supplier_name: supplierName || null,
+        product_id: form.product_id || null,
+        product_name: selProd?.product_name || selProd?.name || form.productText || null,
+        quantity: qty || null,
+        unit_price: price || null,
+        total_value: qty * price || null,
+        total_amount: qty * price || null,
+        status: "Created",
+        stage: "Created",
         payment_status: form.payment_status,
         payment_terms: form.payment_terms,
-        expected_delivery: form.expected_delivery || undefined,
-        notes: form.notes || undefined,
+        expected_delivery: form.expected_delivery || null,
+        notes: form.notes || null,
       });
+      // Remove null uuid fields that break Supabase
+      if (!payload.product_id) delete payload.product_id;
+      if (!payload.customer_id) delete payload.customer_id;
+      if (!payload.supplier_id) delete payload.supplier_id;
+      await api.post("/api/deals", payload);
       close(); fetchAll();
-    } catch (e) { setErr(e.response?.data?.error || e.message); }
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -1097,10 +1139,29 @@ function TradeEngine() {
         )}
 
         <Field label="Material / Product">
-          <Select value={form.product_id} onChange={set("product_id")}>
-            <option value="">— Select from stock —</option>
-            {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name || i.name} ({i.available_quantity} {i.unit || "pcs"} available)</option>)}
-          </Select>
+          <div className="space-y-2">
+            <Input
+              value={form.productText || ""}
+              onChange={e => setForm(p => ({ ...p, productText: e.target.value, product_id: "" }))}
+              placeholder="Type material name (e.g. Teak Plywood 18mm)…"
+            />
+            {inventory.length > 0 && (
+              <div className="text-xs text-gray-400 flex items-center gap-1">
+                <span>Or pick from stock:</span>
+                <select
+                  value={form.product_id || ""}
+                  onChange={e => {
+                    const sel = inventory.find(i => i.id === e.target.value);
+                    setForm(p => ({ ...p, product_id: e.target.value, productText: sel ? (sel.product_name || sel.name) : p.productText }));
+                  }}
+                  className="border border-gray-200 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 max-w-xs"
+                >
+                  <option value="">— existing stock —</option>
+                  {inventory.map(i => <option key={i.id} value={i.id}>{i.product_name || i.name} ({i.available_quantity} {i.unit || "pcs"})</option>)}
+                </select>
+              </div>
+            )}
+          </div>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1194,10 +1255,10 @@ function Transit() {
     if (!form.destination) { setErr("Destination required"); return; }
     setSaving(true); setErr("");
     try {
-      await api.post("/api/shipments", {
+      const payload = clean({
         vehicle_number: form.vehicle_number,
-        driver_name: form.driver_name, driver_phone: form.driver_phone,
-        origin_yard_id: form.origin_yard_id || null,
+        driver_name: form.driver_name,
+        driver_phone: form.driver_phone,
         destination: form.destination,
         dispatch_date: form.dispatch_date,
         expected_arrival: form.expected_arrival,
@@ -1205,10 +1266,12 @@ function Transit() {
         status: form.status,
         cargo_details: form.cargo_details,
         transit_type: form.transit_type,
-        shipment_type: form.transit_type,
       });
+      // Only include origin_yard_id if actually selected (avoid null uuid error)
+      if (form.origin_yard_id) payload.origin_yard_id = form.origin_yard_id;
+      await api.post("/api/shipments", payload);
       close(); fetchAll();
-    } catch (e) { setErr(e.response?.data?.error || e.message); }
+    } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -1356,7 +1419,7 @@ function Suppliers() {
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", credit_terms: "30 days", notes: "" });
+  const [form, setForm] = useState({ name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", notes: "" });
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const fetchAll = useCallback(async () => {
@@ -1371,13 +1434,18 @@ function Suppliers() {
   }, []);
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const DEFAULTS = { name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", credit_terms: "30 days", notes: "" };
+  const DEFAULTS = { name: "", city: "", country: "India", contact_person: "", phone: "", email: "", gst_number: "", pan_number: "", products_supplied: "", notes: "" };
   const close = () => { setShowAdd(false); setForm(DEFAULTS); setErr(""); };
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/suppliers", form); close(); fetchAll(); }
-    catch (e) { setErr(e.response?.data?.error || e.message); }
+    try {
+      // Only send columns that exist in the suppliers table
+      const payload = clean({ name: form.name, city: form.city, country: form.country, contact_person: form.contact_person, phone: form.phone, email: form.email, gst_number: form.gst_number, pan_number: form.pan_number, products_supplied: form.products_supplied, notes: form.notes });
+      await api.post("/api/suppliers", payload);
+      close(); fetchAll();
+    }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -1432,11 +1500,6 @@ function Suppliers() {
         </div>
         <Field label="Email"><Input type="email" value={form.email} onChange={set("email")} /></Field>
         <Field label="Products Supplied"><Input value={form.products_supplied} onChange={set("products_supplied")} placeholder="Teak, Plywood…" /></Field>
-        <Field label="Credit Terms">
-          <Select value={form.credit_terms} onChange={set("credit_terms")}>
-            <option>Immediate</option><option>7 days</option><option>15 days</option><option>30 days</option><option>45 days</option><option>60 days</option>
-          </Select>
-        </Field>
         <Field label="Notes"><Textarea value={form.notes} onChange={set("notes")} /></Field>
         <ErrBanner msg={err} />
         <div className="flex gap-3"><Btn onClick={save} disabled={saving}>{saving ? "Saving…" : "Add Supplier"}</Btn><Btn variant="secondary" onClick={close}>Cancel</Btn></div>
@@ -1472,8 +1535,12 @@ function Customers() {
   const save = async () => {
     if (!form.name) { setErr("Name required"); return; }
     setSaving(true); setErr("");
-    try { await api.post("/api/customers", form); close(); fetchAll(); }
-    catch (e) { setErr(e.response?.data?.error || e.message); }
+    try {
+      const payload = clean({ name: form.name, city: form.city, country: form.country, phone: form.phone, email: form.email, gst_number: form.gst_number, pan_number: form.pan_number, notes: form.notes });
+      await api.post("/api/customers", payload);
+      close(); fetchAll();
+    }
+    catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); }
     setSaving(false);
   };
 
@@ -1691,26 +1758,48 @@ function Reports() {
     { key: "customers", label: "Customer Report", icon: "👥", desc: "Customer revenue analysis" },
   ];
 
+  const REPORT_HEADERS = {
+    inventory: ["Product","Category","Wood Type","Grade","Unit","Qty","Cost Price","Total Value"],
+    sales:     ["Deal #","Customer","Product","Qty","Unit Price","Total Value","Status","Payment","Date"],
+    shipments: ["Shipment #","Vehicle","Driver","Destination","Dispatch","ETA","Status","Freight"],
+    suppliers: ["Supplier","City","Country","GST","Contact","Phone","Email","Products"],
+    customers: ["Customer","City","Country","GST","Phone","Email","Notes"],
+  };
+
+  const buildRow = (type, row) => {
+    const safe = (v) => (v === null || v === undefined ? "—" : String(v));
+    if (type === "inventory") return [row.product_name||row.name, row.category, row.wood_type, row.grade, row.unit, row.available_quantity, row.cost_price ? `₹${Number(row.cost_price).toLocaleString("en-IN")}` : "—", row.cost_price && row.available_quantity ? `₹${(row.cost_price*row.available_quantity).toLocaleString("en-IN")}` : "—"].map(safe);
+    if (type === "sales")     return [row.deal_number, row.customer_name, row.product_name, row.quantity, row.unit_price ? `₹${Number(row.unit_price).toLocaleString("en-IN")}` : "—", row.total_value ? `₹${Number(row.total_value).toLocaleString("en-IN")}` : "—", row.status, row.payment_status, row.created_at ? new Date(row.created_at).toLocaleDateString("en-IN") : "—"].map(safe);
+    if (type === "shipments") return [row.shipment_number, row.vehicle_number, row.driver_name, row.destination, row.dispatch_date ? new Date(row.dispatch_date).toLocaleDateString("en-IN") : "—", row.expected_arrival ? new Date(row.expected_arrival).toLocaleDateString("en-IN") : "—", row.status, row.freight_cost ? `₹${Number(row.freight_cost).toLocaleString("en-IN")}` : "—"].map(safe);
+    if (type === "suppliers") return [row.name, row.city, row.country, row.gst_number, row.contact_person, row.phone, row.email, row.products_supplied].map(safe);
+    if (type === "customers") return [row.name, row.city, row.country, row.gst_number, row.phone, row.email, row.notes].map(safe);
+    return Object.values(row).slice(0,8).map(safe);
+  };
+
   const downloadPDF = async (type, label) => {
     setLoading(p => ({ ...p, [type]: true }));
     try {
-      const { data } = await api.get(`/api/reports/${type}`);
+      const res = await api.get(`/api/reports/${type}`).catch(() => api.get(`/api/${type === "sales" ? "deals" : type === "inventory" ? "inventory" : type}`));
+      const data = (res.data || []);
+      const headers = REPORT_HEADERS[type] || Object.keys(data[0] || {}).slice(0,8);
       const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
       const co = company;
+      const rows = data.map(row => buildRow(type, row));
+      const tableHtml = `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${label}</title>
-<style>* {margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a1a}.page{max-width:900px;margin:0 auto;padding:32px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #1e3a5f;margin-bottom:20px}.company-name{font-size:22px;font-weight:900;color:#1e3a5f}.report-title-box{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:14px 20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.report-title{font-size:16px;font-weight:800}table{width:100%;border-collapse:collapse;font-size:10px}thead tr{background:#1e3a5f;color:white}th{padding:8px 10px;text-align:left;font-weight:600}tbody tr:nth-child(even){background:#f8fafc}td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155}.footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a1a}.page{max-width:960px;margin:0 auto;padding:32px}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #1e3a5f;margin-bottom:20px}.co-name{font-size:22px;font-weight:900;color:#1e3a5f}.title-box{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:14px 20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.title-text{font-size:16px;font-weight:800}table{width:100%;border-collapse:collapse;font-size:10px}thead tr{background:#1e3a5f;color:white}th{padding:8px 10px;text-align:left;font-weight:600}tbody tr:nth-child(even){background:#f8fafc}td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155}.footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
 </head><body><div class="page">
-<div class="header"><div><div class="company-name">${co.name || "Dockside Timber"}</div><div style="font-size:10px;color:#64748b">Timber Trade OS</div>${co.address ? `<div style="font-size:10px;color:#64748b;margin-top:4px">${co.address}</div>` : ""}</div>
-<div style="text-align:right;font-size:10px;color:#475569">${co.gst_number ? `<div>GST: ${co.gst_number}</div>` : ""}${co.pan_number ? `<div>PAN: ${co.pan_number}</div>` : ""}${co.owner_name ? `<div>Prop: ${co.owner_name}</div>` : ""}</div></div>
-<div class="report-title-box"><div><div class="report-title">${label}</div><div style="font-size:11px;opacity:0.8;margin-top:2px">${data.length} records</div></div><div style="font-size:10px;opacity:0.85">Generated: ${now}</div></div>
-<table><thead><tr>${Object.keys(data[0] || {}).slice(0, 8).map(k => `<th>${k}</th>`).join("")}</tr></thead>
-<tbody>${data.map(row => `<tr>${Object.values(row).slice(0, 8).map(v => `<td>${v ?? "—"}</td>`).join("")}</tr>`).join("")}</tbody></table>
-</div><div style="max-width:900px;margin:0 auto;padding:0 32px"><div class="footer"><span>${co.name || "Dockside"} · Confidential</span><span>Generated ${now}</span></div></div>
+<div class="header"><div><div class="co-name">${co.name||"Dockside Timber"}</div><div style="font-size:10px;color:#64748b">Timber Trade OS</div>${co.address?`<div style="font-size:10px;color:#64748b;margin-top:4px">${co.address}</div>`:""}</div>
+<div style="text-align:right;font-size:10px;color:#475569">${co.gst_number?`<div>GST: ${co.gst_number}</div>`:""}${co.pan_number?`<div>PAN: ${co.pan_number}</div>`:""}${co.owner_name?`<div>Prop: ${co.owner_name}</div>`:""}</div></div>
+<div class="title-box"><div><div class="title-text">${label}</div><div style="font-size:11px;opacity:.8;margin-top:2px">${data.length} records</div></div><div style="font-size:10px;opacity:.85">Generated: ${now}</div></div>
+${tableHtml}
+</div><div style="max-width:960px;margin:0 auto;padding:0 32px"><div class="footer"><span>${co.name||"Dockside"} · Confidential</span><span>Generated ${now}</span></div></div>
 </body></html>`;
       const w = window.open("", "_blank");
+      if (!w) { alert("Popup blocked — please allow popups for this site"); return; }
       w.document.write(html); w.document.close();
-      setTimeout(() => w.print(), 800);
-    } catch (e) { alert("Failed: " + e.message); }
+      setTimeout(() => w.print(), 900);
+    } catch (e) { alert("Report failed: " + (e.response?.data?.error || e.message)); }
     setLoading(p => ({ ...p, [type]: false }));
   };
 
