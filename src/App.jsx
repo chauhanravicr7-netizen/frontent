@@ -170,23 +170,26 @@ const TypeToggle = ({ value, onChange, options, colors }) => (
   </div>
 );
 
-const AutocompleteInput = ({ endpoint, placeholder, onSelect, value, onChange }) => {
-  const [suggestions, setSuggestions] = useState([]);
-  const [open, setOpen] = useState(false);
-  const ref = useRef();
-  
-  useEffect(() => { 
-    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; 
-    document.addEventListener("mousedown", handleClick); 
-    return () => document.removeEventListener("mousedown", handleClick); 
-  }, []);
-  
-  const [localList, setLocalList] = useState([]);
-  
-  useEffect(() => { 
-    const base = endpoint.replace("/api/autocomplete/", "/api/"); 
-    api.get(base).then(r => setLocalList(r.data || [])).catch(() => {}); 
-  }, [endpoint]);
+const search = async (q) => {
+    if (!q) { setSuggestions([]); setOpen(false); return; }
+    try { 
+      // Bypass the global error wrapper by using native fetch for background search
+      const res = await fetch(`${API}${endpoint}?q=${encodeURIComponent(q)}`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("dockside-token")}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data ||[]); 
+        setOpen(true); 
+        return;
+      }
+      throw new Error("Fallback to local");
+    } catch { 
+      const filtered = localList.filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase())).slice(0, 8); 
+      setSuggestions(filtered); 
+      setOpen(filtered.length > 0); 
+    }
+  };
   
   const search = async (q) => {
     if (!q) { setSuggestions([]); setOpen(false); return; }
