@@ -1906,7 +1906,8 @@ function Reports() {
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
-    sb.from("company").select("*").limit(1).single()
+    sb.from("company").select("*").eq("id", companyId).single()
+
       .then(r => setCompany(r.data || {})).catch(() => {});
   }, []);
 
