@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
-import axios from "axios";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer
@@ -9,12 +8,35 @@ import {
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY || "";
 
-const api = axios.create({ baseURL: API });
-api.interceptors.request.use(c => {
-  const t = localStorage.getItem("dockside-token");
-  if (t) c.headers.Authorization = `Bearer ${t}`;
-  return c;
-});
+// Native fetch-based API client — drop-in axios replacement
+const api = (() => {
+  const getHeaders = () => {
+    const h = { "Content-Type": "application/json" };
+    const t = localStorage.getItem("dockside-token");
+    if (t) h["Authorization"] = `Bearer ${t}`;
+    return h;
+  };
+  const request = async (method, url, body) => {
+    const res = await fetch(`${API}${url}`, {
+      method,
+      headers: getHeaders(),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data?.error || `HTTP ${res.status}`);
+      err.response = { data, status: res.status };
+      throw err;
+    }
+    return { data };
+  };
+  return {
+    get:    (url)        => request("GET",    url),
+    post:   (url, body)  => request("POST",   url, body),
+    put:    (url, body)  => request("PUT",    url, body),
+    delete: (url)        => request("DELETE", url),
+  };
+})();
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
 const fmt = (n) => {
