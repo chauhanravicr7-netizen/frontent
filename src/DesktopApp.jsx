@@ -97,7 +97,7 @@ function GlobalSearch({ inventory, deals, customers, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4"
       onClick={onClose}>
-      <div className="w-full max-width-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
         onClick={e => e.stopPropagation()}>
         <div className="p-3 border-b border-gray-200">
           <input autoFocus type="text" value={q} onChange={e => setQ(e.target.value)} ref={inputRef}
