@@ -1343,6 +1343,8 @@ function Settings() {
 
 // ── APP ROOT AND GLOBAL TOAST LAYER ────────────────────────────────────────────
 export default function App() {
+  // ── APP ROOT AND GLOBAL TOAST LAYER ────────────────────────────────────────────
+export default function App() {
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem("dockside-user")); } catch { return null; } });
   const [toast, setToast] = useState(null);
 
@@ -1356,19 +1358,59 @@ export default function App() {
 
   if (!user) return <Login onLogin={setUser} />;
 
+  // Mobile Bottom Navigation Tabs
+  const MobileBottomNav = () => (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
+      <div className="flex h-16">
+        {NAV.slice(0, 5).map(tab => (
+          <NavLink key={tab.to} to={tab.to} end={tab.to === "/"}
+            className={({ isActive }) => cls(
+              "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors",
+              isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+            )}>
+            <span className="text-xl leading-none mb-0.5">{tab.icon}</span>
+            <span className="truncate w-full text-center px-1">{tab.label}</span>
+          </NavLink>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Mobile Top Header
+  const MobileHeader = () => (
+    <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900 text-white flex items-center justify-between px-4 h-14 shadow-md">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-xs">⚓</div>
+        <span className="font-black">Dockside OS</span>
+      </div>
+      <button onClick={signOut} className="text-xs font-bold text-gray-400">Sign Out</button>
+    </div>
+  );
+
   return (
     <BrowserRouter>
       {toast && (
-        <div className="fixed top-6 right-6 z-[9999] max-w-sm bg-red-600 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto border border-red-500">
+        <div className="fixed top-16 md:top-6 right-4 md:right-6 z-[9999] w-[calc(100%-32px)] md:max-w-sm bg-red-600 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto border border-red-500">
           <span className="text-xl leading-none mt-0.5">🚨</span>
           <div><p className="font-black text-sm uppercase tracking-wider text-red-100 mb-0.5">System Error</p><p className="text-sm font-medium leading-snug">{toast}</p></div>
           <button onClick={() => setToast(null)} className="ml-auto text-red-200 hover:text-white transition-colors bg-red-700/50 hover:bg-red-700 rounded-full w-6 h-6 flex items-center justify-center">×</button>
         </div>
       )}
 
+      {/* Main Layout Wrapper */}
       <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-blue-200 selection:text-blue-900">
-        <Sidebar onSignOut={signOut} />
-        <div className="flex-1 ml-56 min-h-screen relative">
+        
+        {/* Desktop Sidebar (Hides on Mobile) */}
+        <div className="hidden md:block">
+          <Sidebar onSignOut={signOut} />
+        </div>
+
+        {/* Mobile Header & Bottom Nav (Hides on Desktop) */}
+        <MobileHeader />
+        <MobileBottomNav />
+
+        {/* Page Content Area */}
+        <div className="flex-1 md:ml-56 min-h-screen w-full relative pt-14 pb-20 md:pt-0 md:pb-0 overflow-x-hidden">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/stock" element={<Stock />} />
@@ -1398,6 +1440,7 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.5); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
       `}} />
     </BrowserRouter>
   );
