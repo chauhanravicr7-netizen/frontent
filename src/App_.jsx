@@ -171,44 +171,75 @@ const TypeToggle = ({ value, onChange, options, colors }) => (
 );
 
   
-  const search = async (q) => {
-    if (!q) { setSuggestions([]); setOpen(false); return; }
-    try { 
-      const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`); 
-      setSuggestions(data ||[]); 
-      setOpen(true); 
-    } catch { 
-      const filtered = localList.filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase())).slice(0, 8); 
-      setSuggestions(filtered); 
-      setOpen(filtered.length > 0); 
-    }
-  };
-  
-  return (
-    <div className="relative" ref={ref}>
-      <input 
-        value={value} 
-        onChange={e => { onChange(e.target.value); search(e.target.value); }} 
-        placeholder={placeholder} 
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" 
-      />
-      {open && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto mt-2 py-1">
-          {suggestions.map(s => (
-            <button 
-              key={s.id} 
-              onClick={() => { onSelect(s); setOpen(false); onChange(s.name); }} 
-              className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-0 transition-colors"
-            >
-              <p className="font-bold text-gray-800">{s.name}</p>
-              <p className="text-xs font-medium text-gray-400 mt-0.5">{[s.city, s.gst_number].filter(Boolean).join(" · ")}</p>
-            </button>
-          ))}
+  const AutocompleteInput = ({ endpoint, value, onChange, onSelect, placeholder, localList = [] }) => {
+    const [open, setOpen] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (ref.current && !ref.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    },[]);
+
+    const handleSearch = async (q) => {
+        if (!q) { 
+            setSuggestions([]); 
+            setOpen(false); 
+            return; 
+        }
+        try {
+            const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`);
+            setSuggestions(data ||[]);
+            setOpen(true);
+        } catch {
+            const filtered = localList
+                .filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase()))
+                .slice(0, 8);
+            setSuggestions(filtered);
+            setOpen(filtered.length > 0);
+        }
+    };
+
+    return (
+        <div className="relative" ref={ref}>
+            <input
+                value={value}
+                onChange={e => { 
+                    onChange(e.target.value); 
+                    handleSearch(e.target.value); 
+                }}
+                placeholder={placeholder}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+            />
+            {open && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto mt-2 py-1">
+                    {suggestions.map(s => (
+                        <button
+                            key={s.id}
+                            onClick={() => { 
+                                onSelect(s); 
+                                setOpen(false); 
+                                onChange(s.name); 
+                            }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-0 transition-colors"
+                        >
+                            <p className="font-bold text-gray-800">{s.name}</p>
+                            <p className="text-xs font-medium text-gray-400 mt-0.5">
+                                {[s.city, s.gst_number].filter(Boolean).join(" · ")}
+                            </p>
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
+
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────────
 const NAV =[
