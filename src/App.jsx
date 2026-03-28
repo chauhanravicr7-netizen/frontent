@@ -297,12 +297,14 @@ const Sidebar = ({ onSignOut }) => (
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState(""); // For registration side
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  
-  const submit = async () => {
+
+  const submitLogin = async () => {
     if (!email || !password) { setErr("Email and password required"); return; }
     setLoading(true); setErr("");
     try {
@@ -316,30 +318,84 @@ function Login({ onLogin }) {
       setLoading(false); 
     }
   };
-  
+
+  const submitRegister = async () => {
+    // Placeholder for when you add a registration endpoint to your backend
+    alert(`Registration triggered for ${name}. Add backend endpoint!`);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4" style={{ backgroundImage: "radial-gradient(circle at top right, #1e3a8a 0%, #111827 50%)" }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-800/50">
-        <div className="bg-gray-50 p-8 text-center border-b border-gray-100">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-xl shadow-blue-900/30 mb-4">⚓</div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dockside</h1>
-          <p className="text-blue-600 font-bold text-sm mt-1 uppercase tracking-widest">Trade OS</p>
+    <div className="min-h-screen bg-[#e9ecf3] flex items-center justify-center p-4 font-sans">
+      <div className="relative w-[768px] max-w-full min-h-[480px] bg-white rounded-[30px] shadow-2xl overflow-hidden">
+        
+        {/* --- SIGN UP FORM --- */}
+        <div className={`absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out px-10 flex flex-col justify-center ${
+            isSignUp ? 'translate-x-full opacity-100 z-50' : 'opacity-0 z-10 pointer-events-none'
+          }`}>
+          <h1 className="text-3xl font-black text-gray-900 text-center mb-6 tracking-tight">Registration</h1>
+          <div className="flex justify-center gap-4 mb-6">
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">G</button>
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">f</button>
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">in</button>
+          </div>
+          <span className="text-xs text-gray-500 text-center mb-6">or register with email</span>
+          <input type="text" placeholder="Username" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-6 transition-all" />
+          <button onClick={submitRegister} className="w-full bg-[#6b59d3] hover:bg-[#5848b5] text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/30">Register</button>
         </div>
-        <div className="p-8 space-y-5">
-          <Field label="Work Email">
-            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" />
-          </Field>
-          <Field label="Password">
-            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••" />
-          </Field>
-          {err && <ErrBanner msg={err} />}
-          <button 
-            onClick={submit} 
-            disabled={loading} 
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black py-3.5 rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-200 active:scale-[0.98] mt-2"
-          >
-            {loading ? "Authenticating…" : "Sign In to Workspace"}
+
+        {/* --- SIGN IN FORM --- */}
+        <div className={`absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out px-10 flex flex-col justify-center ${
+            isSignUp ? 'translate-x-full opacity-0 z-10 pointer-events-none' : 'opacity-100 z-50'
+          }`}>
+          <h1 className="text-3xl font-black text-gray-900 text-center mb-6 tracking-tight">Login</h1>
+          <div className="flex justify-center gap-4 mb-6">
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">G</button>
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">f</button>
+            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">in</button>
+          </div>
+          <span className="text-xs text-gray-500 text-center mb-6">or login with email</span>
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submitLogin()} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-2 transition-all" />
+          <p className="text-xs font-bold text-[#6b59d3] hover:text-[#5848b5] cursor-pointer mb-6">Forgot Password?</p>
+          {err && <div className="text-red-500 text-xs font-bold mb-3 text-center bg-red-50 p-2 rounded-lg">{err}</div>}
+          <button onClick={submitLogin} disabled={loading} className="w-full bg-[#6b59d3] hover:bg-[#5848b5] text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/30 disabled:opacity-50">
+            {loading ? "Authenticating..." : "Login"}
           </button>
+        </div>
+
+        {/* --- OVERLAY CONTAINER --- */}
+        <div className={`absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-700 ease-in-out z-[100] ${
+            isSignUp ? '-translate-x-full' : 'translate-x-0'
+          }`}>
+          <div className={`bg-gradient-to-br from-[#8d7cff] to-[#6b59d3] relative -left-full h-full w-[200%] transform transition-transform duration-700 ease-in-out text-white ${
+              isSignUp ? 'translate-x-1/2' : 'translate-x-0'
+            }`}>
+            
+            {/* OVERLAY LEFT (Appears when Sign Up is active) */}
+            <div className={`absolute w-1/2 h-full flex flex-col justify-center items-center px-12 text-center top-0 transition-transform duration-700 ease-in-out ${
+                isSignUp ? 'translate-x-0' : '-translate-x-[20%]'
+              }`}>
+              <h2 className="text-3xl font-black mb-4 leading-tight">Welcome Back!</h2>
+              <p className="text-sm font-medium mb-8 text-white/80">Already have an account? Log in to continue accessing your dashboard.</p>
+              <button onClick={() => setIsSignUp(false)} className="px-10 py-2.5 border-2 border-white rounded-full font-bold hover:bg-white hover:text-[#6b59d3] transition-colors">
+                Login
+              </button>
+            </div>
+
+            {/* OVERLAY RIGHT (Appears when Sign In is active) */}
+            <div className={`absolute right-0 w-1/2 h-full flex flex-col justify-center items-center px-12 text-center top-0 transition-transform duration-700 ease-in-out ${
+                isSignUp ? 'translate-x-[20%]' : 'translate-x-0'
+              }`}>
+              <h2 className="text-3xl font-black mb-4 leading-tight">Hello, Welcome!</h2>
+              <p className="text-sm font-medium mb-8 text-white/80">Don't have an account? Register now to start managing your logistics.</p>
+              <button onClick={() => setIsSignUp(true)} className="px-10 py-2.5 border-2 border-white rounded-full font-bold hover:bg-white hover:text-[#6b59d3] transition-colors">
+                Register
+              </button>
+            </div>
+            
+          </div>
         </div>
       </div>
     </div>
