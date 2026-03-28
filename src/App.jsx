@@ -173,27 +173,6 @@ const TypeToggle = ({ value, onChange, options, colors }) => (
 const search = async (q) => {
     if (!q) { setSuggestions([]); setOpen(false); return; }
     try { 
-      // Bypass the global error wrapper by using native fetch for background search
-      const res = await fetch(`${API}${endpoint}?q=${encodeURIComponent(q)}`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("dockside-token")}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data ||[]); 
-        setOpen(true); 
-        return;
-      }
-      throw new Error("Fallback to local");
-    } catch { 
-      const filtered = localList.filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase())).slice(0, 8); 
-      setSuggestions(filtered); 
-      setOpen(filtered.length > 0); 
-    }
-  };
-  
-  const search = async (q) => {
-    if (!q) { setSuggestions([]); setOpen(false); return; }
-    try { 
       const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`); 
       setSuggestions(data ||[]); 
       setOpen(true); 
