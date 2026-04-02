@@ -170,75 +170,45 @@ const TypeToggle = ({ value, onChange, options, colors }) => (
   </div>
 );
 
-const AutocompleteInput = ({ endpoint, value, onChange, onSelect, placeholder, localList = [] }) => {
-  const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const ref = useRef(null);
-
-  useEffect(() => {
-      const handleClickOutside = (event) => {
-          if (ref.current && !ref.current.contains(event.target)) {
-              setOpen(false);
-          }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-  },[]);
-
-  const handleSearch = async (q) => {
-      if (!q) { 
-          setSuggestions([]); 
-          setOpen(false); 
-          return; 
-      }
-      try {
-          const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`);
-          setSuggestions(data ||[]);
-          setOpen(true);
-      } catch {
-          const filtered = localList
-              .filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase()))
-              .slice(0, 8);
-          setSuggestions(filtered);
-          setOpen(filtered.length > 0);
-      }
+  
+  const search = async (q) => {
+    if (!q) { setSuggestions([]); setOpen(false); return; }
+    try { 
+      const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(q)}`); 
+      setSuggestions(data ||[]); 
+      setOpen(true); 
+    } catch { 
+      const filtered = localList.filter(item => (item.name || "").toLowerCase().includes(q.toLowerCase())).slice(0, 8); 
+      setSuggestions(filtered); 
+      setOpen(filtered.length > 0); 
+    }
   };
-
+  
   return (
-      <div className="relative" ref={ref}>
-          <input
-              value={value}
-              onChange={e => { 
-                  onChange(e.target.value); 
-                  handleSearch(e.target.value); 
-              }}
-              placeholder={placeholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-          />
-          {open && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto mt-2 py-1">
-                  {suggestions.map(s => (
-                      <button
-                          key={s.id}
-                          onClick={() => { 
-                              onSelect(s); 
-                              setOpen(false); 
-                              onChange(s.name); 
-                          }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-0 transition-colors"
-                      >
-                          <p className="font-bold text-gray-800">{s.name}</p>
-                          <p className="text-xs font-medium text-gray-400 mt-0.5">
-                              {[s.city, s.gst_number].filter(Boolean).join(" · ")}
-                          </p>
-                      </button>
-                  ))}
-              </div>
-          )}
-      </div>
+    <div className="relative" ref={ref}>
+      <input 
+        value={value} 
+        onChange={e => { onChange(e.target.value); search(e.target.value); }} 
+        placeholder={placeholder} 
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" 
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto mt-2 py-1">
+          {suggestions.map(s => (
+            <button 
+              key={s.id} 
+              onClick={() => { onSelect(s); setOpen(false); onChange(s.name); }} 
+              className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-0 transition-colors"
+            >
+              <p className="font-bold text-gray-800">{s.name}</p>
+              <p className="text-xs font-medium text-gray-400 mt-0.5">{[s.city, s.gst_number].filter(Boolean).join(" · ")}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
-
 
 // ── SIDEBAR ────────────────────────────────────────────────────────────────────
 const NAV =[
@@ -267,8 +237,7 @@ const Sidebar = ({ onSignOut }) => (
         </div>
       </div>
     </div>
-    {/* FIX 1: Added min-h-0 and pb-24 so that at 100% zoom, the sidebar scrolls instead of hiding the bottom links */}
-    <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-1 custom-scrollbar min-h-0 pb-24">
+    <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-1 custom-scrollbar">
       {NAV.map(n => (
         <NavLink 
           key={n.to} 
@@ -297,14 +266,12 @@ const Sidebar = ({ onSignOut }) => (
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState(""); // For registration side
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-
-  const submitLogin = async () => {
+  
+  const submit = async () => {
     if (!email || !password) { setErr("Email and password required"); return; }
     setLoading(true); setErr("");
     try {
@@ -318,83 +285,30 @@ function Login({ onLogin }) {
       setLoading(false); 
     }
   };
-
-  const submitRegister = async () => {
-    alert(`Registration triggered for ${name}. Add backend endpoint!`);
-  };
-
+  
   return (
-    <div className="min-h-screen bg-[#e9ecf3] flex items-center justify-center p-4 font-sans">
-      <div className="relative w-[768px] max-w-full min-h-[480px] bg-white rounded-[30px] shadow-2xl overflow-hidden">
-        
-        {/* --- SIGN UP FORM --- */}
-        <div className={`absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out px-10 flex flex-col justify-center ${
-            isSignUp ? 'translate-x-full opacity-100 z-50' : 'opacity-0 z-10 pointer-events-none'
-          }`}>
-          <h1 className="text-3xl font-black text-gray-900 text-center mb-6 tracking-tight">Registration</h1>
-          <div className="flex justify-center gap-4 mb-6">
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">G</button>
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">f</button>
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">in</button>
-          </div>
-          <span className="text-xs text-gray-500 text-center mb-6">or register with email</span>
-          <input type="text" placeholder="Username" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
-          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-6 transition-all" />
-          <button onClick={submitRegister} className="w-full bg-[#6b59d3] hover:bg-[#5848b5] text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/30">Register</button>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4" style={{ backgroundImage: "radial-gradient(circle at top right, #1e3a8a 0%, #111827 50%)" }}>
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-800/50">
+        <div className="bg-gray-50 p-8 text-center border-b border-gray-100">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-xl shadow-blue-900/30 mb-4">⚓</div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dockside</h1>
+          <p className="text-blue-600 font-bold text-sm mt-1 uppercase tracking-widest">Trade OS</p>
         </div>
-
-        {/* --- SIGN IN FORM --- */}
-        <div className={`absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out px-10 flex flex-col justify-center ${
-            isSignUp ? 'translate-x-full opacity-0 z-10 pointer-events-none' : 'opacity-100 z-50'
-          }`}>
-          <h1 className="text-3xl font-black text-gray-900 text-center mb-6 tracking-tight">Login</h1>
-          <div className="flex justify-center gap-4 mb-6">
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">G</button>
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">f</button>
-            <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700">in</button>
-          </div>
-          <span className="text-xs text-gray-500 text-center mb-6">or login with email</span>
-          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-3 transition-all" />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submitLogin()} className="w-full bg-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b59d3] mb-2 transition-all" />
-          <p className="text-xs font-bold text-[#6b59d3] hover:text-[#5848b5] cursor-pointer mb-6">Forgot Password?</p>
-          {err && <div className="text-red-500 text-xs font-bold mb-3 text-center bg-red-50 p-2 rounded-lg">{err}</div>}
-          <button onClick={submitLogin} disabled={loading} className="w-full bg-[#6b59d3] hover:bg-[#5848b5] text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/30 disabled:opacity-50">
-            {loading ? "Authenticating..." : "Login"}
+        <div className="p-8 space-y-5">
+          <Field label="Work Email">
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" />
+          </Field>
+          <Field label="Password">
+            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••" />
+          </Field>
+          {err && <ErrBanner msg={err} />}
+          <button 
+            onClick={submit} 
+            disabled={loading} 
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black py-3.5 rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-200 active:scale-[0.98] mt-2"
+          >
+            {loading ? "Authenticating…" : "Sign In to Workspace"}
           </button>
-        </div>
-
-        {/* --- OVERLAY CONTAINER --- */}
-        <div className={`absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-700 ease-in-out z-[100] ${
-            isSignUp ? '-translate-x-full' : 'translate-x-0'
-          }`}>
-          <div className={`bg-gradient-to-br from-[#8d7cff] to-[#6b59d3] relative -left-full h-full w-[200%] transform transition-transform duration-700 ease-in-out text-white ${
-              isSignUp ? 'translate-x-1/2' : 'translate-x-0'
-            }`}>
-            
-            {/* OVERLAY LEFT (Appears when Sign Up is active) */}
-            <div className={`absolute w-1/2 h-full flex flex-col justify-center items-center px-12 text-center top-0 transition-transform duration-700 ease-in-out ${
-                isSignUp ? 'translate-x-0' : '-translate-x-[20%]'
-              }`}>
-              <h2 className="text-3xl font-black mb-4 leading-tight">Welcome Back!</h2>
-              <p className="text-sm font-medium mb-8 text-white/80">Already have an account? Log in to continue accessing your dashboard.</p>
-              <button onClick={() => setIsSignUp(false)} className="px-10 py-2.5 border-2 border-white rounded-full font-bold hover:bg-white hover:text-[#6b59d3] transition-colors">
-                Login
-              </button>
-            </div>
-
-            {/* OVERLAY RIGHT (Appears when Sign In is active) */}
-            <div className={`absolute right-0 w-1/2 h-full flex flex-col justify-center items-center px-12 text-center top-0 transition-transform duration-700 ease-in-out ${
-                isSignUp ? 'translate-x-[20%]' : 'translate-x-0'
-              }`}>
-              <h2 className="text-3xl font-black mb-4 leading-tight">Hello, Welcome!</h2>
-              <p className="text-sm font-medium mb-8 text-white/80">Don't have an account? Register now to start managing your logistics.</p>
-              <button onClick={() => setIsSignUp(true)} className="px-10 py-2.5 border-2 border-white rounded-full font-bold hover:bg-white hover:text-[#6b59d3] transition-colors">
-                Register
-              </button>
-            </div>
-            
-          </div>
         </div>
       </div>
     </div>
@@ -765,68 +679,8 @@ function TradeEngine() {
     } catch (e) { setErr(e.response?.data?.error || e.response?.data?.hint || e.message); } setSaving(false);
   };
   
-  // FIX 3: Auto-Transfer to Inventory on Purchase Closed
-  const updateDealStatus = async (deal, newStatus, extraFields = {}) => { 
-    try { 
-      await api.put(`/api/deals/${deal.id}`, { status: newStatus, stage: newStatus, ...extraFields }); 
-      
-      if (newStatus === "Closed" && deal.deal_type === "purchase") {
-         const invPayload = {
-            product_name: deal.product_name || "Unknown Product",
-            category: "Auto-Transfer",
-            cost_price: deal.unit_price || 0,
-            available_quantity: deal.quantity || 0,
-            stock_status: "available",
-            supplier_id: deal.supplier_id
-         };
-         await api.post("/api/inventory", invPayload);
-         alert(`✅ ${deal.quantity} units of ${deal.product_name} auto-transferred to Inventory!`);
-      }
-      fetchAll(); 
-    } catch (e) { 
-      alert("Update failed: " + (e.response?.data?.error || e.message)); 
-    } 
-  };
-
-  const markPaid = async (deal) => { 
-    await updateDealStatus(deal, "Paid", { payment_status: "Paid" }); 
-    setTimeout(() => updateDealStatus(deal, "Closed", { payment_status: "Paid" }), 600); 
-  };
-
-  // FIX 4: Download Custom Invoice
-  const downloadInvoice = async (deal) => {
-    try {
-      const { data: comp } = await api.get("/api/company");
-      let template = comp?.invoice_template;
-      if (!template) {
-         alert("No invoice template found! Please upload your HTML file in Settings first.");
-         return;
-      }
-
-      const replacements = {
-        "{{deal_id}}": deal.deal_number || deal.id,
-        "{{date}}": new Date().toLocaleDateString(),
-        "{{product_name}}": deal.product_name || "N/A",
-        "{{quantity}}": deal.quantity || 0,
-        "{{unit_price}}": deal.unit_price || 0,
-        "{{total_amount}}": deal.total_value || deal.total_amount || 0,
-        "{{customer_name}}": deal.customer_name || deal.supplier_name || "N/A",
-        "{{company_name}}": comp.name || "Dockside Trade",
-      };
-
-      for (const [key, value] of Object.entries(replacements)) {
-        template = template.replace(new RegExp(key, 'g'), value);
-      }
-
-      const printWin = window.open('', '_blank');
-      printWin.document.write(template);
-      printWin.document.close();
-      printWin.focus();
-      setTimeout(() => printWin.print(), 500);
-    } catch(e) {
-      alert("Error generating invoice.");
-    }
-  };
+  const updateDealStatus = async (dealId, newStatus, extraFields = {}) => { try { await api.put(`/api/deals/${dealId}`, { status: newStatus, stage: newStatus, ...extraFields }); fetchAll(); } catch (e) { alert("Update failed: " + e.message); } };
+  const markPaid = async (deal) => { await updateDealStatus(deal.id, "Paid", { payment_status: "Paid" }); setTimeout(() => updateDealStatus(deal.id, "Closed", { payment_status: "Paid" }), 600); };
   
   const totalValue = typeDeals.reduce((s, d) => s + (d.total_value || d.total_amount || 0), 0);
 
@@ -886,25 +740,12 @@ function TradeEngine() {
                   <div className="text-right flex flex-col items-end gap-3 min-w-[200px]">
                     <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Deal Value</p><p className="text-2xl font-black text-gray-900">{fmt(d.total_value || d.total_amount)}</p></div>
                     <p className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">{fmtDate(d.created_at)}</p>
-                    
-                    {/* Buttons Updated for Auto-Transfer and Download Invoice */}
                     <div className="flex flex-col gap-2 mt-auto pt-2 w-full">
-                      {d.status === "Created" && <Btn small variant="secondary" onClick={() => updateDealStatus(d, "In Transit")} className="w-full">Mark In Transit</Btn>}
-                      {d.status === "In Transit" && <Btn small variant="secondary" onClick={() => updateDealStatus(d, "Delivered")} className="w-full">Mark Delivered</Btn>}
+                      {d.status === "Created" && <Btn small variant="secondary" onClick={() => updateDealStatus(d.id, "In Transit")} className="w-full">Mark In Transit</Btn>}
+                      {d.status === "In Transit" && <Btn small variant="secondary" onClick={() => updateDealStatus(d.id, "Delivered")} className="w-full">Mark Delivered</Btn>}
                       {d.status === "Delivered" && (d.payment_status || "Pending") !== "Paid" && <Btn small variant="green" onClick={() => markPaid(d)} className="w-full shadow-green-200">Payment Received → Close</Btn>}
-                      
-                      {d.status === "Closed" && (
-                        <div className="flex flex-col gap-2 w-full">
-                          <div className="text-center text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-3 py-2 rounded-xl">
-                            ✅ Contract Fulfilled
-                          </div>
-                          <Btn small variant="secondary" onClick={() => downloadInvoice(d)} className="w-full border-gray-300 text-gray-700 hover:bg-gray-100">
-                            🖨️ Download Invoice
-                          </Btn>
-                        </div>
-                      )}
+                      {d.status === "Closed" && <div className="text-center text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-3 py-2 rounded-xl">✅ Contract Fulfilled</div>}
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -1269,81 +1110,20 @@ function Company() {
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────────────
-// FIX 2: Admin HTML Template Upload
 function Settings() {
-  const [company, setCompany] = useState({});
-  const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("dockside-user") || "{}");
-
-  useEffect(() => {
-    api.get("/api/company").then(r => {
-      if (r.data?.id) setCompany(r.data);
-    }).catch(() => {});
-  }, []);
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const htmlContent = event.target.result;
-      try {
-        if (company.id) {
-          await api.put(`/api/company/${company.id}`, { ...company, invoice_template: htmlContent });
-          setCompany({ ...company, invoice_template: htmlContent });
-          alert("✅ Custom Invoice Template Uploaded and Saved!");
-        } else {
-          alert("Please save your Company Profile first in the Company tab.");
-        }
-      } catch (err) {
-        alert("Failed to save template.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <div className="p-6 max-w-xl">
       <h1 className="text-2xl font-black text-gray-800 mb-6">Settings</h1>
-      
-      {/* Account Info */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4 mb-6">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
         <h3 className="font-bold text-gray-700">Account</h3>
-        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600">
-            {(user.full_name || user.email || "U")[0].toUpperCase()}
-          </div>
-          <div>
-            <p className="font-bold text-gray-800">{user.full_name || "User"}</p>
-            <p className="text-sm text-gray-400">{user.email}</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl"><div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600">{(user.full_name || user.email || "U")[0].toUpperCase()}</div><div><p className="font-bold text-gray-800">{user.full_name || "User"}</p><p className="text-sm text-gray-400">{user.email}</p></div></div>
       </div>
-
-      {/* Invoice Template Upload */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-2">📄 Custom Invoice Template</h2>
-        <p className="text-sm text-gray-500 mb-4">Upload your custom HTML invoice template. Use placeholders like {"{{product_name}}"} inside your HTML.</p>
-        
-        <div 
-          className="border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-lg p-6 text-center hover:bg-blue-100 cursor-pointer transition-colors" 
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input ref={fileInputRef} type="file" accept=".html" style={{ display: "none" }} onChange={handleFileUpload} />
-          
-          <p className="text-sm font-bold text-blue-700">
-            {company?.invoice_template ? "✅ Template Active! Click to replace." : "Click to upload HTML template"}
-          </p>
-        </div>
-      </div>
-
     </div>
   );
 }
 
 // ── APP ROOT AND GLOBAL TOAST LAYER ────────────────────────────────────────────
-export default function App() {
-  // ── APP ROOT AND GLOBAL TOAST LAYER ────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem("dockside-user")); } catch { return null; } });
   const [toast, setToast] = useState(null);
@@ -1358,59 +1138,19 @@ export default function App() {
 
   if (!user) return <Login onLogin={setUser} />;
 
-  // Mobile Bottom Navigation Tabs
-  const MobileBottomNav = () => (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
-      <div className="flex h-16">
-        {NAV.slice(0, 5).map(tab => (
-          <NavLink key={tab.to} to={tab.to} end={tab.to === "/"}
-            className={({ isActive }) => cls(
-              "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors",
-              isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
-            )}>
-            <span className="text-xl leading-none mb-0.5">{tab.icon}</span>
-            <span className="truncate w-full text-center px-1">{tab.label}</span>
-          </NavLink>
-        ))}
-      </div>
-    </div>
-  );
-
-  // Mobile Top Header
-  const MobileHeader = () => (
-    <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900 text-white flex items-center justify-between px-4 h-14 shadow-md">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-xs">⚓</div>
-        <span className="font-black">Dockside OS</span>
-      </div>
-      <button onClick={signOut} className="text-xs font-bold text-gray-400">Sign Out</button>
-    </div>
-  );
-
   return (
     <BrowserRouter>
       {toast && (
-        <div className="fixed top-16 md:top-6 right-4 md:right-6 z-[9999] w-[calc(100%-32px)] md:max-w-sm bg-red-600 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto border border-red-500">
+        <div className="fixed top-6 right-6 z-[9999] max-w-sm bg-red-600 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto border border-red-500">
           <span className="text-xl leading-none mt-0.5">🚨</span>
           <div><p className="font-black text-sm uppercase tracking-wider text-red-100 mb-0.5">System Error</p><p className="text-sm font-medium leading-snug">{toast}</p></div>
           <button onClick={() => setToast(null)} className="ml-auto text-red-200 hover:text-white transition-colors bg-red-700/50 hover:bg-red-700 rounded-full w-6 h-6 flex items-center justify-center">×</button>
         </div>
       )}
 
-      {/* Main Layout Wrapper */}
       <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-blue-200 selection:text-blue-900">
-        
-        {/* Desktop Sidebar (Hides on Mobile) */}
-        <div className="hidden md:block">
-          <Sidebar onSignOut={signOut} />
-        </div>
-
-        {/* Mobile Header & Bottom Nav (Hides on Desktop) */}
-        <MobileHeader />
-        <MobileBottomNav />
-
-        {/* Page Content Area */}
-        <div className="flex-1 md:ml-56 min-h-screen w-full relative pt-14 pb-20 md:pt-0 md:pb-0 overflow-x-hidden">
+        <Sidebar onSignOut={signOut} />
+        <div className="flex-1 ml-56 min-h-screen relative">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/stock" element={<Stock />} />
@@ -1440,7 +1180,6 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.5); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
       `}} />
     </BrowserRouter>
   );
