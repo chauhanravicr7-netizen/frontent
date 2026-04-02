@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { sb, signOut } from "./lib/supabase";
-import { useAuth, AuthCtx, Spinner } from "./shared";
+import { sb } from "./lib/supabase";
+import { Spinner } from "./shared";
 import DesktopApp from "./DesktopApp";
 import MobileApp from "./MobileApp";
 
@@ -26,36 +26,24 @@ function LoginPage() {
         password,
       });
       if (authError) throw authError;
-      if (data.user) {
-        const { data: userData } = await sb
-          .from("users")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
-        if (userData) {
-          localStorage.setItem("dockside-user", JSON.stringify(userData));
-          window.location.href = "/";
-        }
-      }
     } catch (err) {
       setError(err.message || "Login failed");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">⚓</div>
-          <h1 className="text-3xl font-black text-gray-800">Dockside</h1>
-          <p className="text-gray-600 text-sm mt-1">Timber Trade OS</p>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(to bottom right, #2563eb, #4f46e5)', padding: '1rem' }}>
+      <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', padding: '2rem', width: '100%', maxWidth: '28rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>⚓</div>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: '900', color: '#1f2937' }}>Dockside</h1>
+          <p style={{ color: '#4b5563', fontSize: '0.875rem', marginTop: '0.25rem' }}>Timber Trade OS</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
               Email
             </label>
             <input
@@ -63,12 +51,12 @@ function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ width: '100%', padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '1rem' }}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
               Password
             </label>
             <input
@@ -76,12 +64,12 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ width: '100%', padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '1rem' }}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.5rem', padding: '0.75rem', color: '#b91c1c', fontSize: '0.875rem' }}>
               {error}
             </div>
           )}
@@ -89,13 +77,13 @@ function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+            style={{ width: '100%', background: '#2563eb', color: 'white', padding: '0.625rem 0', borderRadius: '0.5rem', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: loading ? 0.5 : 1 }}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '1.5rem' }}>
           Demo: Use your Supabase credentials
         </p>
       </div>
@@ -113,19 +101,10 @@ export default function App() {
       try {
         const { data: { user: authUser } } = await sb.auth.getUser();
         if (authUser) {
-          const { data: userData } = await sb
-            .from("users")
-            .select("*")
-            .eq("id", authUser.id)
-            .single();
-          if (userData) {
-            setUser(userData);
-          } else {
-            setUser(authUser);
-          }
+          setUser(authUser);
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
+        console.error("Auth check error:", err);
       } finally {
         setLoading(false);
       }
@@ -133,31 +112,19 @@ export default function App() {
 
     checkAuth();
 
-    const { data: subscription } = sb.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          const { data: userData } = await sb
-            .from("users")
-            .select("*")
-            .eq("id", session.user.id)
-            .single()
-            .catch(() => ({ data: null }));
-          setUser(userData || session.user);
-        } else {
-          setUser(null);
-        }
+    const { data: subscription } = sb.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
       }
-    );
+    });
 
     return () => subscription?.unsubscribe();
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner />
-      </div>
-    );
+    return <Spinner />;
   }
 
   if (!user) {
